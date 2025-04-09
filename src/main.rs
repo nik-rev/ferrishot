@@ -3,7 +3,7 @@
 use iced::advanced::debug::core::SmolStr;
 use iced::keyboard::Modifiers;
 use iced::widget::{self, canvas};
-use iced::{Element, Length, Point, Rectangle, Renderer, Task, Theme, mouse};
+use iced::{Color, Element, Length, Point, Rectangle, Renderer, Size, Task, Theme, mouse};
 
 mod screenshot;
 
@@ -49,7 +49,36 @@ impl Default for App {
 struct CanvasContext {
     left_mouse_down: bool,
     /// Area of the screen that is selected for capture
-    selected_region: Rectangle,
+    selected_region: Option<Rectangle>,
+}
+
+impl CanvasContext {
+    /// Create an empty selection at the current position
+    pub fn create_selection_at(&mut self, create_selection_at: Point) {
+        self.selected_region = Some(Rectangle::new(create_selection_at, Size::default()))
+    }
+
+    /// Computes a new selection based on the current position
+    pub fn update_selection(&mut self, create_selection_at: Point) {
+        self.selected_region = self.selected_region.take().map(|region| {
+            #[rustfmt::skip]
+            {
+                // selected_region -> x1y1-------------------------x2
+                //   (fixed)          |             ^
+                //                    |           width            ~
+                //                    |
+                //                    |
+                //                    | <- height                  ~
+                //                    |
+                //                    |                            ~
+                //                    |
+                //                   y2    ~      ~       ~   ~  x2y2 <- create_selection_at (can move)
+            };
+            let width = create_selection_at.x - region.x;
+            let height = create_selection_at.y - region.y;
+            Rectangle::new(region.position(), Size { width, height })
+        });
+    }
 }
 
 impl<Message> canvas::Program<Message> for App {
@@ -57,7 +86,7 @@ impl<Message> canvas::Program<Message> for App {
 
     fn draw(
         &self,
-        _state: &Self::State,
+        state: &Self::State,
         renderer: &Renderer,
         _theme: &Theme,
         bounds: Rectangle,
@@ -69,7 +98,23 @@ impl<Message> canvas::Program<Message> for App {
             // this is necessary otherwise the rendered image is going to be blurry
             .filter_method(widget::image::FilterMethod::Nearest);
 
-        frame.draw_image(bounds, img);
+        // TODO: cache draw
+        // frame.draw_image(bounds, img);
+
+        // if let Some(selected_region) = state.selected_region {
+        frame.fill_rectangle(
+            Point { x: 200., y: 200. },
+            // selected_region.position(),
+            Size {
+                width: 75.,
+                height: 75.,
+            },
+            // selected_region.size(),
+            Color::from_rgb(1., 0., 0.),
+        );
+
+        frame.fill_text("Hello");
+        // }
 
         vec![frame.into_geometry()]
     }
@@ -79,25 +124,43 @@ impl<Message> canvas::Program<Message> for App {
         state: &mut Self::State,
         event: &iced::Event,
         _bounds: Rectangle,
-        _cursor: iced::advanced::mouse::Cursor,
+        cursor: iced::advanced::mouse::Cursor,
     ) -> Option<widget::Action<Message>> {
+        use iced::Event::Mouse;
         match event {
-            iced::Event::Mouse(mouse::Event::ButtonPressed(mouse::Button::Left)) => {
+            Mouse(mouse::Event::ButtonPressed(mouse::Button::Left)) => {
                 state.left_mouse_down = true;
-                None
+                if let Some(selected_region) = state.selected_region {
+                    if let Some(cursor_position_over_selected_region) =
+                        cursor.position_over(selected_region)
+                    {
+                        // move the selection
+                    } else {
+                        // cursor is not in the selected region
+                        // create new selection
+                        let cursor_position =
+                            cursor.position().expect("cursor to be in the monitor");
+                        // no region is selected, select the initial region
+                        state.create_selection_at(cursor_position);
+                    };
+                } else {
+                    // no region is selected, select the initial region
+                    let cursor_position = cursor.position().expect("cursor to be in the monitor");
+                    state.create_selection_at(cursor_position);
+                };
             },
-            iced::Event::Mouse(mouse::Event::ButtonReleased(mouse::Button::Left)) => {
+            Mouse(mouse::Event::ButtonReleased(mouse::Button::Left)) => {
                 state.left_mouse_down = false;
-                None
             },
-            iced::Event::Mouse(mouse::Event::CursorMoved { position }) => {
+            Mouse(mouse::Event::CursorMoved { position }) => {
                 if state.left_mouse_down {
+                    state.update_selection(*position);
                     // dragging
                 }
-                None
             },
-            _ => None,
-        }
+            _ => (),
+        };
+        None
     }
 }
 
@@ -110,15 +173,14 @@ fn main() -> iced::Result {
         })
         .subscription(|_state| {
             iced::keyboard::on_key_press(|key, mods| {
+                use iced::keyboard::Key;
                 match (key, mods) {
-                    (iced::keyboard::Key::Named(iced::keyboard::key::Named::Escape), _) => {
-                        Some(Message::Close)
-                    },
-                    (iced::keyboard::Key::Character(str @ _), Modifiers::CTRL) if str == "y" => {
-                        // save path
+                    (Key::Named(iced::keyboard::key::Named::Escape), _) => Some(Message::Close),
+                    (Key::Character(str @ _), Modifiers::CTRL) if str == "y" => {
+                        // save screenshot to path
                         None
                     },
-                    (iced::keyboard::Key::Character(str @ _), Modifiers::CTRL) if str == "c" => {
+                    (Key::Character(str @ _), Modifiers::CTRL) if str == "c" => {
                         // copy to clipboard
                         None
                     },
