@@ -11,7 +11,9 @@ categories = ["_"]
 [dependencies]
 mouse_position = "0.1.4"
 xcap = { version = "0.4.1", features = ["image", "vendored"] }
-iced = "0.13.1"
+iced = { git = "https://github.com/iced-rs/iced.git", version = "0.14.0-dev", features = [
+  "canvas",
+] }
 
 #### lints ####
 
