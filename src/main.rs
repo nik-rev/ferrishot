@@ -1,18 +1,12 @@
 #![cfg_attr(doc, doc = include_str!("../README.md"))]
 
 use iced::keyboard::Modifiers;
-use iced::widget::{self, Stack, canvas, stack};
+use iced::widget::{self, Action, canvas, stack};
 use iced::{Color, Element, Length, Point, Rectangle, Renderer, Size, Task, Theme, mouse};
 use image_renderer::BackgroundImage;
 
 mod image_renderer;
 mod screenshot;
-
-#[derive(Debug, Clone, PartialEq)]
-enum Message {
-    /// Exits the application
-    Close,
-}
 
 #[derive(Default)]
 struct App;
@@ -33,7 +27,7 @@ impl App {
     }
 }
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 struct CanvasContext {
     left_mouse_down: bool,
     /// Area of the screen that is selected for capture
@@ -69,12 +63,18 @@ impl CanvasContext {
     }
 }
 
-impl<Message> canvas::Program<Message> for App {
+#[derive(Debug, Clone)]
+enum Message {
+    /// Exits the application
+    Close,
+}
+
+impl canvas::Program<Message> for App {
     type State = CanvasContext;
 
     fn draw(
         &self,
-        _state: &Self::State,
+        state: &Self::State,
         renderer: &Renderer,
         _theme: &Theme,
         bounds: Rectangle,
@@ -82,20 +82,13 @@ impl<Message> canvas::Program<Message> for App {
     ) -> Vec<canvas::Geometry> {
         let mut frame = canvas::Frame::new(renderer, bounds.size());
 
-        // if let Some(selected_region) = state.selected_region {
-        frame.fill_rectangle(
-            Point { x: 200., y: 0. },
-            // selected_region.position(),
-            Size {
-                width: 75.,
-                height: 75.,
-            },
-            // selected_region.size(),
-            Color::BLACK,
-        );
-
-        frame.fill_text("Hello");
-        // }
+        if let Some(selected_region) = state.selected_region {
+            frame.fill_rectangle(
+                selected_region.position(),
+                selected_region.size(),
+                Color::BLACK,
+            );
+        }
 
         vec![frame.into_geometry()]
     }
@@ -123,11 +116,18 @@ impl<Message> canvas::Program<Message> for App {
                             cursor.position().expect("cursor to be in the monitor");
                         // no region is selected, select the initial region
                         state.create_selection_at(cursor_position);
+                        // always request a redraw
+                        // TODO: change this of course
+                        return Some(Action::request_redraw());
                     };
                 } else {
                     // no region is selected, select the initial region
                     let cursor_position = cursor.position().expect("cursor to be in the monitor");
                     state.create_selection_at(cursor_position);
+
+                    // always request a redraw
+                    // TODO: change this of course
+                    return Some(Action::request_redraw());
                 };
             },
             Mouse(mouse::Event::ButtonReleased(mouse::Button::Left)) => {
@@ -136,11 +136,15 @@ impl<Message> canvas::Program<Message> for App {
             Mouse(mouse::Event::CursorMoved { position }) => {
                 if state.left_mouse_down {
                     state.update_selection(*position);
+                    // always request a redraw
+                    // TODO: change this of course
+                    return Some(Action::request_redraw());
                     // dragging
                 }
             },
             _ => (),
         };
+
         None
     }
 }
