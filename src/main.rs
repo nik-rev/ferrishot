@@ -1,5 +1,7 @@
 #![cfg_attr(doc, doc = include_str!("../README.md"))]
 
+use iced::advanced::debug::core::SmolStr;
+use iced::keyboard::Modifiers;
 use iced::widget::{self, canvas};
 use iced::{Element, Length, Point, Rectangle, Renderer, Task, Theme, mouse};
 
@@ -46,6 +48,8 @@ impl Default for App {
 #[derive(Default)]
 struct CanvasContext {
     left_mouse_down: bool,
+    /// Area of the screen that is selected for capture
+    selected_region: Rectangle,
 }
 
 impl<Message> canvas::Program<Message> for App {
@@ -105,10 +109,18 @@ fn main() -> iced::Result {
             ..Default::default()
         })
         .subscription(|_state| {
-            iced::keyboard::on_key_press(|key, _mods| {
-                match key {
-                    iced::keyboard::Key::Named(iced::keyboard::key::Named::Escape) => {
+            iced::keyboard::on_key_press(|key, mods| {
+                match (key, mods) {
+                    (iced::keyboard::Key::Named(iced::keyboard::key::Named::Escape), _) => {
                         Some(Message::Close)
+                    },
+                    (iced::keyboard::Key::Character(str @ _), Modifiers::CTRL) if str == "y" => {
+                        // save path
+                        None
+                    },
+                    (iced::keyboard::Key::Character(str @ _), Modifiers::CTRL) if str == "c" => {
+                        // copy to clipboard
+                        None
                     },
                     _ => None,
                 }
