@@ -1,26 +1,17 @@
 #![cfg_attr(doc, doc = include_str!("../README.md"))]
 
-use std::time::Instant;
-use xcap::Monitor;
-
-fn normalized(filename: String) -> String {
-    filename.replace(['|', '\\', ':', '/'], "")
-}
-
 fn main() {
-    let start = Instant::now();
-    let monitors = Monitor::all().unwrap();
+    let mouse_position::mouse_position::Mouse::Position { x, y } =
+        mouse_position::mouse_position::Mouse::get_mouse_position()
+    else {
+        panic!("Could not get mouse position")
+    };
 
-    for monitor in monitors {
-        let image = monitor.capture_image().unwrap();
+    let monitor = xcap::Monitor::from_point(x, y).expect("Could not get monitor");
 
-        image
-            .save(format!(
-                "monitor-{}.png",
-                normalized(monitor.name().unwrap())
-            ))
-            .unwrap();
-    }
+    let image = monitor.capture_image().unwrap();
 
-    println!("took: {:?}", start.elapsed());
+    image
+        .save(format!("monitor-{}.png", monitor.name().unwrap()))
+        .unwrap();
 }
