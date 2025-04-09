@@ -1,17 +1,34 @@
 #![cfg_attr(doc, doc = include_str!("../README.md"))]
 
-fn main() {
-    let mouse_position::mouse_position::Mouse::Position { x, y } =
-        mouse_position::mouse_position::Mouse::get_mouse_position()
-    else {
-        panic!("Could not get mouse position")
-    };
+use iced::{
+    Element,
+    widget::{button, text},
+};
 
-    let monitor = xcap::Monitor::from_point(x, y).expect("Could not get monitor");
+mod screenshot;
 
-    let image = monitor.capture_image().unwrap();
+#[derive(Debug, Clone)]
+enum Message {
+    Increment,
+}
 
-    image
-        .save(format!("monitor-{}.png", monitor.name().unwrap()))
-        .unwrap();
+#[derive(Default)]
+struct Counter {
+    value: u64,
+}
+
+fn update(counter: &mut Counter, message: Message) {
+    match message {
+        Message::Increment => counter.value += 1,
+    }
+}
+
+fn view(counter: &Counter) -> Element<Message> {
+    button(text(counter.value))
+        .on_press(Message::Increment)
+        .into()
+}
+
+fn main() -> iced::Result {
+    iced::run("Hello World", update, view)
 }

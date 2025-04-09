@@ -11,6 +11,7 @@ categories = ["_"]
 [dependencies]
 mouse_position = "0.1.4"
 xcap = { version = "0.4.1", features = ["image", "vendored"] }
+iced = "0.13.1"
 
 #### lints ####
 

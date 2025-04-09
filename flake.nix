@@ -33,13 +33,23 @@
               xorg.libxcb
               xorg.xrandr
               xorg.libX11
-              (rust-bin.fromRustupToolchainFile ./rust-toolchain.toml)
+              xorg.libXcursor
+              xorg.libXi
+              libxkbcommon
+              vulkan-loader
+              wayland
+              # (rust-bin.fromRustupToolchainFile ./rust-toolchain.toml)
             ];
             LD_LIBRARY_PATH = lib.makeLibraryPath [
               dbus
               xorg.libxcb
               xorg.xrandr
               xorg.libX11
+              xorg.libXcursor
+              xorg.libXi
+              libxkbcommon
+              vulkan-loader
+              wayland
             ];
           };
       }
