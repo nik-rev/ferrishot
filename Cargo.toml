@@ -13,7 +13,9 @@ mouse_position = "0.1.4"
 xcap = { version = "0.4.1", features = ["image", "vendored"] }
 iced = { git = "https://github.com/iced-rs/iced.git", version = "0.14.0-dev", features = [
   "canvas",
+  "image",
 ] }
+image = "0.25.6"
 
 #### lints ####
 
