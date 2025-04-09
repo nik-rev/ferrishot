@@ -1436,7 +1436,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "grox"
+name = "groxshot"
 version = "0.1.0"
 dependencies = [
  "iced",

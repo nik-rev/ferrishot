@@ -30,6 +30,13 @@ impl App {
 #[derive(Default, Debug)]
 struct CanvasContext {
     left_mouse_down: bool,
+    /// 1st Point:
+    /// - Represents the absolute (x, y) anchor of the selection before we
+    ///   started moving it
+    /// 2nd Point:
+    /// - Represents the area where the selection has started moving,
+    /// namely when hovering over the selection and left click + drag
+    moving_selection: Option<(Point, Point)>,
     /// Area of the screen that is selected for capture
     selected_region: Option<Rectangle>,
 }
@@ -41,7 +48,7 @@ impl CanvasContext {
     }
 
     /// Computes a new selection based on the current position
-    pub fn update_selection(&mut self, create_selection_at: Point) {
+    pub fn update_selection(&mut self, other: Point) {
         self.selected_region = self.selected_region.take().map(|region| {
             #[rustfmt::skip]
             {
@@ -56,8 +63,8 @@ impl CanvasContext {
                 //                    |
                 //                   y2    ~      ~       ~   ~  x2y2 <- create_selection_at (can move)
             };
-            let width = create_selection_at.x - region.x;
-            let height = create_selection_at.y - region.y;
+            let width = other.x - region.x;
+            let height = other.y - region.y;
             Rectangle::new(region.position(), Size { width, height })
         });
     }
@@ -105,10 +112,13 @@ impl canvas::Program<Message> for App {
             Mouse(mouse::Event::ButtonPressed(mouse::Button::Left)) => {
                 state.left_mouse_down = true;
                 if let Some(selected_region) = state.selected_region {
-                    if let Some(_cursor_position_over_selected_region) =
+                    if let Some(cursor_position_over_selected_region) =
                         cursor.position_over(selected_region)
                     {
-                        // move the selection
+                        state.moving_selection = Some((
+                            selected_region.position(),
+                            cursor_position_over_selected_region,
+                        ))
                     } else {
                         // cursor is not in the selected region
                         // create new selection
@@ -132,10 +142,26 @@ impl canvas::Program<Message> for App {
             },
             Mouse(mouse::Event::ButtonReleased(mouse::Button::Left)) => {
                 state.left_mouse_down = false;
+                state.moving_selection = None;
             },
             Mouse(mouse::Event::CursorMoved { position }) => {
                 if state.left_mouse_down {
-                    state.update_selection(*position);
+                    if let Some((start_moving_top_left_center, start_moving_pos)) =
+                        state.moving_selection
+                    {
+                        state.selected_region = state.selected_region.take().map(|region| {
+                            Rectangle {
+                                x: start_moving_top_left_center.x
+                                    + (position.x - start_moving_pos.x),
+                                y: start_moving_top_left_center.y
+                                    + (position.y - start_moving_pos.y),
+                                width: region.width,
+                                height: region.height,
+                            }
+                        });
+                    } else {
+                        state.update_selection(*position);
+                    }
                     // always request a redraw
                     // TODO: change this of course
                     return Some(Action::request_redraw());
