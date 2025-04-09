@@ -1,7 +1,7 @@
 #![cfg_attr(doc, doc = include_str!("../README.md"))]
 
 use iced::keyboard::Modifiers;
-use iced::widget::{self, canvas, container};
+use iced::widget::{self, Stack, canvas, stack};
 use iced::{Color, Element, Length, Point, Rectangle, Renderer, Size, Task, Theme, mouse};
 use image_renderer::BackgroundImage;
 
@@ -19,7 +19,11 @@ struct App;
 
 impl App {
     fn view(&self) -> Element<Message> {
-        BackgroundImage::default().into()
+        stack![
+            BackgroundImage::default(),
+            canvas(self).width(Length::Fill).height(Length::Fill)
+        ]
+        .into()
     }
 
     fn update(&mut self, message: Message) -> Task<Message> {
@@ -80,14 +84,14 @@ impl<Message> canvas::Program<Message> for App {
 
         // if let Some(selected_region) = state.selected_region {
         frame.fill_rectangle(
-            Point { x: 200., y: 200. },
+            Point { x: 200., y: 0. },
             // selected_region.position(),
             Size {
                 width: 75.,
                 height: 75.,
             },
             // selected_region.size(),
-            Color::from_rgb(1., 0., 0.),
+            Color::BLACK,
         );
 
         frame.fill_text("Hello");
