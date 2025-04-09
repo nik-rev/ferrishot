@@ -1,6 +1,7 @@
 #![cfg_attr(doc, doc = include_str!("../README.md"))]
 
-use iced::{Color, Element, Rectangle, Renderer, Theme, mouse, widget::canvas};
+use iced::widget::canvas;
+use iced::{Color, Element, Rectangle, Renderer, Task, Theme, mouse};
 
 mod screenshot;
 
@@ -17,10 +18,11 @@ struct Circle {
 }
 
 #[allow(unused_variables)]
-fn update(counter: &mut Circle, message: Message) {
+fn update(counter: &mut Circle, message: Message) -> Task<Message> {
     if message == Message::Close {
-        let task = iced::exit::<()>();
+        return iced::exit::<Message>();
     }
+    ().into()
 }
 
 impl<Message> canvas::Program<Message> for Circle {
@@ -56,11 +58,13 @@ fn main() -> iced::Result {
             ..Default::default()
         })
         .subscription(|state| {
-            iced::keyboard::on_key_press(|key, _mods| match key {
-                iced::keyboard::Key::Named(iced::keyboard::key::Named::Escape) => {
-                    Some(Message::Close)
-                },
-                _ => None,
+            iced::keyboard::on_key_press(|key, _mods| {
+                match key {
+                    iced::keyboard::Key::Named(iced::keyboard::key::Named::Escape) => {
+                        Some(Message::Close)
+                    },
+                    _ => None,
+                }
             })
         })
         .run()
