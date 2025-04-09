@@ -1,46 +1,30 @@
 #![cfg_attr(doc, doc = include_str!("../README.md"))]
 
-use iced::advanced::debug::core::SmolStr;
 use iced::keyboard::Modifiers;
-use iced::widget::{self, canvas};
+use iced::widget::{self, canvas, container};
 use iced::{Color, Element, Length, Point, Rectangle, Renderer, Size, Task, Theme, mouse};
+use image_renderer::BackgroundImage;
 
+mod image_renderer;
 mod screenshot;
 
 #[derive(Debug, Clone, PartialEq)]
 enum Message {
     /// Exits the application
     Close,
-    Click(Point),
 }
 
-struct App {
-    image_handle: widget::image::Handle,
-}
+#[derive(Default)]
+struct App;
 
 impl App {
     fn view(&self) -> Element<Message> {
-        iced::widget::canvas(self)
-            .width(Length::Fill)
-            .height(Length::Fill)
-            .into()
+        BackgroundImage::default().into()
     }
 
     fn update(&mut self, message: Message) -> Task<Message> {
         match message {
             Message::Close => iced::exit(),
-            Message::Click(point) => {
-                todo!()
-            },
-        }
-    }
-}
-
-impl Default for App {
-    fn default() -> Self {
-        let screenshot = screenshot::screenshot().unwrap();
-        Self {
-            image_handle: screenshot,
         }
     }
 }
@@ -86,20 +70,13 @@ impl<Message> canvas::Program<Message> for App {
 
     fn draw(
         &self,
-        state: &Self::State,
+        _state: &Self::State,
         renderer: &Renderer,
         _theme: &Theme,
         bounds: Rectangle,
         _cursor: mouse::Cursor,
     ) -> Vec<canvas::Geometry> {
         let mut frame = canvas::Frame::new(renderer, bounds.size());
-
-        let img = canvas::Image::new(self.image_handle.clone())
-            // this is necessary otherwise the rendered image is going to be blurry
-            .filter_method(widget::image::FilterMethod::Nearest);
-
-        // TODO: cache draw
-        // frame.draw_image(bounds, img);
 
         // if let Some(selected_region) = state.selected_region {
         frame.fill_rectangle(
@@ -131,7 +108,7 @@ impl<Message> canvas::Program<Message> for App {
             Mouse(mouse::Event::ButtonPressed(mouse::Button::Left)) => {
                 state.left_mouse_down = true;
                 if let Some(selected_region) = state.selected_region {
-                    if let Some(cursor_position_over_selected_region) =
+                    if let Some(_cursor_position_over_selected_region) =
                         cursor.position_over(selected_region)
                     {
                         // move the selection

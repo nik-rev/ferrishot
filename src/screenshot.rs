@@ -2,11 +2,11 @@ use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum ScreenshotError {
-    #[error("Unable to get the mouse position")]
+    #[error("Could not get position of the mouse")]
     NoMousePosition,
-    #[error("Unable not get the monitor: {0}")]
+    #[error("Could not get the active monitor: {0}")]
     NoMonitor(xcap::XCapError),
-    #[error("Could take a screenshot: {0}")]
+    #[error("Couldn not take a screenshot: {0}")]
     NoScreenshot(xcap::XCapError),
 }
 
