@@ -14,6 +14,8 @@ xcap = { version = "0.4.1", features = ["image", "vendored"] }
 iced = { git = "https://github.com/iced-rs/iced.git", version = "0.14.0-dev", features = [
   "canvas",
   "image",
+  "web-colors",
+  "advanced",
 ] }
 image = "0.25.6"
 

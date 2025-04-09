@@ -1,10 +1,7 @@
 #![cfg_attr(doc, doc = include_str!("../README.md"))]
 
-use std::io::Read;
-
-use iced::widget::{self, canvas, column, text};
-use iced::{Color, Element, Rectangle, Renderer, Task, Theme, mouse};
-use image::EncodableLayout as _;
+use iced::widget::{self, canvas};
+use iced::{Element, Length, Rectangle, Renderer, Task, Theme, mouse};
 
 mod screenshot;
 
@@ -15,33 +12,13 @@ enum Message {
 }
 
 struct App {
-    radius: f32,
-    region: Option<Rect>,
     image_handle: widget::image::Handle,
 }
 
 impl App {
     pub fn new(image_handle: widget::image::Handle) -> Self {
-        Self {
-            image_handle,
-            radius: Default::default(),
-            region: Default::default(),
-        }
+        Self { image_handle }
     }
-}
-
-#[derive(PartialEq, PartialOrd, Clone, Copy, Default)]
-struct Rect {
-    top_left: Coordinate,
-    top_right: Coordinate,
-    bottom_left: Coordinate,
-    bottom_right: Coordinate,
-}
-
-#[derive(PartialEq, PartialOrd, Clone, Copy, Default)]
-struct Coordinate {
-    x: f32,
-    y: f32,
 }
 
 #[allow(unused_variables)]
@@ -62,33 +39,35 @@ impl<Message> canvas::Program<Message> for App {
         bounds: Rectangle,
         _cursor: mouse::Cursor,
     ) -> Vec<canvas::Geometry> {
-        // We prepare a new `Frame`
         let mut frame = canvas::Frame::new(renderer, bounds.size());
-        frame.draw_image(bounds, &self.image_handle);
 
-        // We create a `Path` representing a simple circle
-        let circle = canvas::Path::circle(frame.center(), self.radius);
-        // And fill it with some color
-        frame.fill(&circle, Color::BLACK);
-        // Then, we produce the geometry
+        let img = canvas::Image::new(self.image_handle.clone())
+            // this is necessary otherwise the rendered image is going to be blurry
+            .filter_method(widget::image::FilterMethod::Nearest);
+
+        frame.draw_image(bounds, img);
+
         vec![frame.into_geometry()]
     }
 }
 
 fn view(state: &App) -> Element<Message> {
-    column![text("lol"), iced::widget::canvas(state)].into()
+    iced::widget::canvas(state)
+        .width(Length::Fill)
+        .height(Length::Fill)
+        .into()
 }
 
 fn main() -> iced::Result {
     iced::application(
         || {
-            let image = screenshot::get();
-            let handle = iced::widget::image::Handle::from_rgba(
-                image.width(),
-                image.height(),
-                image.into_raw(),
+            let screenshot = screenshot::get();
+            let screenshot = iced::widget::image::Handle::from_rgba(
+                screenshot.width(),
+                screenshot.height(),
+                screenshot.into_raw(),
             );
-            App::new(handle)
+            App::new(screenshot)
         },
         update,
         view,
