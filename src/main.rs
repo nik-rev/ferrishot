@@ -4,9 +4,11 @@ use iced::{Color, Element, Rectangle, Renderer, Theme, mouse, widget::canvas};
 
 mod screenshot;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 enum Message {
     Increment,
+    // closes the application
+    Close,
 }
 
 #[derive(Default)]
@@ -15,7 +17,11 @@ struct Circle {
 }
 
 #[allow(unused_variables)]
-fn update(counter: &mut Circle, message: Message) {}
+fn update(counter: &mut Circle, message: Message) {
+    if message == Message::Close {
+        let task = iced::exit::<()>();
+    }
+}
 
 impl<Message> canvas::Program<Message> for Circle {
     type State = ();
@@ -48,6 +54,14 @@ fn main() -> iced::Result {
             level: iced::window::Level::AlwaysOnTop,
             fullscreen: true,
             ..Default::default()
+        })
+        .subscription(|state| {
+            iced::keyboard::on_key_press(|key, _mods| match key {
+                iced::keyboard::Key::Named(iced::keyboard::key::Named::Escape) => {
+                    Some(Message::Close)
+                },
+                _ => None,
+            })
         })
         .run()
 }
