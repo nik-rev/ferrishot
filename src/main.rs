@@ -1,21 +1,15 @@
 #![cfg_attr(doc, doc = include_str!("../README.md"))]
 
 use iced::widget::{self, canvas};
-use iced::{Element, Length, Rectangle, Renderer, Task, Theme, mouse};
+use iced::{Element, Length, Point, Rectangle, Renderer, Task, Theme, mouse};
 
 mod screenshot;
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, PartialEq)]
 enum Message {
     /// Exits the application
     Close,
-}
-
-#[allow(unused_variables)]
-fn update(counter: &mut App, message: Message) -> Task<Message> {
-    match message {
-        Message::Close => iced::exit(),
-    }
+    Click(Point),
 }
 
 struct App {
@@ -23,13 +17,39 @@ struct App {
 }
 
 impl App {
-    pub fn new(image_handle: widget::image::Handle) -> Self {
-        Self { image_handle }
+    fn view(&self) -> Element<Message> {
+        iced::widget::canvas(self)
+            .width(Length::Fill)
+            .height(Length::Fill)
+            .into()
+    }
+
+    fn update(&mut self, message: Message) -> Task<Message> {
+        match message {
+            Message::Close => iced::exit(),
+            Message::Click(point) => {
+                todo!()
+            },
+        }
     }
 }
 
+impl Default for App {
+    fn default() -> Self {
+        let screenshot = screenshot::screenshot().unwrap();
+        Self {
+            image_handle: screenshot,
+        }
+    }
+}
+
+#[derive(Default)]
+struct CanvasContext {
+    left_mouse_down: bool,
+}
+
 impl<Message> canvas::Program<Message> for App {
-    type State = ();
+    type State = CanvasContext;
 
     fn draw(
         &self,
@@ -49,38 +69,50 @@ impl<Message> canvas::Program<Message> for App {
 
         vec![frame.into_geometry()]
     }
-}
 
-fn view(state: &App) -> Element<Message> {
-    iced::widget::canvas(state)
-        .width(Length::Fill)
-        .height(Length::Fill)
-        .into()
+    fn update(
+        &self,
+        state: &mut Self::State,
+        event: &iced::Event,
+        _bounds: Rectangle,
+        _cursor: iced::advanced::mouse::Cursor,
+    ) -> Option<widget::Action<Message>> {
+        match event {
+            iced::Event::Mouse(mouse::Event::ButtonPressed(mouse::Button::Left)) => {
+                state.left_mouse_down = true;
+                None
+            },
+            iced::Event::Mouse(mouse::Event::ButtonReleased(mouse::Button::Left)) => {
+                state.left_mouse_down = false;
+                None
+            },
+            iced::Event::Mouse(mouse::Event::CursorMoved { position }) => {
+                if state.left_mouse_down {
+                    // dragging
+                }
+                None
+            },
+            _ => None,
+        }
+    }
 }
 
 fn main() -> iced::Result {
-    iced::application(
-        || {
-            let screenshot = screenshot::screenshot().unwrap();
-            App::new(screenshot)
-        },
-        update,
-        view,
-    )
-    .window(iced::window::Settings {
-        level: iced::window::Level::AlwaysOnTop,
-        fullscreen: true,
-        ..Default::default()
-    })
-    .subscription(|_state| {
-        iced::keyboard::on_key_press(|key, _mods| {
-            match key {
-                iced::keyboard::Key::Named(iced::keyboard::key::Named::Escape) => {
-                    Some(Message::Close)
-                },
-                _ => None,
-            }
+    iced::application(App::default, App::update, App::view)
+        .window(iced::window::Settings {
+            level: iced::window::Level::AlwaysOnTop,
+            fullscreen: true,
+            ..Default::default()
         })
-    })
-    .run()
+        .subscription(|_state| {
+            iced::keyboard::on_key_press(|key, _mods| {
+                match key {
+                    iced::keyboard::Key::Named(iced::keyboard::key::Named::Escape) => {
+                        Some(Message::Close)
+                    },
+                    _ => None,
+                }
+            })
+        })
+        .run()
 }
