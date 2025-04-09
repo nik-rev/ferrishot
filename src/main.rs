@@ -1,6 +1,7 @@
 #![cfg_attr(doc, doc = include_str!("../README.md"))]
 
 use iced::keyboard::Modifiers;
+use iced::mouse::Cursor;
 use iced::widget::{self, Action, canvas, stack};
 use iced::{Color, Element, Length, Point, Rectangle, Renderer, Size, Task, Theme, mouse};
 use image_renderer::BackgroundImage;
@@ -8,8 +9,23 @@ use image_renderer::BackgroundImage;
 mod image_renderer;
 mod screenshot;
 
-#[derive(Default)]
-struct App;
+#[derive(Debug, Default)]
+struct MovingSelection {
+    /// top left point of the selection before we started moving it
+    top_left_anchor: Point,
+    /// cursor position before we started moving the selection with the cursor
+    cursor_anchor: Point,
+}
+
+#[derive(Default, Debug)]
+struct App {
+    /// Left mouse click is currently being held down
+    left_mouse_down: bool,
+    /// The selection is currently being moved (hold left click + move)
+    moving_selection: Option<MovingSelection>,
+    /// Area of the screen that is selected for capture
+    selected_region: Option<Rectangle>,
+}
 
 impl App {
     fn view(&self) -> Element<Message> {
@@ -25,23 +41,17 @@ impl App {
             Message::Close => iced::exit(),
         }
     }
-}
 
-#[derive(Default, Debug)]
-struct CanvasContext {
-    left_mouse_down: bool,
-    /// 1st Point:
-    /// - Represents the absolute (x, y) anchor of the selection before we
-    ///   started moving it
-    /// 2nd Point:
-    /// - Represents the area where the selection has started moving,
-    /// namely when hovering over the selection and left click + drag
-    moving_selection: Option<(Point, Point)>,
-    /// Area of the screen that is selected for capture
-    selected_region: Option<Rectangle>,
-}
+    /// If the given cursor intersects the selected region, give the region and
+    /// the cursor
+    fn point_in_region(&self, cursor: Cursor) -> Option<(Point, Rectangle)> {
+        self.selected_region.and_then(|selected_region| {
+            cursor
+                .position_over(selected_region)
+                .map(|cursor_anchor| (cursor_anchor, selected_region))
+        })
+    }
 
-impl CanvasContext {
     /// Create an empty selection at the current position
     pub fn create_selection_at(&mut self, create_selection_at: Point) {
         self.selected_region = Some(Rectangle::new(create_selection_at, Size::default()))
@@ -77,7 +87,7 @@ enum Message {
 }
 
 impl canvas::Program<Message> for App {
-    type State = CanvasContext;
+    type State = App;
 
     fn draw(
         &self,
@@ -111,62 +121,44 @@ impl canvas::Program<Message> for App {
         match event {
             Mouse(mouse::Event::ButtonPressed(mouse::Button::Left)) => {
                 state.left_mouse_down = true;
-                if let Some(selected_region) = state.selected_region {
-                    if let Some(cursor_position_over_selected_region) =
-                        cursor.position_over(selected_region)
-                    {
-                        state.moving_selection = Some((
-                            selected_region.position(),
-                            cursor_position_over_selected_region,
-                        ))
-                    } else {
-                        // cursor is not in the selected region
-                        // create new selection
-                        let cursor_position =
-                            cursor.position().expect("cursor to be in the monitor");
-                        // no region is selected, select the initial region
-                        state.create_selection_at(cursor_position);
-                        // always request a redraw
-                        // TODO: change this of course
-                        return Some(Action::request_redraw());
-                    };
-                } else {
-                    // no region is selected, select the initial region
-                    let cursor_position = cursor.position().expect("cursor to be in the monitor");
-                    state.create_selection_at(cursor_position);
-
-                    // always request a redraw
-                    // TODO: change this of course
+                if let Some((cursor, selected_region)) = state.point_in_region(cursor) {
+                    state.moving_selection = Some(MovingSelection {
+                        top_left_anchor: selected_region.position(),
+                        cursor_anchor: cursor,
+                    });
                     return Some(Action::request_redraw());
                 };
+
+                // no region is selected, select the initial region
+                let cursor_position = cursor.position().expect("cursor to be in the monitor");
+                state.create_selection_at(cursor_position);
+
+                return Some(Action::request_redraw());
             },
             Mouse(mouse::Event::ButtonReleased(mouse::Button::Left)) => {
                 state.left_mouse_down = false;
                 state.moving_selection = None;
             },
-            Mouse(mouse::Event::CursorMoved { position }) => {
-                if state.left_mouse_down {
-                    if let Some((start_moving_top_left_center, start_moving_pos)) =
-                        state.moving_selection
-                    {
-                        state.selected_region = state.selected_region.take().map(|region| {
-                            Rectangle {
-                                x: start_moving_top_left_center.x
-                                    + (position.x - start_moving_pos.x),
-                                y: start_moving_top_left_center.y
-                                    + (position.y - start_moving_pos.y),
-                                width: region.width,
-                                height: region.height,
-                            }
-                        });
-                    } else {
-                        state.update_selection(*position);
+            Mouse(mouse::Event::CursorMoved { position }) if state.left_mouse_down => {
+                if let Some(MovingSelection {
+                    top_left_anchor,
+                    cursor_anchor,
+                }) = state.moving_selection
+                {
+                    if let Some(Rectangle { width, height, .. }) = state.selected_region {
+                        let Point { x, y } = top_left_anchor + (*position - cursor_anchor);
+
+                        state.selected_region = Some(Rectangle {
+                            x,
+                            y,
+                            width,
+                            height,
+                        })
                     }
-                    // always request a redraw
-                    // TODO: change this of course
-                    return Some(Action::request_redraw());
-                    // dragging
+                } else {
+                    state.update_selection(*position);
                 }
+                return Some(Action::request_redraw());
             },
             _ => (),
         };
