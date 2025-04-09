@@ -1,21 +1,32 @@
-use image::{ImageBuffer, Rgba};
+use thiserror::Error;
 
-pub fn gete() -> image::ImageBuffer<image::Rgba<u8>, Vec<u8>> {
-    image::ImageReader::open("../monitor.png")
-        .unwrap()
-        .decode()
-        .unwrap()
-        .into_rgba8()
+#[derive(Error, Debug)]
+pub enum ScreenshotError {
+    #[error("Unable to get the mouse position")]
+    NoMousePosition,
+    #[error("Could not get the monitor: {0}")]
+    NoMonitor(xcap::XCapError),
+    #[error("Could not get the monitor: {0}")]
+    NoScreenshot(xcap::XCapError),
 }
 
-pub fn get() -> image::ImageBuffer<image::Rgba<u8>, Vec<u8>> {
+/// Take a screenshot and return a handle to the image
+pub fn screenshot() -> Result<iced::widget::image::Handle, ScreenshotError> {
     let mouse_position::mouse_position::Mouse::Position { x, y } =
         mouse_position::mouse_position::Mouse::get_mouse_position()
     else {
-        panic!("Could not get mouse position")
+        return Err(ScreenshotError::NoMousePosition);
     };
 
-    let monitor = xcap::Monitor::from_point(x, y).expect("Could not get monitor");
+    let monitor = xcap::Monitor::from_point(x, y).map_err(ScreenshotError::NoMonitor)?;
 
-    monitor.capture_image().unwrap()
+    let screenshot = monitor
+        .capture_image()
+        .map_err(ScreenshotError::NoScreenshot)?;
+
+    Ok(iced::widget::image::Handle::from_rgba(
+        screenshot.width(),
+        screenshot.height(),
+        screenshot.into_raw(),
+    ))
 }

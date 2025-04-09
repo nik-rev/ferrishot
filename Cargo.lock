@@ -1442,6 +1442,7 @@ dependencies = [
  "iced",
  "image 0.25.6",
  "mouse_position",
+ "thiserror 2.0.12",
  "xcap",
 ]
 

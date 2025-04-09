@@ -11,6 +11,13 @@ enum Message {
     Close,
 }
 
+#[allow(unused_variables)]
+fn update(counter: &mut App, message: Message) -> Task<Message> {
+    match message {
+        Message::Close => iced::exit(),
+    }
+}
+
 struct App {
     image_handle: widget::image::Handle,
 }
@@ -18,13 +25,6 @@ struct App {
 impl App {
     pub fn new(image_handle: widget::image::Handle) -> Self {
         Self { image_handle }
-    }
-}
-
-#[allow(unused_variables)]
-fn update(counter: &mut App, message: Message) -> Task<Message> {
-    match message {
-        Message::Close => iced::exit(),
     }
 }
 
@@ -61,12 +61,7 @@ fn view(state: &App) -> Element<Message> {
 fn main() -> iced::Result {
     iced::application(
         || {
-            let screenshot = screenshot::get();
-            let screenshot = iced::widget::image::Handle::from_rgba(
-                screenshot.width(),
-                screenshot.height(),
-                screenshot.into_raw(),
-            );
+            let screenshot = screenshot::screenshot().unwrap();
             App::new(screenshot)
         },
         update,
