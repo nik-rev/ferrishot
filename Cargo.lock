@@ -856,6 +856,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "delegate"
+version = "0.13.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b9b6483c2bbed26f97861cf57651d4f2b731964a28cd2257f934a4b452480d21"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "dispatch"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1439,6 +1450,7 @@ dependencies = [
 name = "groxshot"
 version = "0.1.0"
 dependencies = [
+ "delegate",
  "iced",
  "image 0.25.6",
  "mouse_position",

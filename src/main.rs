@@ -1,10 +1,77 @@
 #![cfg_attr(doc, doc = include_str!("../README.md"))]
 
+use delegate::delegate;
 use iced::keyboard::Modifiers;
-use iced::mouse::Cursor;
+use iced::mouse::{Cursor, Interaction};
 use iced::widget::{self, Action, canvas, stack};
 use iced::{Color, Element, Length, Point, Rectangle, Renderer, Size, Task, Theme, mouse};
 use image_renderer::BackgroundImage;
+
+#[derive(Debug, Default, Copy, Clone)]
+struct Selection(Rectangle);
+
+impl Selection {
+    /// make sure that the top-left corner is ALWAYS in the top left
+    /// (it could be that top-left corner is actually on the bottom right,
+    /// and we have a negative width and height):
+    ///
+    ///                           ----------
+    ///                           |        |
+    ///                           |        | <- height: -3
+    ///                           |        |
+    /// our "top left" is here -> O---------
+    /// even if the width and height is negative
+    fn normalize(&self) -> Rectangle {
+        let mut rect = self.0;
+        if rect.width.is_sign_negative() {
+            rect.x = rect.x + rect.width;
+            rect.width = rect.width.abs();
+        }
+        if rect.height.is_sign_negative() {
+            rect.y = rect.y + rect.height;
+            rect.height = rect.height.abs();
+        }
+        rect
+    }
+
+    pub fn contains(&self, point: Point) -> bool {
+        self.normalize().contains(point)
+    }
+
+    /// Create selection with a size of zero
+    pub fn new(point: Point) -> Self {
+        Self(Rectangle::new(point, Size::default()))
+    }
+
+    pub fn with_size(&self, size: Size) -> Self {
+        Self(Rectangle::new(self.position(), size))
+    }
+
+    pub fn with_position(&self, pos: Point) -> Self {
+        Self(Rectangle::new(pos, self.size()))
+    }
+
+    pub fn rect(&self) -> Rectangle {
+        self.0
+    }
+
+    /// The x-coordinate of the top left point
+    pub fn x(&self) -> f32 {
+        self.0.x
+    }
+
+    /// The y-coordinate of the top left point
+    pub fn y(&self) -> f32 {
+        self.0.y
+    }
+
+    delegate! {
+        to self.0 {
+            pub fn position(&self) -> Point;
+            pub fn size(&self) -> Size;
+        }
+    }
+}
 
 mod image_renderer;
 mod screenshot;
@@ -24,14 +91,15 @@ struct App {
     /// The selection is currently being moved (hold left click + move)
     moving_selection: Option<MovingSelection>,
     /// Area of the screen that is selected for capture
-    selected_region: Option<Rectangle>,
+    selected_region: Option<Selection>,
+    message: Option<String>,
 }
 
 impl App {
     fn view(&self) -> Element<Message> {
         stack![
             BackgroundImage::default(),
-            canvas(self).width(Length::Fill).height(Length::Fill)
+            canvas(self).width(Length::Fill).height(Length::Fill),
         ]
         .into()
     }
@@ -44,38 +112,43 @@ impl App {
 
     /// If the given cursor intersects the selected region, give the region and
     /// the cursor
-    fn point_in_region(&self, cursor: Cursor) -> Option<(Point, Rectangle)> {
+    fn cursor_in_selection(&self, cursor: Cursor) -> Option<(Point, Selection)> {
         self.selected_region.and_then(|selected_region| {
-            cursor
-                .position_over(selected_region)
-                .map(|cursor_anchor| (cursor_anchor, selected_region))
+            cursor.position().and_then(|cursor_pos| {
+                selected_region
+                    .contains(cursor_pos)
+                    .then_some((cursor_pos, selected_region))
+            })
         })
     }
 
     /// Create an empty selection at the current position
     pub fn create_selection_at(&mut self, create_selection_at: Point) {
-        self.selected_region = Some(Rectangle::new(create_selection_at, Size::default()))
+        self.selected_region = Some(Selection::new(create_selection_at))
     }
 
     /// Computes a new selection based on the current position
     pub fn update_selection(&mut self, other: Point) {
-        self.selected_region = self.selected_region.take().map(|region| {
+        self.selected_region = self.selected_region.take().map(|selected_region| {
             #[rustfmt::skip]
             {
-                // selected_region -> x1y1-------------------------x2
-                //   (fixed)          |             ^
-                //                    |           width            ~
-                //                    |
-                //                    |
-                //                    | <- height                  ~
-                //                    |
-                //                    |                            ~
-                //                    |
-                //                   y2    ~      ~       ~   ~  x2y2 <- create_selection_at (can move)
+    // selected_region -> x1y1-------------------------x2
+    //   (fixed)          |             ^
+    //                    |           width            ~
+    //                    |
+    //                    |
+    //                    | <- height                  ~
+    //                    |
+    //                    |                            ~
+    //                    |
+    //                   y2    ~      ~       ~   ~  x2y2 <- create_selection_at (can move)
             };
-            let width = other.x - region.x;
-            let height = other.y - region.y;
-            Rectangle::new(region.position(), Size { width, height })
+            let width = other.x - selected_region.x();
+            let height = other.y - selected_region.y();
+
+            Selection::default()
+                .with_position(selected_region.position())
+                .with_size(Size { width, height })
         });
     }
 }
@@ -110,6 +183,22 @@ impl canvas::Program<Message> for App {
         vec![frame.into_geometry()]
     }
 
+    fn mouse_interaction(
+        &self,
+        state: &Self::State,
+        _bounds: Rectangle,
+        cursor: iced::advanced::mouse::Cursor,
+    ) -> iced::advanced::mouse::Interaction {
+        // when the cursor is inside of the selected region,
+        if (!state.left_mouse_down || state.moving_selection.is_some())
+            && state.cursor_in_selection(cursor).is_some()
+        {
+            Interaction::Grab
+        } else {
+            Interaction::Crosshair
+        }
+    }
+
     fn update(
         &self,
         state: &mut Self::State,
@@ -117,11 +206,16 @@ impl canvas::Program<Message> for App {
         _bounds: Rectangle,
         cursor: iced::advanced::mouse::Cursor,
     ) -> Option<widget::Action<Message>> {
+        state.message = format!(
+            "cursor: {cursor:?}, region: {:?}",
+            self.selected_region.unwrap_or_default()
+        )
+        .into();
         use iced::Event::Mouse;
         match event {
             Mouse(mouse::Event::ButtonPressed(mouse::Button::Left)) => {
                 state.left_mouse_down = true;
-                if let Some((cursor, selected_region)) = state.point_in_region(cursor) {
+                if let Some((cursor, selected_region)) = state.cursor_in_selection(cursor) {
                     state.moving_selection = Some(MovingSelection {
                         top_left_anchor: selected_region.position(),
                         cursor_anchor: cursor,
@@ -145,15 +239,16 @@ impl canvas::Program<Message> for App {
                     cursor_anchor,
                 }) = state.moving_selection
                 {
-                    if let Some(Rectangle { width, height, .. }) = state.selected_region {
+                    if let Some(Rectangle { width, height, .. }) =
+                        state.selected_region.map(|r| r.rect())
+                    {
                         let Point { x, y } = top_left_anchor + (*position - cursor_anchor);
 
-                        state.selected_region = Some(Rectangle {
-                            x,
-                            y,
-                            width,
-                            height,
-                        })
+                        state.selected_region = Some(
+                            Selection::default()
+                                .with_size(Size { width, height })
+                                .with_position(Point { x, y }),
+                        );
                     }
                 } else {
                     state.update_selection(*position);

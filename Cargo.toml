@@ -19,6 +19,7 @@ iced = { git = "https://github.com/iced-rs/iced.git", version = "0.14.0-dev", fe
 ] }
 image = "0.25.6"
 thiserror = "2.0.12"
+delegate = "0.13"
 
 #### lints ####
 
