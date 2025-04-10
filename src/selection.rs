@@ -1,7 +1,6 @@
 use delegate::delegate;
 use iced::{Point, Rectangle, Size};
 
-use crate::app::Side;
 use crate::corners::Corners;
 
 /// The selected area of the desktop which will be captured
@@ -9,11 +8,13 @@ use crate::corners::Corners;
 pub struct Selection {
     pub rect: Rectangle,
     /// The selection is currently being moved (hold left click + move)
-    pub moving_selection: Option<SelectionStatus>,
+    pub selection_status: SelectionStatus,
 }
 
-#[derive(Debug, Default, Clone, Copy)]
+#[derive(Debug, Default, Clone, Copy, PartialEq)]
 pub enum SelectionStatus {
+    /// The selection is currently being resized
+    Resized { rect: Rectangle, cursor: Point },
     /// The selection is currently being dragged
     ///
     /// left click + hold + move mouse
@@ -27,6 +28,20 @@ pub enum SelectionStatus {
     /// The selection is not moving
     #[default]
     Idle,
+}
+
+impl SelectionStatus {
+    pub fn is_idle(&self) -> bool {
+        *self == SelectionStatus::Idle
+    }
+
+    pub fn is_dragged(&self) -> bool {
+        matches!(self, SelectionStatus::Dragged { .. })
+    }
+
+    pub fn is_resized(&self) -> bool {
+        matches!(self, SelectionStatus::Resized { .. })
+    }
 }
 
 impl Selection {
@@ -96,7 +111,7 @@ impl Selection {
     pub fn new(point: Point) -> Self {
         Self {
             rect: Rectangle::new(point, Size::default()),
-            moving_selection: None,
+            selection_status: SelectionStatus::default(),
         }
     }
 
@@ -126,6 +141,11 @@ impl Selection {
         to self.rect {
             pub fn position(&self) -> Point;
             pub fn size(&self) -> Size;
+        }
+        to self.selection_status {
+            pub fn is_dragged(&self) -> bool;
+            pub fn is_idle(&self) -> bool;
+            pub fn is_resized(&self) -> bool;
         }
     }
 }

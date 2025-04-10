@@ -90,27 +90,45 @@ impl App {
         match message {
             Message::Exit => return iced::exit(),
             Message::LeftMouseDown(cursor) => {
+                // if let Some((cursor, _side, rect)) = cursor.position().and_then(|cursor_pos|
+                // {     self.selected_region.as_mut().map(|selected_region| {
+                //         (
+                //             cursor_pos,
+                //             selected_region.corners().side_at(cursor_pos),
+                //             selected_region,
+                //         )
+                //     })
+                // }) {
+                //     let resized = SelectionStatus::Resized {
+                //         rect: rect.rect,
+                //         cursor,
+                //     };
+                //     log::info!("Starting to dragging the selection: {resized:?}");
+                //     rect.selection_status = resized;
+                // } else
+
                 if let Some((cursor, selected_region)) = self.cursor_in_selection_mut(cursor) {
-                    let status = SelectionStatus::Dragged {
+                    let dragged = SelectionStatus::Dragged {
                         rect_position: selected_region.position(),
                         cursor,
                     };
-                    log::info!("Dragging the selection: {status:?}");
-                    selected_region.moving_selection = Some(status);
+                    log::info!("Starting to dragging the selection: {dragged:?}");
+                    selected_region.selection_status = dragged;
                 } else {
                     // no region is selected, select the initial region
                     let cursor_position = cursor.position().expect("cursor to be in the monitor");
                     self.create_selection_at(
                         cursor_position,
                         self.selected_region
-                            .and_then(|region| region.moving_selection),
+                            .map(|region| region.selection_status)
+                            .unwrap_or_default(),
                     );
                     log::info!("Selected initial region at {cursor_position}");
                 };
             },
             Message::LeftMouseUp => {
                 if let Some(selection) = self.selected_region.as_mut() {
-                    selection.moving_selection = None;
+                    selection.selection_status = SelectionStatus::Idle;
                 }
             },
             Message::LeftMouseDrag(new_mouse_position) => {
@@ -120,11 +138,10 @@ impl App {
                         cursor,
                     },
                     selected_region,
-                )) = self.selected_region.and_then(|region| {
-                    region
-                        .moving_selection
-                        .map(|moving_selection| (moving_selection, region))
-                }) {
+                )) = self
+                    .selected_region
+                    .map(|region| (region.selection_status, region))
+                {
                     self.selected_region = Some(
                         selected_region
                             .with_position(rect_position + (new_mouse_position - cursor)),
@@ -183,12 +200,10 @@ impl App {
     pub fn create_selection_at(
         &mut self,
         create_selection_at: Point,
-        moving_selection: Option<SelectionStatus>,
+        moving_selection: SelectionStatus,
     ) {
         let mut selection = Selection::new(create_selection_at);
-        if let Some(moving_selection) = moving_selection {
-            selection.moving_selection = Some(moving_selection)
-        }
+        selection.selection_status = moving_selection;
         self.selected_region = Some(Selection::new(create_selection_at))
     }
 
@@ -310,7 +325,7 @@ impl canvas::Program<Message> for App {
             let is_left_released = state.is_left_released();
             let is_moving_selection = self
                 .selected_region
-                .is_some_and(|selected_region| selected_region.moving_selection.is_some());
+                .is_some_and(|selected_region| selected_region.selection_status.is_dragged());
 
             (is_left_released || is_moving_selection) && self.cursor_in_selection(cursor).is_some()
         } {
@@ -329,11 +344,11 @@ impl canvas::Program<Message> for App {
     ) -> Option<widget::Action<Message>> {
         use iced::Event::Mouse;
 
-        let cursor_side = self.selected_region.and_then(|selected_region| {
-            cursor
-                .position()
-                .and_then(|cursor_position| selected_region.corners().side_at(cursor_position))
-        });
+        // let cursor_side = self.selected_region.and_then(|selected_region| {
+        //     cursor
+        //         .position()
+        //         .and_then(|cursor_position|
+        // selected_region.corners().side_at(cursor_position)) });
 
         let message = match event {
             Mouse(mouse::Event::ButtonPressed(mouse::Button::Left)) => {
@@ -345,7 +360,11 @@ impl canvas::Program<Message> for App {
                 Message::LeftMouseUp
             },
             // Mouse(mouse::Event::CursorMoved { position })
-            //     if state.is_left_clicked() && cursor_side.is_some() =>
+            //     if state.is_left_clicked()
+            //         && cursor_side.is_some()
+            //         && self
+            //             .selected_region
+            //             .is_none_or(|selection_region| !selection_region.is_dragged()) =>
             // {
             //     // FIXME: this will not be necessary when we have `let_chains`
             //     let cursor_side = cursor_side.expect("has `.is_some()` guard");
