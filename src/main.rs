@@ -1,105 +1,21 @@
 #![cfg_attr(doc, doc = include_str!("../README.md"))]
 
-use delegate::delegate;
+mod image_renderer;
+mod screenshot;
+mod selection;
+
 use iced::keyboard::Modifiers;
 use iced::mouse::{Cursor, Interaction};
 use iced::widget::{self, Action, canvas, stack};
 use iced::{Color, Element, Length, Point, Rectangle, Renderer, Size, Task, Theme, mouse};
 use image_renderer::BackgroundImage;
-
-/// The selected area of the desktop which will be captured
-#[derive(Debug, Default, Copy, Clone)]
-struct Selection {
-    rect: Rectangle,
-}
-
-impl Selection {
-    /// make sure that the top-left corner is ALWAYS in the top left
-    /// (it could be that top-left corner is actually on the bottom right,
-    /// and we have a negative width and height):
-    ///
-    ///                           ----------
-    ///                           |        |
-    ///                           |        | <- height: -3
-    ///                           |        |
-    /// our "top left" is here -> O---------
-    /// even if the width and height is negative
-    fn normalize(&self) -> Rectangle {
-        let mut rect = self.rect;
-        if rect.width.is_sign_negative() {
-            rect.x = rect.x + rect.width;
-            rect.width = rect.width.abs();
-        }
-        if rect.height.is_sign_negative() {
-            rect.y = rect.y + rect.height;
-            rect.height = rect.height.abs();
-        }
-        rect
-    }
-
-    pub fn contains(&self, point: Point) -> bool {
-        self.normalize().contains(point)
-    }
-
-    /// Create selection with a size of zero
-    pub fn new(point: Point) -> Self {
-        Self {
-            rect: Rectangle::new(point, Size::default()),
-        }
-    }
-
-    pub fn with_size(&self, size: Size) -> Self {
-        Self {
-            rect: Rectangle::new(self.position(), size),
-        }
-    }
-
-    pub fn with_position(&self, pos: Point) -> Self {
-        Self {
-            rect: Rectangle::new(pos, self.size()),
-        }
-    }
-
-    pub fn rect(&self) -> Rectangle {
-        self.rect
-    }
-
-    /// The x-coordinate of the top left point
-    pub fn x(&self) -> f32 {
-        self.rect.x
-    }
-
-    /// The y-coordinate of the top left point
-    pub fn y(&self) -> f32 {
-        self.rect.y
-    }
-
-    delegate! {
-        to self.rect {
-            pub fn position(&self) -> Point;
-            pub fn size(&self) -> Size;
-        }
-    }
-}
-
-mod image_renderer;
-mod screenshot;
-
-#[derive(Debug, Default)]
-struct MovingSelection {
-    /// top left point of the selection before we started moving it
-    top_left_anchor: Point,
-    /// cursor position before we started moving the selection with the cursor
-    cursor_anchor: Point,
-}
+use selection::{Selection, SelectionStatus};
 
 #[derive(Debug)]
 struct App {
     bg: widget::image::Handle,
     /// Left mouse click is currently being held down
     left_mouse_down: bool,
-    /// The selection is currently being moved (hold left click + move)
-    moving_selection: Option<MovingSelection>,
     /// Area of the screen that is selected for capture
     selected_region: Option<Selection>,
 }
@@ -110,7 +26,6 @@ impl Default for App {
         Self {
             bg: screenshot,
             left_mouse_down: false,
-            moving_selection: None,
             selected_region: None,
         }
     }
@@ -130,44 +45,48 @@ impl App {
             Message::Exit => return iced::exit(),
             Message::LeftMouseDown(cursor) => {
                 self.left_mouse_down = true;
-                println!("started dragging");
-                dbg!(cursor, self.selected_region);
-                if let Some((cursor, selected_region)) = self.cursor_in_selection(cursor) {
-                    let status = MovingSelection {
-                        top_left_anchor: selected_region.position(),
-                        cursor_anchor: cursor,
+                if let Some((cursor, selected_region)) = self.cursor_in_selection_mut(cursor) {
+                    let status = SelectionStatus::Dragged {
+                        rect_position: selected_region.position(),
+                        cursor,
                     };
                     log::info!("Dragging the selection: {status:?}");
-                    self.moving_selection = Some(status);
+                    selected_region.moving_selection = Some(status);
                 } else {
                     // no region is selected, select the initial region
                     let cursor_position = cursor.position().expect("cursor to be in the monitor");
-                    self.create_selection_at(cursor_position);
+                    self.create_selection_at(
+                        cursor_position,
+                        self.selected_region
+                            .and_then(|region| region.moving_selection),
+                    );
                     log::info!("Selected initial region at {cursor_position}");
                 };
             },
             Message::LeftMouseUp => {
                 self.left_mouse_down = false;
-                self.moving_selection = None;
+                if let Some(selection) = self.selected_region.as_mut() {
+                    selection.moving_selection = None;
+                }
             },
             Message::LeftMouseDrag(new_mouse_position) => {
-                if let Some(MovingSelection {
-                    top_left_anchor,
-                    cursor_anchor,
-                }) = self.moving_selection
-                {
-                    if let Some(Rectangle { width, height, .. }) =
-                        self.selected_region.map(|r| r.rect())
-                    {
-                        let Point { x, y } = top_left_anchor + (new_mouse_position - cursor_anchor);
+                if let Some((
+                    SelectionStatus::Dragged {
+                        rect_position,
+                        cursor,
+                    },
+                    selected_region,
+                )) = self.selected_region.and_then(|region| {
+                    region
+                        .moving_selection
+                        .map(|moving_selection| (moving_selection, region))
+                }) {
+                    self.selected_region = Some(
+                        selected_region
+                            .with_position(rect_position + (new_mouse_position - cursor)),
+                    );
 
-                        let region = Selection::default()
-                            .with_size(Size { width, height })
-                            .with_position(Point { x, y });
-
-                        self.selected_region = Some(region);
-                        log::debug!("Dragged. New region: {region:?}");
-                    }
+                    log::debug!("Dragged. New region: {:?}", self.selected_region);
                 } else {
                     log::debug!("Updated selection: {new_mouse_position:?}");
                     self.update_selection(new_mouse_position);
@@ -191,9 +110,28 @@ impl App {
             })
         })
     }
+    /// If the given cursor intersects the selected region, give the region and
+    /// the cursor
+    fn cursor_in_selection_mut(&mut self, cursor: Cursor) -> Option<(Point, &mut Selection)> {
+        self.selected_region.as_mut().and_then(|selected_region| {
+            cursor.position().and_then(|cursor_pos| {
+                selected_region
+                    .contains(cursor_pos)
+                    .then_some((cursor_pos, selected_region))
+            })
+        })
+    }
 
     /// Create an empty selection at the current position
-    pub fn create_selection_at(&mut self, create_selection_at: Point) {
+    pub fn create_selection_at(
+        &mut self,
+        create_selection_at: Point,
+        moving_selection: Option<SelectionStatus>,
+    ) {
+        let mut selection = Selection::new(create_selection_at);
+        if let Some(moving_selection) = moving_selection {
+            selection.moving_selection = Some(moving_selection)
+        }
         self.selected_region = Some(Selection::new(create_selection_at))
     }
 
@@ -272,7 +210,10 @@ impl canvas::Program<Message> for App {
         cursor: iced::advanced::mouse::Cursor,
     ) -> iced::advanced::mouse::Interaction {
         // when the cursor is inside of the selected region,
-        if (!self.left_mouse_down || self.moving_selection.is_some())
+        if (!self.left_mouse_down
+            || self
+                .selected_region
+                .is_some_and(|selected_region| selected_region.moving_selection.is_some()))
             && self.cursor_in_selection(cursor).is_some()
         {
             Interaction::Grab
