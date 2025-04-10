@@ -1,3 +1,4 @@
+use iced::keyboard::{Key, Modifiers};
 use iced::mouse::{Cursor, Interaction};
 use iced::widget::{self, Action, canvas, stack};
 use iced::{Color, Element, Length, Point, Rectangle, Renderer, Size, Task, Theme, mouse};
@@ -26,6 +27,17 @@ impl Default for App {
 }
 
 impl App {
+    /// Receives keybindings
+    pub fn handle_key_press(key: Key, mods: Modifiers) -> Option<Message> {
+        match (key, mods) {
+            (Key::Named(iced::keyboard::key::Named::Escape), _) => Some(Message::Exit),
+            (Key::Character(ch), Modifiers::CTRL) if ch == "c" => Some(Message::CopyToClipboard),
+            (Key::Character(ch), Modifiers::CTRL) if ch == "s" => Some(Message::SaveScreenshot),
+            _ => None,
+        }
+    }
+
+    /// Renders the app
     pub fn view(&self) -> Element<Message> {
         stack![
             BackgroundImage::new(self.bg.clone()),
@@ -34,6 +46,7 @@ impl App {
         .into()
     }
 
+    /// Modifies the app's state
     pub fn update(&mut self, message: Message) -> Task<Message> {
         match message {
             Message::Exit => return iced::exit(),
