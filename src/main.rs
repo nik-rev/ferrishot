@@ -7,6 +7,7 @@ use iced::widget::{self, Action, canvas, stack};
 use iced::{Color, Element, Length, Point, Rectangle, Renderer, Size, Task, Theme, mouse};
 use image_renderer::BackgroundImage;
 
+/// The selected area of the desktop which will be captured
 #[derive(Debug, Default, Copy, Clone)]
 struct Selection(Rectangle);
 
@@ -84,21 +85,33 @@ struct MovingSelection {
     cursor_anchor: Point,
 }
 
-#[derive(Default, Debug)]
+#[derive(Debug)]
 struct App {
+    bg: widget::image::Handle,
     /// Left mouse click is currently being held down
     left_mouse_down: bool,
     /// The selection is currently being moved (hold left click + move)
     moving_selection: Option<MovingSelection>,
     /// Area of the screen that is selected for capture
     selected_region: Option<Selection>,
-    message: Option<String>,
+}
+
+impl Default for App {
+    fn default() -> Self {
+        let screenshot = crate::screenshot::screenshot().unwrap();
+        Self {
+            bg: screenshot,
+            left_mouse_down: false,
+            moving_selection: None,
+            selected_region: None,
+        }
+    }
 }
 
 impl App {
     fn view(&self) -> Element<Message> {
         stack![
-            BackgroundImage::default(),
+            BackgroundImage::new(self.bg.clone()),
             canvas(self).width(Length::Fill).height(Length::Fill),
         ]
         .into()
@@ -106,8 +119,52 @@ impl App {
 
     fn update(&mut self, message: Message) -> Task<Message> {
         match message {
-            Message::Close => iced::exit(),
-        }
+            Message::Exit => return iced::exit(),
+            Message::LeftMouseDown(cursor) => {
+                self.left_mouse_down = true;
+                println!("started dragging");
+                dbg!(cursor, self.selected_region);
+                if let Some((cursor, selected_region)) = self.cursor_in_selection(cursor) {
+                    self.moving_selection = Some(MovingSelection {
+                        top_left_anchor: selected_region.position(),
+                        cursor_anchor: cursor,
+                    });
+                } else {
+                    // no region is selected, select the initial region
+                    let cursor_position = cursor.position().expect("cursor to be in the monitor");
+                    self.create_selection_at(cursor_position);
+                };
+            },
+            Message::LeftMouseUp => {
+                self.left_mouse_down = false;
+                self.moving_selection = None;
+            },
+            Message::LeftMouseDrag(new_mouse_position) => {
+                if let Some(MovingSelection {
+                    top_left_anchor,
+                    cursor_anchor,
+                }) = self.moving_selection
+                {
+                    if let Some(Rectangle { width, height, .. }) =
+                        self.selected_region.map(|r| r.rect())
+                    {
+                        let Point { x, y } = top_left_anchor + (new_mouse_position - cursor_anchor);
+
+                        self.selected_region = Some(
+                            Selection::default()
+                                .with_size(Size { width, height })
+                                .with_position(Point { x, y }),
+                        );
+                    }
+                } else {
+                    self.update_selection(new_mouse_position);
+                }
+            },
+            Message::CopyToClipboard => todo!(),
+            Message::SaveScreenshot => todo!(),
+        };
+
+        ().into()
     }
 
     /// If the given cursor intersects the selected region, give the region and
@@ -156,15 +213,27 @@ impl App {
 #[derive(Debug, Clone)]
 enum Message {
     /// Exits the application
-    Close,
+    Exit,
+    /// The left mouse button is down
+    LeftMouseDown(Cursor),
+    /// The left mouse button is up
+    LeftMouseUp,
+    /// Left mouse is held down and dragged
+    ///
+    /// Contains the new point of the mouse
+    LeftMouseDrag(Point),
+    /// Copy the screenshot to the clipboard
+    CopyToClipboard,
+    /// Save the screenshot as an image
+    SaveScreenshot,
 }
 
 impl canvas::Program<Message> for App {
-    type State = App;
+    type State = ();
 
     fn draw(
         &self,
-        state: &Self::State,
+        _state: &Self::State,
         renderer: &Renderer,
         _theme: &Theme,
         bounds: Rectangle,
@@ -172,7 +241,7 @@ impl canvas::Program<Message> for App {
     ) -> Vec<canvas::Geometry> {
         let mut frame = canvas::Frame::new(renderer, bounds.size());
 
-        if let Some(selected_region) = state.selected_region {
+        if let Some(selected_region) = self.selected_region {
             frame.fill_rectangle(
                 selected_region.position(),
                 selected_region.size(),
@@ -185,13 +254,13 @@ impl canvas::Program<Message> for App {
 
     fn mouse_interaction(
         &self,
-        state: &Self::State,
+        _state: &Self::State,
         _bounds: Rectangle,
         cursor: iced::advanced::mouse::Cursor,
     ) -> iced::advanced::mouse::Interaction {
         // when the cursor is inside of the selected region,
-        if (!state.left_mouse_down || state.moving_selection.is_some())
-            && state.cursor_in_selection(cursor).is_some()
+        if (!self.left_mouse_down || self.moving_selection.is_some())
+            && self.cursor_in_selection(cursor).is_some()
         {
             Interaction::Grab
         } else {
@@ -201,64 +270,24 @@ impl canvas::Program<Message> for App {
 
     fn update(
         &self,
-        state: &mut Self::State,
+        _state: &mut Self::State,
         event: &iced::Event,
         _bounds: Rectangle,
         cursor: iced::advanced::mouse::Cursor,
     ) -> Option<widget::Action<Message>> {
-        state.message = format!(
-            "cursor: {cursor:?}, region: {:?}",
-            self.selected_region.unwrap_or_default()
-        )
-        .into();
         use iced::Event::Mouse;
-        match event {
+        let message = match event {
             Mouse(mouse::Event::ButtonPressed(mouse::Button::Left)) => {
-                state.left_mouse_down = true;
-                if let Some((cursor, selected_region)) = state.cursor_in_selection(cursor) {
-                    state.moving_selection = Some(MovingSelection {
-                        top_left_anchor: selected_region.position(),
-                        cursor_anchor: cursor,
-                    });
-                    return Some(Action::request_redraw());
-                };
-
-                // no region is selected, select the initial region
-                let cursor_position = cursor.position().expect("cursor to be in the monitor");
-                state.create_selection_at(cursor_position);
-
-                return Some(Action::request_redraw());
+                Message::LeftMouseDown(cursor)
             },
-            Mouse(mouse::Event::ButtonReleased(mouse::Button::Left)) => {
-                state.left_mouse_down = false;
-                state.moving_selection = None;
+            Mouse(mouse::Event::ButtonReleased(mouse::Button::Left)) => Message::LeftMouseUp,
+            Mouse(mouse::Event::CursorMoved { position }) if self.left_mouse_down => {
+                Message::LeftMouseDrag(*position)
             },
-            Mouse(mouse::Event::CursorMoved { position }) if state.left_mouse_down => {
-                if let Some(MovingSelection {
-                    top_left_anchor,
-                    cursor_anchor,
-                }) = state.moving_selection
-                {
-                    if let Some(Rectangle { width, height, .. }) =
-                        state.selected_region.map(|r| r.rect())
-                    {
-                        let Point { x, y } = top_left_anchor + (*position - cursor_anchor);
-
-                        state.selected_region = Some(
-                            Selection::default()
-                                .with_size(Size { width, height })
-                                .with_position(Point { x, y }),
-                        );
-                    }
-                } else {
-                    state.update_selection(*position);
-                }
-                return Some(Action::request_redraw());
-            },
-            _ => (),
+            _ => return None,
         };
 
-        None
+        Some(Action::publish(message))
     }
 }
 
@@ -273,14 +302,12 @@ fn main() -> iced::Result {
             iced::keyboard::on_key_press(|key, mods| {
                 use iced::keyboard::Key;
                 match (key, mods) {
-                    (Key::Named(iced::keyboard::key::Named::Escape), _) => Some(Message::Close),
-                    (Key::Character(str @ _), Modifiers::CTRL) if str == "y" => {
-                        // save screenshot to path
-                        None
-                    },
+                    (Key::Named(iced::keyboard::key::Named::Escape), _) => Some(Message::Exit),
                     (Key::Character(str @ _), Modifiers::CTRL) if str == "c" => {
-                        // copy to clipboard
-                        None
+                        Some(Message::CopyToClipboard)
+                    },
+                    (Key::Character(str @ _), Modifiers::CTRL) if str == "s" => {
+                        Some(Message::SaveScreenshot)
                     },
                     _ => None,
                 }

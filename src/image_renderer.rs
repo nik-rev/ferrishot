@@ -3,16 +3,14 @@ use iced::advanced::{Layout, Widget, layout, renderer};
 use iced::widget::image;
 use iced::{Element, Length, Rectangle, Size, Theme, mouse, widget};
 
+#[derive(Debug)]
 pub struct BackgroundImage {
     image_handle: widget::image::Handle,
 }
 
-impl Default for BackgroundImage {
-    fn default() -> Self {
-        let screenshot = crate::screenshot::screenshot().unwrap();
-        Self {
-            image_handle: screenshot,
-        }
+impl BackgroundImage {
+    pub fn new(image_handle: widget::image::Handle) -> Self {
+        Self { image_handle }
     }
 }
 
