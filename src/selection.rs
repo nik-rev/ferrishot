@@ -9,6 +9,30 @@ pub struct Selection {
     pub moving_selection: Option<SelectionStatus>,
 }
 
+#[derive(Debug, Default, Clone, Copy)]
+pub enum SelectionStatus {
+    /// The selection is currently being dragged
+    ///
+    /// left click + hold + move mouse
+    Dragged {
+        /// Top-left point of the selection Rect before we started dragging the
+        /// selection
+        rect_position: Point,
+        /// Position of the cursor when we just started dragging the selection
+        cursor: Point,
+    },
+    /// The selection is not moving
+    #[default]
+    Idle,
+}
+
+pub struct Corners {
+    pub top_left: Point,
+    pub top_right: Point,
+    pub bottom_left: Point,
+    pub bottom_right: Point,
+}
+
 impl Selection {
     /// make sure that the top-left corner is ALWAYS in the top left
     /// (it could be that top-left corner is actually on the bottom right,
@@ -33,11 +57,24 @@ impl Selection {
         rect
     }
 
+    /// If this selection contains the given point
     pub fn contains(&self, point: Point) -> bool {
         self.normalize().contains(point)
     }
 
-    /// Create selection with a size of zero
+    /// Obtain coordinates of the 4 corners of the Selection
+    pub fn corners(&self) -> Corners {
+        let rect = self.normalize();
+        let top_left = rect.position();
+        Corners {
+            top_left,
+            top_right: Point::new(top_left.x + rect.width, top_left.y),
+            bottom_left: Point::new(top_left.x, top_left.y + rect.height),
+            bottom_right: Point::new(top_left.x + rect.width, top_left.y + rect.height),
+        }
+    }
+
+    /// Create selection at a point with a size of zero
     pub fn new(point: Point) -> Self {
         Self {
             rect: Rectangle::new(point, Size::default()),
@@ -45,11 +82,13 @@ impl Selection {
         }
     }
 
+    /// Update height and width
     pub fn with_size(mut self, size: Size) -> Self {
         self.rect = Rectangle::new(self.position(), size);
         self
     }
 
+    /// Update position of the top left corner
     pub fn with_position(mut self, pos: Point) -> Self {
         self.rect = Rectangle::new(pos, self.size());
         self
@@ -71,21 +110,4 @@ impl Selection {
             pub fn size(&self) -> Size;
         }
     }
-}
-
-#[derive(Debug, Default, Clone, Copy)]
-pub enum SelectionStatus {
-    /// The selection is currently being dragged
-    ///
-    /// left click + hold + move mouse
-    Dragged {
-        /// Top-left point of the selection Rect before we started dragging the
-        /// selection
-        rect_position: Point,
-        /// Position of the cursor when we just started dragging the selection
-        cursor: Point,
-    },
-    /// The selection is not moving
-    #[default]
-    Idle,
 }

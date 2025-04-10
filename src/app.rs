@@ -1,5 +1,6 @@
 use iced::keyboard::{Key, Modifiers};
 use iced::mouse::{Cursor, Interaction};
+use iced::widget::canvas::{Path, Stroke};
 use iced::widget::{self, Action, canvas, stack};
 use iced::{Color, Element, Length, Point, Rectangle, Renderer, Size, Task, Theme, mouse};
 
@@ -8,19 +9,52 @@ use crate::selection::{Selection, SelectionStatus};
 
 #[derive(Debug)]
 pub struct App {
-    bg: widget::image::Handle,
-    /// Left mouse click is currently being held down
-    left_mouse_down: bool,
+    /// The full screenshot of the monitor from which groxshot was invoked
+    /// We then create a window spanning the entire monitor, with this
+    /// screenshot as background, with a canvas rendered on top - giving the
+    /// illusion that we are drawing shapes on top of the screen.
+    screenshot: widget::image::Handle,
+    /// Tracks information about the mouse
+    mouse_state: MouseState,
     /// Area of the screen that is selected for capture
     selected_region: Option<Selection>,
+}
+
+/// Holds information about the mouse
+#[derive(Default, Debug, Clone, Copy)]
+struct MouseState {
+    /// Left mouse click is currently being held down
+    is_left_down: bool,
+}
+
+impl MouseState {
+    /// Register a left mouse click
+    pub fn left_click(&mut self) {
+        self.is_left_down = true
+    }
+
+    /// Left mouse button
+    pub fn left_release(&mut self) {
+        self.is_left_down = false
+    }
+
+    /// If the left mouse button is clicked
+    pub fn is_left_clicked(&self) -> bool {
+        self.is_left_down
+    }
+
+    /// If the left mouse button is released
+    pub fn is_left_released(&self) -> bool {
+        !self.is_left_down
+    }
 }
 
 impl Default for App {
     fn default() -> Self {
         let screenshot = crate::screenshot::screenshot().unwrap();
         Self {
-            bg: screenshot,
-            left_mouse_down: false,
+            screenshot,
+            mouse_state: MouseState::default(),
             selected_region: None,
         }
     }
@@ -40,7 +74,7 @@ impl App {
     /// Renders the app
     pub fn view(&self) -> Element<Message> {
         stack![
-            BackgroundImage::new(self.bg.clone()),
+            BackgroundImage::new(self.screenshot.clone()),
             canvas(self).width(Length::Fill).height(Length::Fill),
         ]
         .into()
@@ -51,7 +85,7 @@ impl App {
         match message {
             Message::Exit => return iced::exit(),
             Message::LeftMouseDown(cursor) => {
-                self.left_mouse_down = true;
+                self.mouse_state.left_click();
                 if let Some((cursor, selected_region)) = self.cursor_in_selection_mut(cursor) {
                     let status = SelectionStatus::Dragged {
                         rect_position: selected_region.position(),
@@ -71,7 +105,7 @@ impl App {
                 };
             },
             Message::LeftMouseUp => {
-                self.left_mouse_down = false;
+                self.mouse_state.left_release();
                 if let Some(selection) = self.selected_region.as_mut() {
                     selection.moving_selection = None;
                 }
@@ -200,10 +234,25 @@ impl canvas::Program<Message> for App {
         let mut frame = canvas::Frame::new(renderer, bounds.size());
 
         if let Some(selected_region) = self.selected_region {
-            frame.fill_rectangle(
+            let crate::selection::Corners {
+                top_left,
+                top_right,
+                bottom_left,
+                bottom_right,
+            } = selected_region.corners();
+
+            const RADIUS: f32 = 6.0;
+
+            for circle in [top_left, top_right, bottom_left, bottom_right]
+                .map(|corner| Path::circle(corner, RADIUS))
+            {
+                frame.fill(&circle, Color::WHITE);
+            }
+
+            frame.stroke_rectangle(
                 selected_region.position(),
                 selected_region.size(),
-                Color::BLACK,
+                Stroke::default().with_color(Color::WHITE).with_width(2.0),
             );
         }
 
@@ -217,7 +266,7 @@ impl canvas::Program<Message> for App {
         cursor: iced::advanced::mouse::Cursor,
     ) -> iced::advanced::mouse::Interaction {
         // when the cursor is inside of the selected region,
-        if (!self.left_mouse_down
+        if (self.mouse_state.is_left_released()
             || self
                 .selected_region
                 .is_some_and(|selected_region| selected_region.moving_selection.is_some()))
@@ -242,7 +291,7 @@ impl canvas::Program<Message> for App {
                 Message::LeftMouseDown(cursor)
             },
             Mouse(mouse::Event::ButtonReleased(mouse::Button::Left)) => Message::LeftMouseUp,
-            Mouse(mouse::Event::CursorMoved { position }) if self.left_mouse_down => {
+            Mouse(mouse::Event::CursorMoved { position }) if self.mouse_state.is_left_clicked() => {
                 Message::LeftMouseDrag(*position)
             },
             _ => return None,
