@@ -143,7 +143,18 @@ impl App {
             },
             Message::CopyToClipboard => todo!(),
             Message::SaveScreenshot => todo!(),
-            Message::Resize(resize, side) => todo!(),
+            Message::Resize(cursor_pos, side) => {
+                match side {
+                    Side::TopLeft => todo!(),
+                    Side::TopRight => todo!(),
+                    Side::BottomLeft => todo!(),
+                    Side::BottomRight => todo!(),
+                    Side::Top => todo!(),
+                    Side::Right => todo!(),
+                    Side::Bottom => todo!(),
+                    Side::Left => todo!(),
+                }
+            },
             _ => todo!(),
         };
 
@@ -228,7 +239,7 @@ pub enum Message {
     CopyToClipboard,
     /// Save the screenshot as an image
     SaveScreenshot,
-    Resize(Resize, Side),
+    Resize(Point, Side),
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
@@ -322,11 +333,25 @@ impl canvas::Program<Message> for App {
         cursor: iced::advanced::mouse::Cursor,
     ) -> Option<widget::Action<Message>> {
         use iced::Event::Mouse;
+
+        let cursor_side = self.selected_region.and_then(|selected_region| {
+            cursor
+                .position()
+                .and_then(|cursor_position| selected_region.corners().side_at(cursor_position))
+        });
+
         let message = match event {
             Mouse(mouse::Event::ButtonPressed(mouse::Button::Left)) => {
                 Message::LeftMouseDown(cursor)
             },
             Mouse(mouse::Event::ButtonReleased(mouse::Button::Left)) => Message::LeftMouseUp,
+            Mouse(mouse::Event::CursorMoved { position })
+                if self.mouse_state.is_left_clicked() && cursor_side.is_some() =>
+            {
+                // FIXME: this will not be necessary when we have `let_chains`
+                let cursor_side = cursor_side.expect("has `.is_some()` guard");
+                Message::Resize(*position, cursor_side)
+            },
             Mouse(mouse::Event::CursorMoved { position }) if self.mouse_state.is_left_clicked() => {
                 Message::LeftMouseDrag(*position)
             },
