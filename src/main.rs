@@ -9,7 +9,9 @@ use image_renderer::BackgroundImage;
 
 /// The selected area of the desktop which will be captured
 #[derive(Debug, Default, Copy, Clone)]
-struct Selection(Rectangle);
+struct Selection {
+    rect: Rectangle,
+}
 
 impl Selection {
     /// make sure that the top-left corner is ALWAYS in the top left
@@ -23,7 +25,7 @@ impl Selection {
     /// our "top left" is here -> O---------
     /// even if the width and height is negative
     fn normalize(&self) -> Rectangle {
-        let mut rect = self.0;
+        let mut rect = self.rect;
         if rect.width.is_sign_negative() {
             rect.x = rect.x + rect.width;
             rect.width = rect.width.abs();
@@ -41,33 +43,39 @@ impl Selection {
 
     /// Create selection with a size of zero
     pub fn new(point: Point) -> Self {
-        Self(Rectangle::new(point, Size::default()))
+        Self {
+            rect: Rectangle::new(point, Size::default()),
+        }
     }
 
     pub fn with_size(&self, size: Size) -> Self {
-        Self(Rectangle::new(self.position(), size))
+        Self {
+            rect: Rectangle::new(self.position(), size),
+        }
     }
 
     pub fn with_position(&self, pos: Point) -> Self {
-        Self(Rectangle::new(pos, self.size()))
+        Self {
+            rect: Rectangle::new(pos, self.size()),
+        }
     }
 
     pub fn rect(&self) -> Rectangle {
-        self.0
+        self.rect
     }
 
     /// The x-coordinate of the top left point
     pub fn x(&self) -> f32 {
-        self.0.x
+        self.rect.x
     }
 
     /// The y-coordinate of the top left point
     pub fn y(&self) -> f32 {
-        self.0.y
+        self.rect.y
     }
 
     delegate! {
-        to self.0 {
+        to self.rect {
             pub fn position(&self) -> Point;
             pub fn size(&self) -> Size;
         }
