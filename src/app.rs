@@ -22,15 +22,13 @@ pub struct App {
     /// screenshot as background, with a canvas rendered on top - giving the
     /// illusion that we are drawing shapes on top of the screen.
     screenshot: widget::image::Handle,
-    /// Tracks information about the mouse
-    mouse_state: MouseState,
     /// Area of the screen that is selected for capture
     selected_region: Option<Selection>,
 }
 
 /// Holds information about the mouse
 #[derive(Default, Debug, Clone, Copy)]
-struct MouseState {
+pub struct MouseState {
     /// Left mouse click is currently being held down
     is_left_down: bool,
 }
@@ -62,7 +60,6 @@ impl Default for App {
         let screenshot = crate::screenshot::screenshot().unwrap();
         Self {
             screenshot,
-            mouse_state: MouseState::default(),
             selected_region: None,
         }
     }
@@ -93,7 +90,6 @@ impl App {
         match message {
             Message::Exit => return iced::exit(),
             Message::LeftMouseDown(cursor) => {
-                self.mouse_state.left_click();
                 if let Some((cursor, selected_region)) = self.cursor_in_selection_mut(cursor) {
                     let status = SelectionStatus::Dragged {
                         rect_position: selected_region.position(),
@@ -113,7 +109,6 @@ impl App {
                 };
             },
             Message::LeftMouseUp => {
-                self.mouse_state.left_release();
                 if let Some(selection) = self.selected_region.as_mut() {
                     selection.moving_selection = None;
                 }
@@ -274,7 +269,7 @@ impl Side {
 }
 
 impl canvas::Program<Message> for App {
-    type State = ();
+    type State = MouseState;
 
     fn draw(
         &self,
@@ -296,7 +291,7 @@ impl canvas::Program<Message> for App {
 
     fn mouse_interaction(
         &self,
-        _state: &Self::State,
+        state: &Self::State,
         _bounds: Rectangle,
         cursor: iced::advanced::mouse::Cursor,
     ) -> iced::advanced::mouse::Interaction {
@@ -312,7 +307,7 @@ impl canvas::Program<Message> for App {
         }
         // when the cursor is inside of the selected region,
         else if {
-            let is_left_released = self.mouse_state.is_left_released();
+            let is_left_released = state.is_left_released();
             let is_moving_selection = self
                 .selected_region
                 .is_some_and(|selected_region| selected_region.moving_selection.is_some());
@@ -327,7 +322,7 @@ impl canvas::Program<Message> for App {
 
     fn update(
         &self,
-        _state: &mut Self::State,
+        state: &mut Self::State,
         event: &iced::Event,
         _bounds: Rectangle,
         cursor: iced::advanced::mouse::Cursor,
@@ -342,17 +337,21 @@ impl canvas::Program<Message> for App {
 
         let message = match event {
             Mouse(mouse::Event::ButtonPressed(mouse::Button::Left)) => {
+                state.left_click();
                 Message::LeftMouseDown(cursor)
             },
-            Mouse(mouse::Event::ButtonReleased(mouse::Button::Left)) => Message::LeftMouseUp,
-            Mouse(mouse::Event::CursorMoved { position })
-                if self.mouse_state.is_left_clicked() && cursor_side.is_some() =>
-            {
-                // FIXME: this will not be necessary when we have `let_chains`
-                let cursor_side = cursor_side.expect("has `.is_some()` guard");
-                Message::Resize(*position, cursor_side)
+            Mouse(mouse::Event::ButtonReleased(mouse::Button::Left)) => {
+                state.left_release();
+                Message::LeftMouseUp
             },
-            Mouse(mouse::Event::CursorMoved { position }) if self.mouse_state.is_left_clicked() => {
+            // Mouse(mouse::Event::CursorMoved { position })
+            //     if state.is_left_clicked() && cursor_side.is_some() =>
+            // {
+            //     // FIXME: this will not be necessary when we have `let_chains`
+            //     let cursor_side = cursor_side.expect("has `.is_some()` guard");
+            //     Message::Resize(*position, cursor_side)
+            // },
+            Mouse(mouse::Event::CursorMoved { position }) if state.is_left_clicked() => {
                 Message::LeftMouseDrag(*position)
             },
             _ => return None,
