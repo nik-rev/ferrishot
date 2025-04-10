@@ -4,6 +4,11 @@ use iced::widget::canvas::{Path, Stroke};
 use iced::widget::{self, Action, canvas, stack};
 use iced::{Color, Element, Length, Point, Rectangle, Renderer, Size, Task, Theme, mouse};
 
+/// Radius of the 4 corners of the selection
+const CORNER_RADIUS: f32 = 6.0;
+/// Color of the selection stroke and corners
+const SELECTION_COLOR: Color = Color::WHITE;
+
 use crate::image_renderer::BackgroundImage;
 use crate::selection::{Selection, SelectionStatus};
 
@@ -241,18 +246,18 @@ impl canvas::Program<Message> for App {
                 bottom_right,
             } = selected_region.corners();
 
-            const RADIUS: f32 = 6.0;
-
             for circle in [top_left, top_right, bottom_left, bottom_right]
-                .map(|corner| Path::circle(corner, RADIUS))
+                .map(|corner| Path::circle(corner, CORNER_RADIUS))
             {
-                frame.fill(&circle, Color::WHITE);
+                frame.fill(&circle, SELECTION_COLOR);
             }
 
             frame.stroke_rectangle(
                 selected_region.position(),
                 selected_region.size(),
-                Stroke::default().with_color(Color::WHITE).with_width(2.0),
+                Stroke::default()
+                    .with_color(SELECTION_COLOR)
+                    .with_width(2.0),
             );
         }
 
