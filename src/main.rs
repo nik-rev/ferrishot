@@ -1,5 +1,7 @@
 #![cfg_attr(doc, doc = include_str!("../README.md"))]
 
+use std::io::Write;
+
 use delegate::delegate;
 use iced::keyboard::Modifiers;
 use iced::mouse::{Cursor, Interaction};
@@ -125,14 +127,17 @@ impl App {
                 println!("started dragging");
                 dbg!(cursor, self.selected_region);
                 if let Some((cursor, selected_region)) = self.cursor_in_selection(cursor) {
-                    self.moving_selection = Some(MovingSelection {
+                    let status = MovingSelection {
                         top_left_anchor: selected_region.position(),
                         cursor_anchor: cursor,
-                    });
+                    };
+                    log::info!("Dragging the selection: {status:?}");
+                    self.moving_selection = Some(status);
                 } else {
                     // no region is selected, select the initial region
                     let cursor_position = cursor.position().expect("cursor to be in the monitor");
                     self.create_selection_at(cursor_position);
+                    log::info!("Selected initial region at {cursor_position}");
                 };
             },
             Message::LeftMouseUp => {
@@ -150,13 +155,15 @@ impl App {
                     {
                         let Point { x, y } = top_left_anchor + (new_mouse_position - cursor_anchor);
 
-                        self.selected_region = Some(
-                            Selection::default()
-                                .with_size(Size { width, height })
-                                .with_position(Point { x, y }),
-                        );
+                        let region = Selection::default()
+                            .with_size(Size { width, height })
+                            .with_position(Point { x, y });
+
+                        self.selected_region = Some(region);
+                        log::debug!("Dragged. New region: {region:?}");
                     }
                 } else {
+                    log::debug!("Updated selection: {new_mouse_position:?}");
                     self.update_selection(new_mouse_position);
                 }
             },
@@ -292,6 +299,11 @@ impl canvas::Program<Message> for App {
 }
 
 fn main() -> iced::Result {
+    env_logger::builder()
+        .format_timestamp(None)
+        .format(|buf, record| writeln!(buf, "{}: {}", record.level(), record.args()))
+        .init();
+
     iced::application(App::default, App::update, App::view)
         .window(iced::window::Settings {
             level: iced::window::Level::AlwaysOnTop,
@@ -303,10 +315,10 @@ fn main() -> iced::Result {
                 use iced::keyboard::Key;
                 match (key, mods) {
                     (Key::Named(iced::keyboard::key::Named::Escape), _) => Some(Message::Exit),
-                    (Key::Character(str @ _), Modifiers::CTRL) if str == "c" => {
+                    (Key::Character(ch), Modifiers::CTRL) if ch == "c" => {
                         Some(Message::CopyToClipboard)
                     },
-                    (Key::Character(str @ _), Modifiers::CTRL) if str == "s" => {
+                    (Key::Character(ch), Modifiers::CTRL) if ch == "s" => {
                         Some(Message::SaveScreenshot)
                     },
                     _ => None,
