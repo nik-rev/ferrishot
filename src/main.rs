@@ -299,10 +299,7 @@ impl canvas::Program<Message> for App {
 }
 
 fn main() -> iced::Result {
-    env_logger::builder()
-        .format_timestamp(None)
-        .format(|buf, record| writeln!(buf, "{}: {}", record.level(), record.args()))
-        .init();
+    env_logger::builder().format_timestamp(None).init();
 
     iced::application(App::default, App::update, App::view)
         .window(iced::window::Settings {
