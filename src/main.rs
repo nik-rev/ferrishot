@@ -1,7 +1,5 @@
 #![cfg_attr(doc, doc = include_str!("../README.md"))]
 
-use std::io::Write;
-
 use delegate::delegate;
 use iced::keyboard::Modifiers;
 use iced::mouse::{Cursor, Interaction};
