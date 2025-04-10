@@ -1,6 +1,4 @@
-use thiserror::Error;
-
-#[derive(Error, Debug)]
+#[derive(thiserror::Error, Debug)]
 pub enum ScreenshotError {
     #[error("Could not get position of the mouse")]
     NoMousePosition,

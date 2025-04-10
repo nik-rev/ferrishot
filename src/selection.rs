@@ -76,6 +76,8 @@ impl Selection {
 #[derive(Debug, Default, Clone, Copy)]
 pub enum SelectionStatus {
     /// The selection is currently being dragged
+    ///
+    /// left click + hold + move mouse
     Dragged {
         /// Top-left point of the selection Rect before we started dragging the
         /// selection
