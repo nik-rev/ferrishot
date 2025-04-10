@@ -1,6 +1,9 @@
 use delegate::delegate;
 use iced::{Point, Rectangle, Size};
 
+use crate::app::Side;
+use crate::corners::Corners;
+
 /// The selected area of the desktop which will be captured
 #[derive(Debug, Default, Copy, Clone)]
 pub struct Selection {
@@ -26,14 +29,19 @@ pub enum SelectionStatus {
     Idle,
 }
 
-pub struct Corners {
-    pub top_left: Point,
-    pub top_right: Point,
-    pub bottom_left: Point,
-    pub bottom_right: Point,
-}
-
 impl Selection {
+    /// Renders border of the selection
+    pub fn render_border(&self, frame: &mut iced::widget::canvas::Frame) {
+        // Render the rectangle around the selection (the sides)
+        frame.stroke_rectangle(
+            self.position(),
+            self.size(),
+            iced::widget::canvas::Stroke::default()
+                .with_color(crate::app::SELECTION_COLOR)
+                .with_width(crate::app::STROKE_SIZE),
+        );
+    }
+
     /// make sure that the top-left corner is ALWAYS in the top left
     /// (it could be that top-left corner is actually on the bottom right,
     /// and we have a negative width and height):
@@ -61,6 +69,16 @@ impl Selection {
     pub fn contains(&self, point: Point) -> bool {
         self.normalize().contains(point)
     }
+
+    /// Which side contains this point, if any?
+    ///
+    /// Used for resizing the selection
+    // pub fn side_contains(&self, point: Point) -> Option<Side> {
+    //     let rect = self.normalize();
+    //     let corners = self.corners();
+
+    //     // .contains(point)
+    // }
 
     /// Obtain coordinates of the 4 corners of the Selection
     pub fn corners(&self) -> Corners {

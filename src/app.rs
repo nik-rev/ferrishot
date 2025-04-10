@@ -1,13 +1,16 @@
 use iced::keyboard::{Key, Modifiers};
 use iced::mouse::{Cursor, Interaction};
-use iced::widget::canvas::{Path, Stroke};
 use iced::widget::{self, Action, canvas, stack};
 use iced::{Color, Element, Length, Point, Rectangle, Renderer, Size, Task, Theme, mouse};
 
 /// Radius of the 4 corners of the selection
-const CORNER_RADIUS: f32 = 6.0;
+pub const CORNER_RADIUS: f32 = 6.;
 /// Color of the selection stroke and corners
-const SELECTION_COLOR: Color = Color::WHITE;
+pub const SELECTION_COLOR: Color = Color::WHITE;
+/// The area around each side which allows that side to be hovered over and
+/// resized
+pub const INTERACTION_AREA: f32 = 20.;
+pub const STROKE_SIZE: f32 = 2.;
 
 use crate::image_renderer::BackgroundImage;
 use crate::selection::{Selection, SelectionStatus};
@@ -140,6 +143,8 @@ impl App {
             },
             Message::CopyToClipboard => todo!(),
             Message::SaveScreenshot => todo!(),
+            Message::Resize(resize, side) => todo!(),
+            _ => todo!(),
         };
 
         ().into()
@@ -223,6 +228,38 @@ pub enum Message {
     CopyToClipboard,
     /// Save the screenshot as an image
     SaveScreenshot,
+    Resize(Resize, Side),
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub enum Resize {
+    /// Increase size of the selection
+    Expand,
+    /// Decreases size of the selection
+    Shrink,
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub enum Side {
+    TopLeft,
+    TopRight,
+    BottomLeft,
+    BottomRight,
+    Top,
+    Right,
+    Bottom,
+    Left,
+}
+
+impl Side {
+    pub fn mouse_icon(&self) -> mouse::Interaction {
+        match self {
+            Side::Top | Side::Bottom => mouse::Interaction::ResizingVertically,
+            Side::Right | Side::Left => mouse::Interaction::ResizingHorizontally,
+            Side::TopLeft | Side::BottomRight => mouse::Interaction::ResizingDiagonallyDown,
+            Side::BottomLeft | Side::TopRight => mouse::Interaction::ResizingDiagonallyUp,
+        }
+    }
 }
 
 impl canvas::Program<Message> for App {
@@ -239,26 +276,8 @@ impl canvas::Program<Message> for App {
         let mut frame = canvas::Frame::new(renderer, bounds.size());
 
         if let Some(selected_region) = self.selected_region {
-            let crate::selection::Corners {
-                top_left,
-                top_right,
-                bottom_left,
-                bottom_right,
-            } = selected_region.corners();
-
-            for circle in [top_left, top_right, bottom_left, bottom_right]
-                .map(|corner| Path::circle(corner, CORNER_RADIUS))
-            {
-                frame.fill(&circle, SELECTION_COLOR);
-            }
-
-            frame.stroke_rectangle(
-                selected_region.position(),
-                selected_region.size(),
-                Stroke::default()
-                    .with_color(SELECTION_COLOR)
-                    .with_width(2.0),
-            );
+            selected_region.render_border(&mut frame);
+            selected_region.corners().render_circles(&mut frame);
         }
 
         vec![frame.into_geometry()]
@@ -270,13 +289,25 @@ impl canvas::Program<Message> for App {
         _bounds: Rectangle,
         cursor: iced::advanced::mouse::Cursor,
     ) -> iced::advanced::mouse::Interaction {
+        if let Some(mouse_icon) = self.selected_region.and_then(|region| {
+            cursor.position().and_then(|cursor_position| {
+                region
+                    .corners()
+                    .side_at(cursor_position)
+                    .map(|corners| corners.mouse_icon())
+            })
+        }) {
+            mouse_icon
+        }
         // when the cursor is inside of the selected region,
-        if (self.mouse_state.is_left_released()
-            || self
+        else if {
+            let is_left_released = self.mouse_state.is_left_released();
+            let is_moving_selection = self
                 .selected_region
-                .is_some_and(|selected_region| selected_region.moving_selection.is_some()))
-            && self.cursor_in_selection(cursor).is_some()
-        {
+                .is_some_and(|selected_region| selected_region.moving_selection.is_some());
+
+            (is_left_released || is_moving_selection) && self.cursor_in_selection(cursor).is_some()
+        } {
             Interaction::Grab
         } else {
             Interaction::Crosshair
