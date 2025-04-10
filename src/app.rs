@@ -1,3 +1,5 @@
+use std::ops::DerefMut;
+
 use iced::keyboard::{Key, Modifiers};
 use iced::mouse::{Cursor, Interaction};
 use iced::widget::{self, Action, canvas, stack};
@@ -9,7 +11,7 @@ pub const CORNER_RADIUS: f32 = 6.;
 pub const SELECTION_COLOR: Color = Color::WHITE;
 /// The area around each side which allows that side to be hovered over and
 /// resized
-pub const INTERACTION_AREA: f32 = 20.;
+pub const INTERACTION_AREA: f32 = 200.;
 pub const STROKE_SIZE: f32 = 2.;
 
 use crate::image_renderer::BackgroundImage;
@@ -90,27 +92,25 @@ impl App {
         match message {
             Message::Exit => return iced::exit(),
             Message::LeftMouseDown(cursor) => {
-                // if let Some((cursor, _side, rect)) = cursor.position().and_then(|cursor_pos|
-                // {     self.selected_region.as_mut().map(|selected_region| {
-                //         (
-                //             cursor_pos,
-                //             selected_region.corners().side_at(cursor_pos),
-                //             selected_region,
-                //         )
-                //     })
-                // }) {
-                //     let resized = SelectionStatus::Resized {
-                //         rect: rect.rect,
-                //         cursor,
-                //     };
-                //     log::info!("Starting to dragging the selection: {resized:?}");
-                //     rect.selection_status = resized;
-                // } else
-
-                if let Some((cursor, selected_region)) = self.cursor_in_selection_mut(cursor) {
+                if let Some((cursor, _side, rect)) = cursor.position().and_then(|cursor_pos| {
+                    self.selected_region.as_mut().and_then(|selected_region| {
+                        selected_region
+                            .corners()
+                            .side_at(cursor_pos)
+                            .map(|l| (cursor_pos, l, selected_region))
+                    })
+                }) {
+                    let resized = SelectionStatus::Resized {
+                        initial_rect: rect.normalize(),
+                        initial_cursor_pos: cursor,
+                    };
+                    log::info!("Starting to dragging the selection: {resized:?}");
+                    rect.selection_status = resized;
+                } else if let Some((cursor, selected_region)) = self.cursor_in_selection_mut(cursor)
+                {
                     let dragged = SelectionStatus::Dragged {
-                        rect_position: selected_region.position(),
-                        cursor,
+                        initial_rect_pos: selected_region.position(),
+                        initial_cursor_pos: cursor,
                     };
                     log::info!("Starting to dragging the selection: {dragged:?}");
                     selected_region.selection_status = dragged;
@@ -134,8 +134,8 @@ impl App {
             Message::LeftMouseDrag(new_mouse_position) => {
                 if let Some((
                     SelectionStatus::Dragged {
-                        rect_position,
-                        cursor,
+                        initial_rect_pos: rect_position,
+                        initial_cursor_pos: cursor,
                     },
                     selected_region,
                 )) = self
@@ -156,18 +156,41 @@ impl App {
             Message::CopyToClipboard => todo!(),
             Message::SaveScreenshot => todo!(),
             Message::Resize(cursor_pos, side) => {
+                let Some(selected_region) = self.selected_region.as_mut() else {
+                    return ().into();
+                };
+
+                // TODO: this can be available in the Resize message
+                // No need to handle it here
+                let SelectionStatus::Resized {
+                    initial_rect,
+                    initial_cursor_pos,
+                } = selected_region.selection_status
+                else {
+                    return ().into();
+                };
                 match side {
                     Side::TopLeft => todo!(),
                     Side::TopRight => todo!(),
                     Side::BottomLeft => todo!(),
                     Side::BottomRight => todo!(),
-                    Side::Top => todo!(),
+                    Side::Top => {
+                        *selected_region = selected_region
+                            .with_size(Size {
+                                width: initial_rect.size().width,
+                                height: initial_rect.size().height
+                                    - (cursor_pos.y - initial_cursor_pos.y),
+                            })
+                            .with_position(Point::new(
+                                initial_rect.position().x,
+                                (initial_rect.position().y) + (cursor_pos.y - initial_cursor_pos.y),
+                            ));
+                    },
                     Side::Right => todo!(),
                     Side::Bottom => todo!(),
                     Side::Left => todo!(),
                 }
             },
-            _ => todo!(),
         };
 
         ().into()
@@ -344,11 +367,11 @@ impl canvas::Program<Message> for App {
     ) -> Option<widget::Action<Message>> {
         use iced::Event::Mouse;
 
-        // let cursor_side = self.selected_region.and_then(|selected_region| {
-        //     cursor
-        //         .position()
-        //         .and_then(|cursor_position|
-        // selected_region.corners().side_at(cursor_position)) });
+        let resize_area_intersection_side = self.selected_region.and_then(|selected_region| {
+            cursor
+                .position()
+                .and_then(|cursor_position| selected_region.corners().side_at(cursor_position))
+        });
 
         let message = match event {
             Mouse(mouse::Event::ButtonPressed(mouse::Button::Left)) => {
@@ -359,22 +382,31 @@ impl canvas::Program<Message> for App {
                 state.left_release();
                 Message::LeftMouseUp
             },
-            // Mouse(mouse::Event::CursorMoved { position })
-            //     if state.is_left_clicked()
-            //         && cursor_side.is_some()
-            //         && self
-            //             .selected_region
-            //             .is_none_or(|selection_region| !selection_region.is_dragged()) =>
-            // {
-            //     // FIXME: this will not be necessary when we have `let_chains`
-            //     let cursor_side = cursor_side.expect("has `.is_some()` guard");
-            //     Message::Resize(*position, cursor_side)
-            // },
+            Mouse(mouse::Event::CursorMoved { position })
+                if state.is_left_clicked()
+                    && resize_area_intersection_side.is_some()
+                    && self
+                        .selected_region
+                        .is_none_or(|selection_region| selection_region.is_resized()) =>
+            {
+                // FIXME: this will not be necessary when we have `let_chains`
+                let cursor_side = resize_area_intersection_side.expect("has `.is_some()` guard");
+                Message::Resize(*position, cursor_side)
+            },
             Mouse(mouse::Event::CursorMoved { position }) if state.is_left_clicked() => {
                 Message::LeftMouseDrag(*position)
             },
             _ => return None,
         };
+
+        // dbg!(
+        //     state.is_left_clicked(),
+        //     resize_area_intersection_side,
+        //     self.selected_region,
+        //     &message,
+        //     cursor.position(),
+        //     self.selected_region.map(|x| x.corners())
+        // );
 
         Some(Action::publish(message))
     }

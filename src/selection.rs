@@ -14,16 +14,19 @@ pub struct Selection {
 #[derive(Debug, Default, Clone, Copy, PartialEq)]
 pub enum SelectionStatus {
     /// The selection is currently being resized
-    Resized { rect: Rectangle, cursor: Point },
+    Resized {
+        initial_rect: Rectangle,
+        initial_cursor_pos: Point,
+    },
     /// The selection is currently being dragged
     ///
     /// left click + hold + move mouse
     Dragged {
         /// Top-left point of the selection Rect before we started dragging the
         /// selection
-        rect_position: Point,
+        initial_rect_pos: Point,
         /// Position of the cursor when we just started dragging the selection
-        cursor: Point,
+        initial_cursor_pos: Point,
     },
     /// The selection is not moving
     #[default]
@@ -67,7 +70,7 @@ impl Selection {
     ///                           |        |
     /// our "top left" is here -> O---------
     /// even if the width and height is negative
-    fn normalize(&self) -> Rectangle {
+    pub fn normalize(&self) -> Rectangle {
         let mut rect = self.rect;
         if rect.width.is_sign_negative() {
             rect.x = rect.x + rect.width;
