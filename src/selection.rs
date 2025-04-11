@@ -2,8 +2,8 @@
 use delegate::delegate;
 use iced::{Point, Rectangle, Size};
 
-use crate::app::Side;
 use crate::corners::Corners;
+use crate::corners::Side;
 use crate::rectangle::RectangleExt;
 
 /// The selected area of the desktop which will be captured
@@ -50,8 +50,8 @@ impl Selection {
             self.pos(),
             self.size(),
             iced::widget::canvas::Stroke::default()
-                .with_color(crate::app::SELECTION_COLOR)
-                .with_width(crate::app::STROKE_SIZE),
+                .with_color(crate::SELECTION_COLOR)
+                .with_width(crate::STROKE_SIZE),
         );
     }
 

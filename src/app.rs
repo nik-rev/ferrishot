@@ -1,20 +1,13 @@
 //! Main logic for the application, handling of events and mutation of the state
+use crate::message::Message;
 use iced::keyboard::{Key, Modifiers};
 use iced::mouse::{Cursor, Interaction};
 use iced::widget::{self, Action, canvas, stack};
-use iced::{Color, Element, Length, Point, Rectangle, Renderer, Size, Task, Theme, mouse};
-
-/// Radius of the 4 corners of the selection
-pub const CORNER_RADIUS: f32 = 6.;
-/// Color of the selection stroke and corners
-pub const SELECTION_COLOR: Color = Color::WHITE;
-/// The area around each side which allows that side to be hovered over and
-/// resized
-pub const INTERACTION_AREA: f32 = 20.;
-/// The size of the border of the square
-pub const STROKE_SIZE: f32 = 2.;
+use iced::{Element, Length, Point, Rectangle, Renderer, Size, Task, Theme, mouse};
 
 use crate::background_image::BackgroundImage;
+use crate::corners::Side;
+use crate::mouse::MouseState;
 use crate::rectangle::RectangleExt;
 use crate::selection::{Selection, SelectionStatus};
 
@@ -28,35 +21,6 @@ pub struct App {
     screenshot: widget::image::Handle,
     /// Area of the screen that is selected for capture
     selected_region: Option<Selection>,
-}
-
-/// Holds information about the mouse
-#[derive(Default, Debug, Clone, Copy)]
-pub struct MouseState {
-    /// Left mouse click is currently being held down
-    is_left_down: bool,
-}
-
-impl MouseState {
-    /// Register a left mouse click
-    pub const fn left_click(&mut self) {
-        self.is_left_down = true;
-    }
-
-    /// Left mouse button
-    pub const fn left_release(&mut self) {
-        self.is_left_down = false;
-    }
-
-    /// If the left mouse button is clicked
-    pub const fn is_left_clicked(self) -> bool {
-        self.is_left_down
-    }
-
-    /// If the left mouse button is released
-    pub const fn is_left_released(self) -> bool {
-        !self.is_left_down
-    }
 }
 
 impl Default for App {
@@ -267,81 +231,6 @@ impl App {
                 .set_pos(selected_region.pos())
                 .set_size(Size { width, height })
         });
-    }
-}
-
-/// Represents an action happening in the application
-#[derive(Debug, Clone, Copy)]
-pub enum Message {
-    /// Exits the application
-    Exit,
-    /// The left mouse button is down
-    LeftMouseDown(Cursor),
-    /// The left mouse button is up
-    LeftMouseUp,
-    /// Copy the screenshot to the clipboard
-    CopyToClipboard,
-    /// Save the screenshot as an image
-    SaveScreenshot,
-    /// The selection is initially resized as it was created
-    InitialResize {
-        /// Current position of the cursor
-        current_cursor_pos: Point,
-        /// Initial position of the cursor
-        initial_cursor_pos: Point,
-        /// Which side we are currently resizing
-        resize_side: Side,
-        /// Selection rectangle as it looked like when we just started resizing
-        initial_rect: Rectangle,
-    },
-    /// When we have not yet released the left mouse button
-    /// and are dragging the selection to extend it
-    ExtendNewSelection(Point),
-    /// Left mouse is held down and dragged
-    ///
-    /// Contains the new point of the mouse
-    MovingSelection {
-        /// Current position of the cursor
-        current_cursor_pos: Point,
-        /// Position of the cursor when we first started moving the selection
-        initial_cursor_pos: Point,
-        /// Current selection
-        current_selection: Selection,
-        /// Top-left corner of the selection before we started moving it
-        initial_rect_pos: Point,
-    },
-}
-
-/// The point that is currently being resized
-#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
-pub enum Side {
-    /// Top-left corner
-    TopLeft,
-    /// Top-right corner
-    TopRight,
-    /// Bottom-left corner
-    BottomLeft,
-    /// Bottom-right corner
-    BottomRight,
-    /// Top side
-    Top,
-    /// Right side
-    Right,
-    /// Bottom side
-    Bottom,
-    /// Left side
-    Left,
-}
-
-impl Side {
-    /// Obtain the appropriate mouse cursor for the given side
-    pub const fn mouse_icon(self) -> mouse::Interaction {
-        match self {
-            Self::Top | Self::Bottom => mouse::Interaction::ResizingVertically,
-            Self::Right | Self::Left => mouse::Interaction::ResizingHorizontally,
-            Self::TopLeft | Self::BottomRight => mouse::Interaction::ResizingDiagonallyDown,
-            Self::BottomLeft | Self::TopRight => mouse::Interaction::ResizingDiagonallyUp,
-        }
     }
 }
 

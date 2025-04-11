@@ -1,7 +1,40 @@
 //! `Corners` represents the 4 vertices of a `iced::Rectangle`
-use iced::{Point, Rectangle};
+use iced::{Point, Rectangle, mouse};
 
-use crate::app::{CORNER_RADIUS, INTERACTION_AREA, SELECTION_COLOR, Side};
+use crate::{CORNER_RADIUS, INTERACTION_AREA, SELECTION_COLOR};
+
+/// The point that is currently being resized
+#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub enum Side {
+    /// Top-left corner
+    TopLeft,
+    /// Top-right corner
+    TopRight,
+    /// Bottom-left corner
+    BottomLeft,
+    /// Bottom-right corner
+    BottomRight,
+    /// Top side
+    Top,
+    /// Right side
+    Right,
+    /// Bottom side
+    Bottom,
+    /// Left side
+    Left,
+}
+
+impl Side {
+    /// Obtain the appropriate mouse cursor for the given side
+    pub const fn mouse_icon(self) -> mouse::Interaction {
+        match self {
+            Self::Top | Self::Bottom => mouse::Interaction::ResizingVertically,
+            Self::Right | Self::Left => mouse::Interaction::ResizingHorizontally,
+            Self::TopLeft | Self::BottomRight => mouse::Interaction::ResizingDiagonallyDown,
+            Self::BottomLeft | Self::TopRight => mouse::Interaction::ResizingDiagonallyUp,
+        }
+    }
+}
 
 /// Corners of an `iced::Rectangle`
 #[derive(Debug, Default, Clone, Copy)]
