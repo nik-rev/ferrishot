@@ -1,8 +1,10 @@
 //! Main logic for the application, handling of events and mutation of the state
 
+use crate::SHADE_COLOR;
 use crate::message::Message;
 use iced::keyboard::{Key, Modifiers};
 use iced::mouse::{Cursor, Interaction};
+use iced::widget::canvas::Path;
 use iced::widget::{self, Action, canvas, stack};
 use iced::{Element, Length, Point, Rectangle, Renderer, Size, Task, Theme, mouse};
 use image::DynamicImage;
@@ -10,7 +12,7 @@ use image::DynamicImage;
 use crate::background_image::BackgroundImage;
 use crate::corners::Side;
 use crate::mouse::MouseState;
-use crate::rectangle::RectangleExt;
+use crate::rectangle::{PointExt, RectangleExt};
 use crate::selection::{Selection, SelectionStatus};
 
 /// Holds the state for ferrishot
@@ -22,7 +24,7 @@ pub struct App {
     /// illusion that we are drawing shapes on top of the screen.
     screenshot: widget::image::Handle,
     /// Area of the screen that is selected for capture
-    selected_region: Option<Selection>,
+    selection: Option<Selection>,
 }
 
 impl Default for App {
@@ -30,12 +32,36 @@ impl Default for App {
         let screenshot = crate::screenshot::screenshot().unwrap();
         Self {
             screenshot,
-            selected_region: None,
+            selection: None,
         }
     }
 }
 
 impl App {
+    /// Renders the black tint on regions that are not selected
+    fn render_shade(&self, frame: &mut canvas::Frame, bounds: Rectangle) {
+        let Some(selection) = self.selection else {
+            frame.fill_rectangle(bounds.pos(), bounds.size(), SHADE_COLOR);
+            return;
+        };
+
+        // represents the area outside of the selection
+        let outside = Path::new(|p| {
+            p.move_to(bounds.top_left());
+            p.line_to(bounds.top_right());
+            p.line_to(bounds.bottom_right());
+            p.line_to(bounds.bottom_left());
+            p.move_to(bounds.top_left());
+            p.move_to(selection.top_left());
+            p.line_to(selection.bottom_left());
+            p.line_to(selection.bottom_right());
+            p.line_to(selection.top_right());
+            p.move_to(selection.top_left());
+        });
+
+        frame.fill(&outside, SHADE_COLOR);
+    }
+
     /// Receives keybindings
     #[must_use]
     pub fn handle_key_press(key: Key, mods: Modifiers) -> Option<Message> {
@@ -67,7 +93,7 @@ impl App {
             Message::Exit => return iced::exit(),
             Message::LeftMouseDown(cursor) => {
                 if let Some((cursor, side, rect)) = cursor.position().and_then(|cursor_pos| {
-                    self.selected_region.as_mut().and_then(|selected_region| {
+                    self.selection.as_mut().and_then(|selected_region| {
                         selected_region
                             .corners()
                             .side_at(cursor_pos)
@@ -79,28 +105,28 @@ impl App {
                         initial_cursor_pos: cursor,
                         resize_side: side,
                     };
-                    rect.selection_status = resized;
+                    rect.status = resized;
                 } else if let Some((cursor, selected_region)) = self.cursor_in_selection_mut(cursor)
                 {
                     let dragged = SelectionStatus::Dragged {
                         initial_rect_pos: selected_region.pos(),
                         initial_cursor_pos: cursor,
                     };
-                    selected_region.selection_status = dragged;
+                    selected_region.status = dragged;
                 } else {
                     // no region is selected, select the initial region
                     let cursor_position = cursor.position().expect("cursor to be in the monitor");
                     self.create_selection_at(
                         cursor_position,
-                        self.selected_region
-                            .map(|region| region.selection_status)
+                        self.selection
+                            .map(|region| region.status)
                             .unwrap_or_default(),
                     );
                 }
             },
             Message::LeftMouseUp => {
-                if let Some(selection) = self.selected_region.as_mut() {
-                    selection.selection_status = SelectionStatus::Idle;
+                if let Some(selection) = self.selection.as_mut() {
+                    selection.status = SelectionStatus::Idle;
                 }
             },
             Message::MovingSelection {
@@ -109,7 +135,7 @@ impl App {
                 current_selection,
                 initial_rect_pos,
             } => {
-                self.selected_region = Some(
+                self.selection = Some(
                     current_selection
                         .set_pos(initial_rect_pos + (current_cursor_pos - initial_cursor_pos)),
                 );
@@ -118,7 +144,7 @@ impl App {
                 self.update_selection(new_mouse_position);
             },
             Message::CopyToClipboard => {
-                let Some(selected_region) = self.selected_region.map(Selection::normalize) else {
+                let Some(selection) = self.selection.map(Selection::normalize) else {
                     // TODO: instead of this, show an error to the user in
                     // a custom widget
                     return ().into();
@@ -138,16 +164,19 @@ impl App {
                 };
 
                 #[expect(clippy::cast_possible_truncation, reason = "pixels must be integer")]
-                #[expect(clippy::cast_sign_loss, reason = "selection cannot be negative")]
+                #[expect(
+                    clippy::cast_sign_loss,
+                    reason = "selection has been normalized so height and width will be positive"
+                )]
                 let cropped_image = DynamicImage::from(
                     image::RgbaImage::from_raw(width, height, pixels.to_vec())
                         .expect("Image handle stores a valid image"),
                 )
                 .crop_imm(
-                    selected_region.x() as u32,
-                    selected_region.y() as u32,
-                    selected_region.width() as u32,
-                    selected_region.height() as u32,
+                    selection.x() as u32,
+                    selection.y() as u32,
+                    selection.width() as u32,
+                    selection.height() as u32,
                 );
 
                 let image_data = arboard::ImageData {
@@ -182,7 +211,7 @@ impl App {
                 // when we send the Resize message, so ideally we would send a mutable
                 // reference. But Messages cannot send mutable references from what I can tell
                 let selected_region = self
-                    .selected_region
+                    .selection
                     .as_mut()
                     .expect("is inside `.is_some_and` guard");
 
@@ -198,7 +227,7 @@ impl App {
                 // Now imagine how the selection transforms with this, and think about it just for 1 case.
                 // It will then be true for all cases
 
-                let changed_rect = match resize_side {
+                selected_region.rect = match resize_side {
                     Side::TopLeft => initial_rect
                         .set_pos(current_cursor_pos)
                         .with_width(|w| w - dx)
@@ -219,7 +248,6 @@ impl App {
                     Side::Bottom => initial_rect.with_height(|h| h + dy),
                     Side::Left => initial_rect.with_width(|w| w - dx).with_x(|x| x + dx),
                 };
-                selected_region.rect = changed_rect;
             },
         }
 
@@ -229,23 +257,20 @@ impl App {
     /// If the given cursor intersects the selected region, give the region and
     /// the cursor
     fn cursor_in_selection(&self, cursor: Cursor) -> Option<(Point, Selection)> {
-        self.selected_region.and_then(|selected_region| {
-            cursor.position().and_then(|cursor_pos| {
-                selected_region
-                    .contains(cursor_pos)
-                    .then_some((cursor_pos, selected_region))
-            })
+        self.selection.and_then(|sel| {
+            cursor
+                .position()
+                .and_then(|cursor_pos| sel.contains(cursor_pos).then_some((cursor_pos, sel)))
         })
     }
     /// If the given cursor intersects the selected region, give the region and
     /// the cursor
     fn cursor_in_selection_mut(&mut self, cursor: Cursor) -> Option<(Point, &mut Selection)> {
-        self.selected_region.as_mut().and_then(|selected_region| {
+        self.selection.as_mut().and_then(|sel| {
             cursor.position().and_then(|cursor_pos| {
-                selected_region
-                    .normalize()
+                sel.normalize()
                     .contains(cursor_pos)
-                    .then_some((cursor_pos, selected_region))
+                    .then_some((cursor_pos, sel))
             })
         })
     }
@@ -257,13 +282,13 @@ impl App {
         moving_selection: SelectionStatus,
     ) {
         let mut selection = Selection::new(create_selection_at);
-        selection.selection_status = moving_selection;
-        self.selected_region = Some(Selection::new(create_selection_at));
+        selection.status = moving_selection;
+        self.selection = Some(Selection::new(create_selection_at));
     }
 
     /// Computes a new selection based on the current position
     pub fn update_selection(&mut self, other: Point) {
-        self.selected_region = self.selected_region.take().map(|selected_region| {
+        self.selection = self.selection.take().map(|selected_region| {
             #[rustfmt::skip]
             {
     // selected_region -> x1y1-------------------------x2
@@ -300,9 +325,11 @@ impl canvas::Program<Message> for App {
     ) -> Vec<canvas::Geometry> {
         let mut frame = canvas::Frame::new(renderer, bounds.size());
 
-        if let Some(selected_region) = self.selected_region {
-            selected_region.render_border(&mut frame);
-            selected_region.corners().render_circles(&mut frame);
+        self.render_shade(&mut frame, bounds);
+
+        if let Some(selection) = self.selection.map(Selection::normalize) {
+            selection.render_border(&mut frame);
+            selection.corners().render_circles(&mut frame);
         }
 
         vec![frame.into_geometry()]
@@ -314,7 +341,7 @@ impl canvas::Program<Message> for App {
         _bounds: Rectangle,
         cursor: iced::advanced::mouse::Cursor,
     ) -> iced::advanced::mouse::Interaction {
-        self.selected_region
+        self.selection
             .and_then(|region| {
                 cursor.position().and_then(|cursor_position| {
                     region
@@ -325,9 +352,7 @@ impl canvas::Program<Message> for App {
             })
             .unwrap_or_else(|| {
                 let is_left_released = state.is_left_released();
-                let is_moving_selection = self
-                    .selected_region
-                    .is_some_and(|selected_region| selected_region.selection_status.is_dragged());
+                let is_moving_selection = self.selection.is_some_and(|sel| sel.status.is_dragged());
 
                 let is_grab = (is_left_released || is_moving_selection)
                     && self.cursor_in_selection(cursor).is_some();
@@ -360,7 +385,7 @@ impl canvas::Program<Message> for App {
             Mouse(mouse::Event::CursorMoved { position })
                 if state.is_left_clicked()
                     && self
-                        .selected_region
+                        .selection
                         .is_some_and(super::selection::Selection::is_resized) =>
             {
                 // FIXME: this will not be necessary when we have `let_chains`
@@ -368,10 +393,7 @@ impl canvas::Program<Message> for App {
                     resize_side,
                     initial_rect,
                     initial_cursor_pos,
-                } = self
-                    .selected_region
-                    .expect("has `.is_some()` guard")
-                    .selection_status
+                } = self.selection.expect("has `.is_some()` guard").status
                 else {
                     unreachable!();
                 };
@@ -385,17 +407,14 @@ impl canvas::Program<Message> for App {
             Mouse(mouse::Event::CursorMoved { position })
                 if state.is_left_clicked()
                     && self
-                        .selected_region
+                        .selection
                         .is_some_and(super::selection::Selection::is_dragged) =>
             {
                 // FIXME: this will not be necessary when we have `let_chains`
                 let SelectionStatus::Dragged {
                     initial_rect_pos,
                     initial_cursor_pos,
-                } = self
-                    .selected_region
-                    .expect("has `.is_some()` guard")
-                    .selection_status
+                } = self.selection.expect("has `.is_some()` guard").status
                 else {
                     unreachable!();
                 };
@@ -403,14 +422,14 @@ impl canvas::Program<Message> for App {
                 Message::MovingSelection {
                     current_cursor_pos: *position,
                     initial_cursor_pos,
-                    current_selection: self.selected_region.expect("has `.is_some()` guard"),
+                    current_selection: self.selection.expect("has `.is_some()` guard"),
                     initial_rect_pos,
                 }
             },
             Mouse(mouse::Event::CursorMoved { position })
                 if state.is_left_clicked()
                     && self
-                        .selected_region
+                        .selection
                         .is_some_and(super::selection::Selection::is_idle) =>
             {
                 Message::ExtendNewSelection(*position)

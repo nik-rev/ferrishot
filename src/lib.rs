@@ -19,6 +19,8 @@ pub const SELECTION_COLOR: iced::Color = iced::Color::WHITE;
 pub const INTERACTION_AREA: f32 = 20.;
 /// The size of the border of the square
 pub const STROKE_SIZE: f32 = 2.;
+/// The color of the background for non-selected regions
+pub const SHADE_COLOR: iced::Color = iced::color!(0x00_00_00, 0.);
 
 pub use app::App;
 pub use clipboard::{CLIPBOARD_DAEMON_ID, run_clipboard_daemon};

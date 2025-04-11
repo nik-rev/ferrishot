@@ -3,6 +3,32 @@ use iced::{Point, Rectangle, Size};
 
 use crate::corners::Corners;
 
+/// Extension methods for `iced::Point`
+#[allow(dead_code)]
+#[easy_ext::ext(PointExt)]
+pub impl Point<f32> {
+    /// Set the x coordinate of the point
+    fn set_x(mut self, x: f32) -> Self {
+        self.x = x;
+        self
+    }
+    /// Compute the new x coordinate of the point from a closure
+    fn with_x<F: FnOnce(f32) -> f32>(mut self, f: F) -> Self {
+        self.x = f(self.x);
+        self
+    }
+    /// Set the y coordinate of the point from a closure
+    fn set_y(mut self, y: f32) -> Self {
+        self.y = y;
+        self
+    }
+    /// Compute the new y coordinate of the point from a closure
+    fn with_y<F: FnOnce(f32) -> f32>(mut self, f: F) -> Self {
+        self.y = f(self.y);
+        self
+    }
+}
+
 /// Extension methods for `iced::Rectangle`
 #[allow(dead_code)]
 #[easy_ext::ext(RectangleExt)]
@@ -39,6 +65,33 @@ pub impl Rectangle<f32> {
             bottom_left: Point::new(top_left.x, top_left.y + rect.height),
             bottom_right: Point::new(top_left.x + rect.width, top_left.y + rect.height),
         }
+    }
+
+    /// Position of the top left corner
+    fn top_left(&self) -> Point {
+        self.position()
+    }
+
+    /// Position of the top right corner
+    fn top_right(&self) -> Point {
+        self.position().with_x(|x| x + self.width)
+    }
+
+    /// Position of the bottom right corner
+    fn bottom_right(&self) -> Point {
+        self.position()
+            .with_x(|x| x + self.width)
+            .with_y(|y| y + self.height)
+    }
+
+    /// Position of the bottom left corner
+    fn bottom_left(&self) -> Point {
+        self.position().with_y(|y| y + self.height)
+    }
+
+    /// Returns the position of the top left corner of the Rectangle
+    fn pos(&self) -> Point {
+        self.position()
     }
 
     /// Update height and width

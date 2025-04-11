@@ -12,7 +12,7 @@ pub struct Selection {
     /// Area represented by the selection
     pub rect: Rectangle,
     /// Status of the selection
-    pub selection_status: SelectionStatus,
+    pub status: SelectionStatus,
 }
 
 /// What the selection is doing at the moment
@@ -59,7 +59,7 @@ impl Selection {
     pub fn new(point: Point) -> Self {
         Self {
             rect: Rectangle::new(point, Size::default()),
-            selection_status: SelectionStatus::default(),
+            status: SelectionStatus::default(),
         }
     }
 
@@ -82,6 +82,14 @@ impl Selection {
             pub fn y(self) -> f32;
             /// Whether this selection contains a given point
             pub fn contains(self, point: Point) -> bool;
+            /// Position of the top left corner
+            pub fn top_left(self) -> Point;
+            /// Position of the top right corner
+            pub fn top_right(self) -> Point;
+            /// Position of the bottom right corner
+            pub fn bottom_right(self) -> Point;
+            /// Position of the bottom left corner
+            pub fn bottom_left(self) -> Point;
         }
         #[allow(dead_code)]
         #[expr(self.rect = $; self)]
@@ -119,7 +127,7 @@ impl Selection {
             /// Make sure the width and height is not negative
             pub fn normalize(mut self) -> Self;
         }
-        to self.selection_status {
+        to self.status {
             /// The selection is currently being dragged
             pub const fn is_dragged(self) -> bool;
             /// The selection is not moving
