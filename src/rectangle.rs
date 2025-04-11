@@ -40,71 +40,71 @@ pub impl Rectangle<f32> {
     }
 
     /// Update height and width
-    fn with_size(mut self, size: Size) -> Self {
+    fn set_size(mut self, size: Size) -> Self {
         self = Self::new(self.position(), size);
         self
     }
 
     /// Update size using a closure
-    fn map_size<F: FnOnce(Size) -> Size>(self, f: F) -> Self {
-        self.with_size(f(self.size()))
+    fn with_size<F: FnOnce(Size) -> Size>(self, f: F) -> Self {
+        self.set_size(f(self.size()))
     }
 
     /// Update position of the top left corner
-    fn with_position(mut self, pos: Point) -> Self {
+    fn set_pos(mut self, pos: Point) -> Self {
         self = Self::new(pos, self.size());
         self
     }
 
     /// Update position using a closure
-    fn map_position<F: FnOnce(Point) -> Point>(self, f: F) -> Self {
-        self.with_position(f(self.position()))
+    fn with_pos<F: FnOnce(Point) -> Point>(self, f: F) -> Self {
+        self.set_pos(f(self.position()))
     }
 
     /// Update the x coordinate
-    fn with_x(self, x: f32) -> Self {
-        self.with_position(Point { x, y: self.y })
+    fn set_x(self, x: f32) -> Self {
+        self.set_pos(Point { x, y: self.y })
     }
 
     /// Update the x coordinate using a closure
-    fn map_x<F: FnOnce(f32) -> f32>(self, f: F) -> Self {
-        self.with_x(f(self.x))
+    fn with_x<F: FnOnce(f32) -> f32>(self, f: F) -> Self {
+        self.set_x(f(self.x))
     }
 
     /// Update the height
-    fn with_height(self, height: f32) -> Self {
-        self.with_size(Size {
+    fn set_height(self, height: f32) -> Self {
+        self.set_size(Size {
             width: self.size().width,
             height,
         })
     }
 
     /// Update the height using a closure
-    fn map_height<F: FnOnce(f32) -> f32>(self, f: F) -> Self {
-        self.with_height(f(self.height))
+    fn with_height<F: FnOnce(f32) -> f32>(self, f: F) -> Self {
+        self.set_height(f(self.height))
     }
 
     /// Update the width
-    fn with_width(self, width: f32) -> Self {
-        self.with_size(Size {
+    fn set_width(self, width: f32) -> Self {
+        self.set_size(Size {
             width,
             height: self.size().height,
         })
     }
 
     /// Update the width using a closure
-    fn map_width<F: FnOnce(f32) -> f32>(self, f: F) -> Self {
-        self.with_width(f(self.width))
+    fn with_width<F: FnOnce(f32) -> f32>(self, f: F) -> Self {
+        self.set_width(f(self.width))
     }
 
     /// Update the y coordinate
-    fn with_y(self, y: f32) -> Self {
-        self.with_position(Point { x: self.x, y })
+    fn set_y(self, y: f32) -> Self {
+        self.set_pos(Point { x: self.x, y })
     }
 
     /// Update the y coordinate using a closure
-    fn map_y<F: FnOnce(f32) -> f32>(self, f: F) -> Self {
-        self.with_position(Point {
+    fn with_y<F: FnOnce(f32) -> f32>(self, f: F) -> Self {
+        self.set_pos(Point {
             x: self.x,
             y: f(self.y),
         })

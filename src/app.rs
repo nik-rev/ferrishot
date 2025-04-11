@@ -114,7 +114,7 @@ impl App {
                 } else if let Some((cursor, selected_region)) = self.cursor_in_selection_mut(cursor)
                 {
                     let dragged = SelectionStatus::Dragged {
-                        initial_rect_pos: selected_region.position(),
+                        initial_rect_pos: selected_region.pos(),
                         initial_cursor_pos: cursor,
                     };
                     log::info!("Starting to dragging the selection: {dragged:?}");
@@ -148,8 +148,7 @@ impl App {
                     .map(|region| (region.selection_status, region))
                 {
                     self.selected_region = Some(
-                        selected_region
-                            .with_position(rect_position + (new_mouse_position - cursor)),
+                        selected_region.set_pos(rect_position + (new_mouse_position - cursor)),
                     );
 
                     log::debug!("Dragged. New region: {:?}", self.selected_region);
@@ -175,7 +174,8 @@ impl App {
                     return ().into();
                 };
 
-                let diff = cursor_pos.y - initial_cursor_pos.y;
+                let dy = cursor_pos.y - initial_cursor_pos.y;
+                let dx = cursor_pos.x - initial_cursor_pos.x;
 
                 match side {
                     Side::TopLeft => todo!(),
@@ -184,22 +184,16 @@ impl App {
                     Side::BottomRight => todo!(),
                     Side::Top => {
                         selected_region.rect =
-                            initial_rect.map_height(|h| h - diff).map_y(|y| y + diff);
+                            initial_rect.with_height(|h| h - dy).with_y(|y| y + dy);
                     },
-                    Side::Right => todo!(),
+                    Side::Right => selected_region.rect = initial_rect.with_width(|w| w + dx),
                     Side::Bottom => {
-                        *selected_region = selected_region
-                            .with_size(Size {
-                                width: initial_rect.size().width,
-                                height: initial_rect.size().height
-                                    - (cursor_pos.y - initial_cursor_pos.y),
-                            })
-                            .with_position(Point::new(
-                                initial_rect.position().x,
-                                (initial_rect.position().y) + (cursor_pos.y - initial_cursor_pos.y),
-                            ));
+                        selected_region.rect = initial_rect.with_height(|h| h + dy);
                     },
-                    Side::Left => todo!(),
+                    Side::Left => {
+                        selected_region.rect =
+                            initial_rect.with_width(|w| w - dx).with_x(|x| x + dx);
+                    },
                 }
             },
         }
@@ -261,8 +255,8 @@ impl App {
             let height = other.y - selected_region.y();
 
             Selection::default()
-                .with_position(selected_region.position())
-                .with_size(Size { width, height })
+                .set_pos(selected_region.pos())
+                .set_size(Size { width, height })
         });
     }
 }
