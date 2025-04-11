@@ -1,6 +1,7 @@
 use delegate::delegate;
 use iced::{Point, Rectangle, Size};
 
+use crate::app::Side;
 use crate::corners::Corners;
 use crate::rectangle::RectangleExt;
 
@@ -22,6 +23,8 @@ pub enum SelectionStatus {
         initial_rect: Rectangle,
         /// Cursor position before we started resizing it
         initial_cursor_pos: Point,
+        /// The side being resized
+        resize_side: Side,
     },
     /// The selection is currently being dragged
     ///

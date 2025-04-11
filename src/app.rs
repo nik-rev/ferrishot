@@ -97,7 +97,7 @@ impl App {
         match message {
             Message::Exit => return iced::exit(),
             Message::LeftMouseDown(cursor) => {
-                if let Some((cursor, _side, rect)) = cursor.position().and_then(|cursor_pos| {
+                if let Some((cursor, side, rect)) = cursor.position().and_then(|cursor_pos| {
                     self.selected_region.as_mut().and_then(|selected_region| {
                         selected_region
                             .corners()
@@ -108,6 +108,7 @@ impl App {
                     let resized = SelectionStatus::Resized {
                         initial_rect: rect.normalize().rect,
                         initial_cursor_pos: cursor,
+                        resize_side: side,
                     };
                     log::info!("Starting to dragging the selection: {resized:?}");
                     rect.selection_status = resized;
@@ -159,23 +160,22 @@ impl App {
             },
             Message::CopyToClipboard => todo!(),
             Message::SaveScreenshot => todo!(),
-            Message::Resize(cursor_pos, side) => {
-                let Some(selected_region) = self.selected_region.as_mut() else {
-                    return ().into();
-                };
+            Message::Resize {
+                current_cursor_pos,
+                initial_cursor_pos,
+                resize_side,
+                initial_rect,
+            } => {
+                // FIXME: this is awkward. We know that self.selected_region EXISTS
+                // when we send the Resize message, so ideally we would send a mutable
+                // reference. But Messages cannot send mutable references from what I can tell
+                let selected_region = self
+                    .selected_region
+                    .as_mut()
+                    .expect("is inside `.is_some_and` guard");
 
-                // TODO: this can be available in the Resize message
-                // No need to handle it here
-                let SelectionStatus::Resized {
-                    initial_rect,
-                    initial_cursor_pos,
-                } = selected_region.selection_status
-                else {
-                    return ().into();
-                };
-
-                let dy = cursor_pos.y - initial_cursor_pos.y;
-                let dx = cursor_pos.x - initial_cursor_pos.x;
+                let dy = current_cursor_pos.y - initial_cursor_pos.y;
+                let dx = current_cursor_pos.x - initial_cursor_pos.x;
 
                 // To give a perspective on this math, imagine that our cursor is at the top left corner
                 // and travelling diagonally down, from point (700, 700) -> (800, 800).
@@ -186,9 +186,9 @@ impl App {
                 // Now imagine how the selection transforms with this, and think about it just for 1 case.
                 // It will then be true for all cases
 
-                let changed_rect = match side {
+                let changed_rect = match resize_side {
                     Side::TopLeft => initial_rect
-                        .set_pos(cursor_pos)
+                        .set_pos(current_cursor_pos)
                         .with_width(|w| w - dx)
                         .with_height(|h| h - dy),
                     Side::TopRight => initial_rect
@@ -290,7 +290,12 @@ pub enum Message {
     CopyToClipboard,
     /// Save the screenshot as an image
     SaveScreenshot,
-    Resize(Point, Side),
+    Resize {
+        current_cursor_pos: Point,
+        initial_cursor_pos: Point,
+        resize_side: Side,
+        initial_rect: Rectangle,
+    },
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
@@ -377,12 +382,6 @@ impl canvas::Program<Message> for App {
     ) -> Option<widget::Action<Message>> {
         use iced::Event::Mouse;
 
-        let resize_area_intersection_side = self.selected_region.and_then(|selected_region| {
-            cursor
-                .position()
-                .and_then(|cursor_position| selected_region.corners().side_at(cursor_position))
-        });
-
         let message = match event {
             Mouse(mouse::Event::ButtonPressed(mouse::Button::Left)) => {
                 state.left_click();
@@ -394,29 +393,34 @@ impl canvas::Program<Message> for App {
             },
             Mouse(mouse::Event::CursorMoved { position })
                 if state.is_left_clicked()
-                    && resize_area_intersection_side.is_some()
                     && self
                         .selected_region
-                        .is_none_or(super::selection::Selection::is_resized) =>
+                        .is_some_and(super::selection::Selection::is_resized) =>
             {
                 // FIXME: this will not be necessary when we have `let_chains`
-                let cursor_side = resize_area_intersection_side.expect("has `.is_some()` guard");
-                Message::Resize(*position, cursor_side)
+                let SelectionStatus::Resized {
+                    resize_side,
+                    initial_rect,
+                    initial_cursor_pos,
+                } = self
+                    .selected_region
+                    .expect("has `.is_some()` guard")
+                    .selection_status
+                else {
+                    unreachable!();
+                };
+                Message::Resize {
+                    current_cursor_pos: *position,
+                    resize_side,
+                    initial_cursor_pos,
+                    initial_rect,
+                }
             },
             Mouse(mouse::Event::CursorMoved { position }) if state.is_left_clicked() => {
                 Message::LeftMouseDrag(*position)
             },
             _ => return None,
         };
-
-        // dbg!(
-        //     state.is_left_clicked(),
-        //     resize_area_intersection_side,
-        //     self.selected_region,
-        //     &message,
-        //     cursor.position(),
-        //     self.selected_region.map(|x| x.corners())
-        // );
 
         Some(Action::publish(message))
     }
