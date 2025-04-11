@@ -14,7 +14,7 @@ pub const INTERACTION_AREA: f32 = 20.;
 /// The size of the border of the square
 pub const STROKE_SIZE: f32 = 2.;
 
-use crate::image_renderer::BackgroundImage;
+use crate::background_image::BackgroundImage;
 use crate::rectangle::RectangleExt;
 use crate::selection::{Selection, SelectionStatus};
 
