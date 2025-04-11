@@ -125,6 +125,9 @@ impl Selection {
             pub fn with_y<F: FnOnce(f32) -> f32>(mut self, y: F) -> Self;
 
             /// Make sure the width and height is not negative
+            // TODO: remove this function
+            // We're using it *everywhere* but instead it would be better if
+            // it was impossible to create a rectangle with a negative width or height
             pub fn normalize(mut self) -> Self;
         }
         to self.status {

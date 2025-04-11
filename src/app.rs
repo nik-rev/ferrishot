@@ -40,7 +40,7 @@ impl Default for App {
 impl App {
     /// Renders the black tint on regions that are not selected
     fn render_shade(&self, frame: &mut canvas::Frame, bounds: Rectangle) {
-        let Some(selection) = self.selection else {
+        let Some(selection) = self.selection.map(Selection::normalize) else {
             frame.fill_rectangle(bounds.pos(), bounds.size(), SHADE_COLOR);
             return;
         };
@@ -343,13 +343,20 @@ impl canvas::Program<Message> for App {
     ) -> iced::advanced::mouse::Interaction {
         self.selection
             .and_then(|sel| {
-                if let SelectionStatus::Resized { resize_side, .. } = sel.status {
-                    Some(resize_side.mouse_icon())
-                } else {
-                    cursor.position().and_then(|cursor_position| {
-                        sel.corners().side_at(cursor_position).map(Side::mouse_icon)
+                // when we started dragging a side, even if we go outside of the bounds of that side (which
+                // happens often when we are dragging the mouse fast), we don't want the cursor to change
+                cursor
+                    .position()
+                    .and_then(|cursor| sel.corners().side_at(cursor).map(Side::mouse_icon))
+                    // for example, if we start dragging top right corner, and move mouse to the
+                    // top left corner, we want the cursor to switch appropriately
+                    .or_else(|| {
+                        if let SelectionStatus::Resized { resize_side, .. } = sel.status {
+                            Some(resize_side.mouse_icon())
+                        } else {
+                            None
+                        }
                     })
-                }
             })
             .unwrap_or_else(|| {
                 let is_left_released = state.is_left_released();
