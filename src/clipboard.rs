@@ -13,20 +13,35 @@ use std::{
     process,
 };
 
+/// Set the text content of the clipboard
+#[expect(dead_code)]
+pub fn set_text(text: &str) -> Result<(), Box<dyn std::error::Error>> {
+    if cfg!(target_os = "linux") {
+        process::Command::new(std::env::current_exe()?)
+            .arg(CLIPBOARD_DAEMON_ID)
+            .arg("text")
+            .arg(text)
+            .stdin(process::Stdio::null())
+            .stdout(process::Stdio::null())
+            .stderr(process::Stdio::null())
+            .current_dir("/")
+            .spawn()?;
+    } else {
+        arboard::Clipboard::new()?.set_text(text)?;
+    }
+
+    Ok(())
+}
+
 /// Set the image content of the clipboard
 pub fn set_image(image_data: arboard::ImageData) -> Result<(), Box<dyn std::error::Error>> {
     if cfg!(target_os = "linux") {
         let clipboard_buffer_path = std::env::temp_dir().join(CLIPBOARD_BUFFER_FILE);
         let mut clipboard_buffer_file = File::create(&clipboard_buffer_path)?;
         clipboard_buffer_file.write_all(&image_data.bytes)?;
-        log::info!(
-            "Called daemon with args: {CLIPBOARD_DAEMON_ID} {} {} {}",
-            image_data.width,
-            image_data.height,
-            clipboard_buffer_path.display()
-        );
         process::Command::new(std::env::current_exe()?)
             .arg(CLIPBOARD_DAEMON_ID)
+            .arg("image")
             .arg(image_data.width.to_string())
             .arg(image_data.height.to_string())
             .arg(clipboard_buffer_path)
@@ -57,10 +72,17 @@ pub fn set_image(image_data: arboard::ImageData) -> Result<(), Box<dyn std::erro
 ///
 /// We expect that the daemon receives 4 arguments:
 ///
-/// - ID of the daemon
-/// - width of image
-/// - height of image
-/// - path to bytes of the image
+/// 1. ID of the daemon
+/// 2. copy type: "image" or "text"
+///
+/// if copy type is "image" we expect:
+///     3. width of image
+///     4. height of image
+///     5. path to bytes of the image
+///
+///     The image must be of valid width, height and byte amount
+/// if copy type is "text" we expect:
+///     3. text content which should be copied to the clipboard
 pub fn run_clipboard_daemon() -> Result<(), arboard::Error> {
     use arboard::SetExtLinux as _;
     // skip program name
@@ -72,34 +94,44 @@ pub fn run_clipboard_daemon() -> Result<(), arboard::Error> {
         "this function must be invoked from a daemon process"
     );
 
-    let width = args
-        .next()
-        .expect("width")
-        .parse::<usize>()
-        .expect("valid image width");
-    let height = args
-        .next()
-        .expect("height")
-        .parse::<usize>()
-        .expect("valid image height");
-    let bytes: std::borrow::Cow<[u8]> = fs::read(args.next().expect("image path"))
-        .expect("image contents")
-        .into();
+    match args.next().expect("has copy type").as_str() {
+        "image" => {
+            let width = args
+                .next()
+                .expect("width")
+                .parse::<usize>()
+                .expect("valid image width");
+            let height = args
+                .next()
+                .expect("height")
+                .parse::<usize>()
+                .expect("valid image height");
+            let bytes: std::borrow::Cow<[u8]> = fs::read(args.next().expect("image path"))
+                .expect("image contents")
+                .into();
 
-    assert_eq!(args.next(), None, "must pass 4 arguments");
-    assert_eq!(
-        width * height * 4,
-        bytes.len(),
-        "every 4 bytes in `bytes` represents a single RGBA pixel"
-    );
+            assert_eq!(args.next(), None, "unexpected extra args");
+            assert_eq!(
+                width * height * 4,
+                bytes.len(),
+                "every 4 bytes in `bytes` represents a single RGBA pixel"
+            );
 
-    arboard::Clipboard::new()?
-        .set()
-        .wait()
-        .image(arboard::ImageData {
-            width,
-            height,
-            bytes,
-        })?;
+            arboard::Clipboard::new()?
+                .set()
+                .wait()
+                .image(arboard::ImageData {
+                    width,
+                    height,
+                    bytes,
+                })?;
+        },
+        "text" => {
+            let text = args.next().expect("text");
+            assert_eq!(args.next(), None, "unexpected extra args");
+            arboard::Clipboard::new()?.set().wait().text(text)?;
+        },
+        _ => panic!("invalid copy type, expected `image` or `text`"),
+    }
     Ok(())
 }
