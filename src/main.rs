@@ -28,5 +28,6 @@ fn main() -> iced::Result {
             ..Default::default()
         })
         .subscription(|_state| iced::keyboard::on_key_press(App::handle_key_press))
+        .title("groxshot")
         .run()
 }

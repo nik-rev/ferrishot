@@ -3,6 +3,7 @@
 mod app;
 mod background_image;
 mod clipboard;
+mod config;
 mod corners;
 mod message;
 mod mouse;

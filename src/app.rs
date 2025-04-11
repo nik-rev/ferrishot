@@ -1,7 +1,9 @@
 //! Main logic for the application, handling of events and mutation of the state
 
 use crate::SHADE_COLOR;
+use crate::config::Config;
 use crate::message::Message;
+use clap::Parser as _;
 use iced::keyboard::{Key, Modifiers};
 use iced::mouse::{Cursor, Interaction};
 use iced::widget::canvas::Path;
@@ -12,12 +14,15 @@ use image::DynamicImage;
 use crate::background_image::BackgroundImage;
 use crate::corners::Side;
 use crate::mouse::MouseState;
-use crate::rectangle::{PointExt, RectangleExt};
+use crate::rectangle::RectangleExt;
 use crate::selection::{Selection, SelectionStatus};
 
 /// Holds the state for ferrishot
 #[derive(Debug)]
 pub struct App {
+    /// How many selections were created throughout the
+    /// lifetime of the App
+    selections_created: usize,
     /// The full screenshot of the monitor from which ferrishot was invoked
     /// We then create a window spanning the entire monitor, with this
     /// screenshot as background, with a canvas rendered on top - giving the
@@ -25,14 +30,19 @@ pub struct App {
     screenshot: widget::image::Handle,
     /// Area of the screen that is selected for capture
     selection: Option<Selection>,
+    /// Configuration of the app
+    config: Config,
 }
 
 impl Default for App {
     fn default() -> Self {
         let screenshot = crate::screenshot::screenshot().unwrap();
+        let config = Config::parse();
         Self {
             screenshot,
             selection: None,
+            config,
+            selections_created: 0,
         }
     }
 }
@@ -283,6 +293,7 @@ impl App {
     ) {
         let mut selection = Selection::new(create_selection_at);
         selection.status = moving_selection;
+        self.selections_created += 1;
         self.selection = Some(Selection::new(create_selection_at));
     }
 
@@ -388,7 +399,11 @@ impl canvas::Program<Message> for App {
             },
             Mouse(mouse::Event::ButtonReleased(mouse::Button::Left)) => {
                 state.left_release();
-                Message::LeftMouseUp
+                if self.config.instant && self.selections_created == 1 {
+                    Message::CopyToClipboard
+                } else {
+                    Message::LeftMouseUp
+                }
             },
             Mouse(mouse::Event::CursorMoved { position })
                 if state.is_left_clicked()

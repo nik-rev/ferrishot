@@ -7,6 +7,7 @@ description = "A cross-platform desktop screenshot app"
 repository = "_"
 keywords = ["_"]
 categories = ["_"]
+authors = ["Nik Revenco"]
 
 [dependencies]
 mouse_position = "0.1.4"
@@ -26,6 +27,7 @@ easy-ext = "1.0.2"
 derive_more = { version = "2.0.1", features = ["is_variant"] }
 arboard = { version = "3.5", features = ["wayland-data-control"] }
 notify-rust = { version = "4.11.7", features = ["image"] }
+clap = { version = "4.5.35", features = ["derive"] }
 
 [lints.rust]
 missing_docs = "warn"
