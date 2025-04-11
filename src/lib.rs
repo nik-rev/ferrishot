@@ -1,4 +1,4 @@
-//! The groxshot utility functions
+//! The ferrishot utility functions
 
 mod app;
 mod background_image;

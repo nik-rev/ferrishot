@@ -1,6 +1,6 @@
 #![doc = include_str!("../README.md")]
 
-use groxshot::App;
+use ferrishot::App;
 
 fn main() -> iced::Result {
     env_logger::builder().format_timestamp(None).init();

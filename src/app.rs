@@ -11,10 +11,10 @@ use crate::mouse::MouseState;
 use crate::rectangle::RectangleExt;
 use crate::selection::{Selection, SelectionStatus};
 
-/// Holds the state for Groxshot
+/// Holds the state for ferrishot
 #[derive(Debug)]
 pub struct App {
-    /// The full screenshot of the monitor from which groxshot was invoked
+    /// The full screenshot of the monitor from which ferrishot was invoked
     /// We then create a window spanning the entire monitor, with this
     /// screenshot as background, with a canvas rendered on top - giving the
     /// illusion that we are drawing shapes on top of the screen.

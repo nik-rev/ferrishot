@@ -1,10 +1,10 @@
-# groxshot
+# ferrishot
 
 An easy to use, and cross-platform screenshot app written in Rust.
 
 ## Features
 
-Currently, this project is under heavy development. The goal is to reach feature parity with [flameshot](https://github.com/flameshot-org/flameshot) before the 1.0 release.
+Currently, this project is under heavy development. The current goal is to reach feature parity with [flameshot](https://github.com/flameshot-org/flameshot) before the 1.0 release and then go beyond.
 
 - Select a region on the screen by left clicking and drag
 - Resize region by dragging on any of the sides
