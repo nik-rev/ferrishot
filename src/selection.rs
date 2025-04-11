@@ -72,6 +72,10 @@ impl Selection {
             pub fn size(self) -> Size;
             /// Top-left, top-right, bottom-left and bottom-right points
             pub fn corners(self) -> Corners;
+            /// The width of the selection
+            pub fn width(self) -> f32;
+            /// The height of the selection
+            pub fn height(self) -> f32;
             /// x-coordinate of the top left corner of the selection
             pub fn x(self) -> f32;
             /// y-coordinate of the top left corner of the selection

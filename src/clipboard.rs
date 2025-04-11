@@ -14,14 +14,19 @@ use std::{
 };
 
 /// Set the text content of the clipboard
-#[expect(dead_code)]
+#[expect(dead_code, reason = "will be used later")]
 pub fn set_text(text: &str) -> Result<(), Box<dyn std::error::Error>> {
     if cfg!(target_os = "linux") {
-        process::Command::new(std::env::current_exe()?)
-            .arg(CLIPBOARD_DAEMON_ID)
-            .arg("text")
-            .arg(text)
-            .stdin(process::Stdio::null())
+        let mut cmd = process::Command::new(std::env::current_exe()?);
+
+        cmd.arg(CLIPBOARD_DAEMON_ID).arg("text").arg(text);
+
+        log::info!(
+            "setting text to the clipboard by calling the daemon with args: {:#?}",
+            cmd.get_args()
+        );
+
+        cmd.stdin(process::Stdio::null())
             .stdout(process::Stdio::null())
             .stderr(process::Stdio::null())
             .current_dir("/")
@@ -34,18 +39,31 @@ pub fn set_text(text: &str) -> Result<(), Box<dyn std::error::Error>> {
 }
 
 /// Set the image content of the clipboard
-pub fn set_image(image_data: arboard::ImageData) -> Result<(), Box<dyn std::error::Error>> {
+///
+/// # Returns
+///
+/// Temporary file of the saved image
+pub fn set_image(
+    image_data: arboard::ImageData,
+) -> Result<std::path::PathBuf, Box<dyn std::error::Error>> {
+    let clipboard_buffer_path = std::env::temp_dir().join(CLIPBOARD_BUFFER_FILE);
+    let mut clipboard_buffer_file = File::create(&clipboard_buffer_path)?;
+    clipboard_buffer_file.write_all(&image_data.bytes)?;
     if cfg!(target_os = "linux") {
-        let clipboard_buffer_path = std::env::temp_dir().join(CLIPBOARD_BUFFER_FILE);
-        let mut clipboard_buffer_file = File::create(&clipboard_buffer_path)?;
-        clipboard_buffer_file.write_all(&image_data.bytes)?;
-        process::Command::new(std::env::current_exe()?)
-            .arg(CLIPBOARD_DAEMON_ID)
+        let mut cmd = process::Command::new(std::env::current_exe()?);
+
+        cmd.arg(CLIPBOARD_DAEMON_ID)
             .arg("image")
             .arg(image_data.width.to_string())
             .arg(image_data.height.to_string())
-            .arg(clipboard_buffer_path)
-            .stdin(process::Stdio::null())
+            .arg(&clipboard_buffer_path);
+
+        log::info!(
+            "setting an image to the clipboard by calling the daemon with args: {:#?}",
+            cmd.get_args()
+        );
+
+        cmd.stdin(process::Stdio::null())
             .stdout(process::Stdio::null())
             .stderr(process::Stdio::null())
             .current_dir("/")
@@ -54,7 +72,7 @@ pub fn set_image(image_data: arboard::ImageData) -> Result<(), Box<dyn std::erro
         arboard::Clipboard::new()?.set_image(image_data)?;
     }
 
-    Ok(())
+    Ok(clipboard_buffer_path)
 }
 
 /// Runs a process in the background that provides clipboard access,

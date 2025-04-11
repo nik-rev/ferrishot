@@ -25,6 +25,7 @@ log = "0.4.27"
 easy-ext = "1.0.2"
 derive_more = { version = "2.0.1", features = ["is_variant"] }
 arboard = { version = "3.5", features = ["wayland-data-control"] }
+notify-rust = { version = "4.11.7", features = ["image"] }
 
 [lints.rust]
 missing_docs = "warn"

@@ -5,6 +5,7 @@ use iced::keyboard::{Key, Modifiers};
 use iced::mouse::{Cursor, Interaction};
 use iced::widget::{self, Action, canvas, stack};
 use iced::{Element, Length, Point, Rectangle, Renderer, Size, Task, Theme, mouse};
+use image::DynamicImage;
 
 use crate::background_image::BackgroundImage;
 use crate::corners::Side;
@@ -117,9 +118,15 @@ impl App {
                 self.update_selection(new_mouse_position);
             },
             Message::CopyToClipboard => {
-                // let Some(selected_region) = self.selected_region else {
-                //     return ().into();
-                // };
+                let Some(selected_region) = self.selected_region.map(Selection::normalize) else {
+                    // TODO: instead of this, show an error to the user in
+                    // a custom widget
+                    return ().into();
+                };
+
+                // FIXME: This is unfortunate, in the future
+                // we can get rid of this by using a custom struct for
+                // the image and constructing Handle on-the-fly
                 let widget::image::Handle::Rgba {
                     width,
                     height,
@@ -129,14 +136,40 @@ impl App {
                 else {
                     unreachable!();
                 };
-                let image_data = arboard::ImageData {
-                    width: width as usize,
-                    height: height as usize,
-                    bytes: std::borrow::Cow::Borrowed(pixels),
-                };
-                crate::clipboard::set_image(image_data).unwrap();
 
-                return iced::exit();
+                #[expect(clippy::cast_possible_truncation, reason = "pixels must be integer")]
+                #[expect(clippy::cast_sign_loss, reason = "selection cannot be negative")]
+                let cropped_image = DynamicImage::from(
+                    image::RgbaImage::from_raw(width, height, pixels.to_vec())
+                        .expect("Image handle stores a valid image"),
+                )
+                .crop_imm(
+                    selected_region.x() as u32,
+                    selected_region.y() as u32,
+                    selected_region.width() as u32,
+                    selected_region.height() as u32,
+                );
+
+                let image_data = arboard::ImageData {
+                    width: cropped_image.width() as usize,
+                    height: cropped_image.height() as usize,
+                    bytes: std::borrow::Cow::Borrowed(cropped_image.as_bytes()),
+                };
+
+                match crate::clipboard::set_image(image_data) {
+                    Ok(img_path) => {
+                        // send desktop notification if possible, this is
+                        // just a decoration though so it's ok if we fail to do this
+                        let _ = notify_rust::Notification::new()
+                            .summary(&format!("Copied image to clipboard {width}px * {height}px"))
+                            .image_path(&img_path.to_string_lossy())
+                            .show();
+
+                        return iced::exit();
+                    },
+                    // TODO: show error to the user in a custom widget
+                    Err(err) => todo!("{err}"),
+                };
             },
             Message::SaveScreenshot => todo!(),
             Message::InitialResize {

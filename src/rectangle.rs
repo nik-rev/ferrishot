@@ -121,4 +121,14 @@ pub impl Rectangle<f32> {
     fn y(self) -> f32 {
         self.y
     }
+
+    /// The width of rectangle
+    fn width(self) -> f32 {
+        self.width
+    }
+
+    /// The height of rectangle
+    fn height(self) -> f32 {
+        self.height
+    }
 }
