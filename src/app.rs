@@ -9,7 +9,7 @@ pub const CORNER_RADIUS: f32 = 6.;
 pub const SELECTION_COLOR: Color = Color::WHITE;
 /// The area around each side which allows that side to be hovered over and
 /// resized
-pub const INTERACTION_AREA: f32 = 200.;
+pub const INTERACTION_AREA: f32 = 20.;
 pub const STROKE_SIZE: f32 = 2.;
 
 use crate::image_renderer::BackgroundImage;
@@ -177,24 +177,37 @@ impl App {
                 let dy = cursor_pos.y - initial_cursor_pos.y;
                 let dx = cursor_pos.x - initial_cursor_pos.x;
 
-                match side {
-                    Side::TopLeft => todo!(),
-                    Side::TopRight => todo!(),
-                    Side::BottomLeft => todo!(),
-                    Side::BottomRight => todo!(),
-                    Side::Top => {
-                        selected_region.rect =
-                            initial_rect.with_height(|h| h - dy).with_y(|y| y + dy);
+                // To give a perspective on this math, imagine that our cursor is at the top left corner
+                // and travelling diagonally down, from point (700, 700) -> (800, 800).
+                //
+                // In this case, the - `(current {x,y} [800 - 700] - previous {x,y} [700, 700])` will
+                // both have positive `dx` and `dy` [100].
+                //
+                // Now imagine how the selection transforms with this, and think about it just for 1 case.
+                // It will then be true for all cases
+
+                let changed_rect = match side {
+                    Side::TopLeft => initial_rect
+                        .set_pos(cursor_pos)
+                        .with_width(|w| w - dx)
+                        .with_height(|h| h - dy),
+                    Side::TopRight => initial_rect
+                        .with_width(|w| w + dx)
+                        .with_y(|y| y + dy)
+                        .with_height(|h| h - dy),
+                    Side::BottomLeft => initial_rect
+                        .with_x(|x| x + dx)
+                        .with_width(|w| w - dx)
+                        .with_height(|h| h + dy),
+                    Side::BottomRight => {
+                        initial_rect.with_width(|w| w + dx).with_height(|h| h + dy)
                     },
-                    Side::Right => selected_region.rect = initial_rect.with_width(|w| w + dx),
-                    Side::Bottom => {
-                        selected_region.rect = initial_rect.with_height(|h| h + dy);
-                    },
-                    Side::Left => {
-                        selected_region.rect =
-                            initial_rect.with_width(|w| w - dx).with_x(|x| x + dx);
-                    },
-                }
+                    Side::Top => initial_rect.with_height(|h| h - dy).with_y(|y| y + dy),
+                    Side::Right => initial_rect.with_width(|w| w + dx),
+                    Side::Bottom => initial_rect.with_height(|h| h + dy),
+                    Side::Left => initial_rect.with_width(|w| w - dx).with_x(|x| x + dx),
+                };
+                selected_region.rect = changed_rect;
             },
         }
 
