@@ -137,26 +137,19 @@ impl App {
                     selection.selection_status = SelectionStatus::Idle;
                 }
             },
-            Message::LeftMouseDrag(new_mouse_position) => {
-                if let Some((
-                    SelectionStatus::Dragged {
-                        initial_rect_pos: rect_position,
-                        initial_cursor_pos: cursor,
-                    },
-                    selected_region,
-                )) = self
-                    .selected_region
-                    .map(|region| (region.selection_status, region))
-                {
-                    self.selected_region = Some(
-                        selected_region.set_pos(rect_position + (new_mouse_position - cursor)),
-                    );
-
-                    log::debug!("Dragged. New region: {:?}", self.selected_region);
-                } else {
-                    log::debug!("Updated selection: {new_mouse_position:?}");
-                    self.update_selection(new_mouse_position);
-                }
+            Message::MovingSelection {
+                current_cursor_pos,
+                initial_cursor_pos,
+                current_selection,
+                initial_rect_pos,
+            } => {
+                self.selected_region = Some(
+                    current_selection
+                        .set_pos(initial_rect_pos + (current_cursor_pos - initial_cursor_pos)),
+                );
+            },
+            Message::ExtendNewSelection(new_mouse_position) => {
+                self.update_selection(new_mouse_position);
             },
             Message::CopyToClipboard => todo!(),
             Message::SaveScreenshot => todo!(),
@@ -231,6 +224,7 @@ impl App {
         self.selected_region.as_mut().and_then(|selected_region| {
             cursor.position().and_then(|cursor_pos| {
                 selected_region
+                    .normalize()
                     .contains(cursor_pos)
                     .then_some((cursor_pos, selected_region))
             })
@@ -282,10 +276,6 @@ pub enum Message {
     LeftMouseDown(Cursor),
     /// The left mouse button is up
     LeftMouseUp,
-    /// Left mouse is held down and dragged
-    ///
-    /// Contains the new point of the mouse
-    LeftMouseDrag(Point),
     /// Copy the screenshot to the clipboard
     CopyToClipboard,
     /// Save the screenshot as an image
@@ -295,6 +285,18 @@ pub enum Message {
         initial_cursor_pos: Point,
         resize_side: Side,
         initial_rect: Rectangle,
+    },
+    /// When we have not yet released the left mouse button
+    /// and are dragging the selection to extend it
+    ExtendNewSelection(Point),
+    /// Left mouse is held down and dragged
+    ///
+    /// Contains the new point of the mouse
+    MovingSelection {
+        current_cursor_pos: Point,
+        initial_cursor_pos: Point,
+        current_selection: Selection,
+        initial_rect_pos: Point,
     },
 }
 
@@ -416,8 +418,38 @@ impl canvas::Program<Message> for App {
                     initial_rect,
                 }
             },
-            Mouse(mouse::Event::CursorMoved { position }) if state.is_left_clicked() => {
-                Message::LeftMouseDrag(*position)
+            Mouse(mouse::Event::CursorMoved { position })
+                if state.is_left_clicked()
+                    && self
+                        .selected_region
+                        .is_some_and(super::selection::Selection::is_dragged) =>
+            {
+                // FIXME: this will not be necessary when we have `let_chains`
+                let SelectionStatus::Dragged {
+                    initial_rect_pos,
+                    initial_cursor_pos,
+                } = self
+                    .selected_region
+                    .expect("has `.is_some()` guard")
+                    .selection_status
+                else {
+                    unreachable!();
+                };
+
+                Message::MovingSelection {
+                    current_cursor_pos: *position,
+                    initial_cursor_pos,
+                    current_selection: self.selected_region.expect("has `.is_some()` guard"),
+                    initial_rect_pos,
+                }
+            },
+            Mouse(mouse::Event::CursorMoved { position })
+                if state.is_left_clicked()
+                    && self
+                        .selected_region
+                        .is_some_and(super::selection::Selection::is_idle) =>
+            {
+                Message::ExtendNewSelection(*position)
             },
             _ => return None,
         };

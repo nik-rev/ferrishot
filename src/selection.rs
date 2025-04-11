@@ -109,7 +109,6 @@ impl Selection {
 
             pub fn normalize(mut self) -> Self;
         }
-        #[allow(dead_code)]
         to self.selection_status {
             pub const fn is_dragged(self) -> bool;
             pub fn is_idle(self) -> bool;
