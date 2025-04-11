@@ -1,7 +1,9 @@
+//! Additional extension methods for `iced::Rectangle`
 use iced::{Point, Rectangle, Size};
 
 use crate::corners::Corners;
 
+/// Extension methods for `iced::Rectangle`
 #[allow(dead_code)]
 #[easy_ext::ext(RectangleExt)]
 pub impl Rectangle<f32> {

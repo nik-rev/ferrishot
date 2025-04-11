@@ -1,14 +1,18 @@
+//! Renders the full, unprocessed desktop screenshot on the screen
 use iced::advanced::widget::Tree;
 use iced::advanced::{Layout, Widget, layout, renderer};
 use iced::widget::image;
 use iced::{Element, Length, Rectangle, Size, Theme, mouse, widget};
 
 #[derive(Debug)]
+/// A widget that draws an image on the entire screen
 pub struct BackgroundImage {
+    /// Image handle of the full-desktop screenshot
     image_handle: widget::image::Handle,
 }
 
 impl BackgroundImage {
+    /// Create a new `BackgroundImage`
     pub const fn new(image_handle: widget::image::Handle) -> Self {
         Self { image_handle }
     }

@@ -1,3 +1,4 @@
+//! Main logic for the application, handling of events and mutation of the state
 use iced::keyboard::{Key, Modifiers};
 use iced::mouse::{Cursor, Interaction};
 use iced::widget::{self, Action, canvas, stack};
@@ -10,6 +11,7 @@ pub const SELECTION_COLOR: Color = Color::WHITE;
 /// The area around each side which allows that side to be hovered over and
 /// resized
 pub const INTERACTION_AREA: f32 = 20.;
+/// The size of the border of the square
 pub const STROKE_SIZE: f32 = 2.;
 
 use crate::image_renderer::BackgroundImage;
@@ -153,7 +155,7 @@ impl App {
             },
             Message::CopyToClipboard => todo!(),
             Message::SaveScreenshot => todo!(),
-            Message::Resize {
+            Message::InitialResize {
                 current_cursor_pos,
                 initial_cursor_pos,
                 resize_side,
@@ -268,6 +270,7 @@ impl App {
     }
 }
 
+/// Represents an action happening in the application
 #[derive(Debug, Clone, Copy)]
 pub enum Message {
     /// Exits the application
@@ -280,10 +283,15 @@ pub enum Message {
     CopyToClipboard,
     /// Save the screenshot as an image
     SaveScreenshot,
-    Resize {
+    /// The selection is initially resized as it was created
+    InitialResize {
+        /// Current position of the cursor
         current_cursor_pos: Point,
+        /// Initial position of the cursor
         initial_cursor_pos: Point,
+        /// Which side we are currently resizing
         resize_side: Side,
+        /// Selection rectangle as it looked like when we just started resizing
         initial_rect: Rectangle,
     },
     /// When we have not yet released the left mouse button
@@ -293,26 +301,40 @@ pub enum Message {
     ///
     /// Contains the new point of the mouse
     MovingSelection {
+        /// Current position of the cursor
         current_cursor_pos: Point,
+        /// Position of the cursor when we first started moving the selection
         initial_cursor_pos: Point,
+        /// Current selection
         current_selection: Selection,
+        /// Top-left corner of the selection before we started moving it
         initial_rect_pos: Point,
     },
 }
 
+/// The point that is currently being resized
 #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Side {
+    /// Top-left corner
     TopLeft,
+    /// Top-right corner
     TopRight,
+    /// Bottom-left corner
     BottomLeft,
+    /// Bottom-right corner
     BottomRight,
+    /// Top side
     Top,
+    /// Right side
     Right,
+    /// Bottom side
     Bottom,
+    /// Left side
     Left,
 }
 
 impl Side {
+    /// Obtain the appropriate mouse cursor for the given side
     pub const fn mouse_icon(self) -> mouse::Interaction {
         match self {
             Self::Top | Self::Bottom => mouse::Interaction::ResizingVertically,
@@ -411,7 +433,7 @@ impl canvas::Program<Message> for App {
                 else {
                     unreachable!();
                 };
-                Message::Resize {
+                Message::InitialResize {
                     current_cursor_pos: *position,
                     resize_side,
                     initial_cursor_pos,

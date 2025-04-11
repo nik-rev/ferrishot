@@ -23,12 +23,14 @@ delegate = "0.13"
 env_logger = "0.11.8"
 log = "0.4.27"
 easy-ext = "1.0.2"
+derive_more = { version = "2.0.1", features = ["is_variant"] }
 
 [lints.rust]
-missing_docs = "deny"
+missing_docs = "warn"
 
 [lints.clippy]
 pedantic = { priority = -1, level = "warn" }
 nursery = { priority = -1, level = "warn" }
 
+missing_docs_in_private_items = "warn"
 too_many_lines = "allow"

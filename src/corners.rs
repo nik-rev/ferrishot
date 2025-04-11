@@ -1,12 +1,18 @@
+//! `Corners` represents the 4 vertices of a `iced::Rectangle`
 use iced::{Point, Rectangle};
 
 use crate::app::{CORNER_RADIUS, INTERACTION_AREA, SELECTION_COLOR, Side};
 
+/// Corners of an `iced::Rectangle`
 #[derive(Debug, Default, Clone, Copy)]
 pub struct Corners {
+    /// Top left corner
     pub top_left: Point,
+    /// Top right corner
     pub top_right: Point,
+    /// Bottom left corner
     pub bottom_left: Point,
+    /// Bottom right corner
     pub bottom_right: Point,
 }
 

@@ -1,9 +1,15 @@
+//! Takes screenshot of the desktop
+
+/// Could not retrieve the screenshot
 #[derive(thiserror::Error, Debug)]
 pub enum ScreenshotError {
+    /// The position of the mouse is unavailable
     #[error("Could not get position of the mouse")]
     MousePosition,
     #[error("Could not get the active monitor: {0}")]
+    /// There is no active monitor
     Monitor(xcap::XCapError),
+    /// Could not capture the screenshot for some reason
     #[error("Couldn not take a screenshot: {0}")]
     Screenshot(xcap::XCapError),
 }
