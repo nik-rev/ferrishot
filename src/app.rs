@@ -117,37 +117,25 @@ impl App {
                 self.update_selection(new_mouse_position);
             },
             Message::CopyToClipboard => {
-                // return iced::clipboard::write("lol".to_string());
-                // wl_clipboard_rs
-                // let ctx = clipboard_rs::ClipboardContext::new().unwrap();
-                // ctx.set_text("hello world".to_string()).unwrap();
-                // TODO: send notification to the user if there is no
-                // selection to copy
                 // let Some(selected_region) = self.selected_region else {
                 //     return ().into();
                 // };
-                // crate::clipboard::copy_text_to_clipboard("hello world").unwrap();
-                // crate::clipboard::providers();
-                // let mut clipboard = arboard::Clipboard::new().unwrap();
-                // let widget::image::Handle::Rgba {
-                //     width,
-                //     height,
-                //     ref pixels,
-                //     ..
-                // } = self.screenshot
-                // else {
-                //     unreachable!();
-                // };
-                // let image_data = ImageData {
-                //     width: width as usize,
-                //     height: height as usize,
-                //     bytes: std::borrow::Cow::Borrowed(pixels),
-                // };
-                // clipboard.set_image(image_data).unwrap();
-                crate::clipboard::set_text().unwrap();
-                // // wl_clipboard_rs::copy::Options ;
-                // let mut clipboard = arboard::Clipboard::new().unwrap();
-                // clipboard.set_text("hello world").unwrap();
+                let widget::image::Handle::Rgba {
+                    width,
+                    height,
+                    ref pixels,
+                    ..
+                } = self.screenshot
+                else {
+                    unreachable!();
+                };
+                let image_data = arboard::ImageData {
+                    width: width as usize,
+                    height: height as usize,
+                    bytes: std::borrow::Cow::Borrowed(pixels),
+                };
+                crate::clipboard::set_image(image_data).unwrap();
+
                 return iced::exit();
             },
             Message::SaveScreenshot => todo!(),
