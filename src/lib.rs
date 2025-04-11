@@ -11,16 +11,16 @@ mod screenshot;
 mod selection;
 
 /// Radius of the 4 corners of the selection
-pub const CORNER_RADIUS: f32 = 6.;
+pub const CORNER_RADIUS: f32 = 6.0;
 /// Color of the selection stroke and corners
 pub const SELECTION_COLOR: iced::Color = iced::Color::WHITE;
 /// The area around each side which allows that side to be hovered over and
 /// resized
-pub const INTERACTION_AREA: f32 = 20.;
+pub const INTERACTION_AREA: f32 = 20.0;
 /// The size of the border of the square
-pub const STROKE_SIZE: f32 = 2.;
+pub const STROKE_SIZE: f32 = 2.0;
 /// The color of the background for non-selected regions
-pub const SHADE_COLOR: iced::Color = iced::color!(0x00_00_00, 0.);
+pub const SHADE_COLOR: iced::Color = iced::color!(0x00_00_00, 0.1);
 
 pub use app::App;
 pub use clipboard::{CLIPBOARD_DAEMON_ID, run_clipboard_daemon};

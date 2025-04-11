@@ -342,13 +342,14 @@ impl canvas::Program<Message> for App {
         cursor: iced::advanced::mouse::Cursor,
     ) -> iced::advanced::mouse::Interaction {
         self.selection
-            .and_then(|region| {
-                cursor.position().and_then(|cursor_position| {
-                    region
-                        .corners()
-                        .side_at(cursor_position)
-                        .map(Side::mouse_icon)
-                })
+            .and_then(|sel| {
+                if let SelectionStatus::Resized { resize_side, .. } = sel.status {
+                    Some(resize_side.mouse_icon())
+                } else {
+                    cursor.position().and_then(|cursor_position| {
+                        sel.corners().side_at(cursor_position).map(Side::mouse_icon)
+                    })
+                }
             })
             .unwrap_or_else(|| {
                 let is_left_released = state.is_left_released();
