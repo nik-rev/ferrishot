@@ -3,6 +3,22 @@
 use ferrishot::App;
 
 fn main() -> iced::Result {
+    // On linux, a daemon is required to provide clipboard access even when
+    // the process dies.
+    //
+    // More info: <https://docs.rs/arboard/3.5.0/arboard/trait.SetExtLinux.html#tymethod.wait>
+    #[cfg(target_os = "linux")]
+    {
+        if std::env::args()
+            .nth(1)
+            .as_deref()
+            .is_some_and(|arg| arg == ferrishot::CLIPBOARD_DAEMON_ID)
+        {
+            ferrishot::run_clipboard_daemon().unwrap();
+            return Ok(());
+        }
+    }
+
     env_logger::builder().format_timestamp(None).init();
 
     iced::application(App::default, App::update, App::view)

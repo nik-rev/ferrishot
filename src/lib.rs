@@ -2,6 +2,7 @@
 
 mod app;
 mod background_image;
+mod clipboard;
 mod corners;
 mod message;
 mod mouse;
@@ -20,3 +21,4 @@ pub const INTERACTION_AREA: f32 = 20.;
 pub const STROKE_SIZE: f32 = 2.;
 
 pub use app::App;
+pub use clipboard::{CLIPBOARD_DAEMON_ID, run_clipboard_daemon};

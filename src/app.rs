@@ -1,4 +1,5 @@
 //! Main logic for the application, handling of events and mutation of the state
+
 use crate::message::Message;
 use iced::keyboard::{Key, Modifiers};
 use iced::mouse::{Cursor, Interaction};
@@ -40,6 +41,7 @@ impl App {
         match (key, mods) {
             (Key::Named(iced::keyboard::key::Named::Escape), _) => Some(Message::Exit),
             (Key::Character(ch), Modifiers::CTRL) if ch == "c" => Some(Message::CopyToClipboard),
+            (Key::Named(iced::keyboard::key::Named::Enter), _) => Some(Message::CopyToClipboard),
             (Key::Character(ch), Modifiers::CTRL) if ch == "s" => Some(Message::SaveScreenshot),
             _ => None,
         }
@@ -76,7 +78,6 @@ impl App {
                         initial_cursor_pos: cursor,
                         resize_side: side,
                     };
-                    log::info!("Starting to dragging the selection: {resized:?}");
                     rect.selection_status = resized;
                 } else if let Some((cursor, selected_region)) = self.cursor_in_selection_mut(cursor)
                 {
@@ -84,7 +85,6 @@ impl App {
                         initial_rect_pos: selected_region.pos(),
                         initial_cursor_pos: cursor,
                     };
-                    log::info!("Starting to dragging the selection: {dragged:?}");
                     selected_region.selection_status = dragged;
                 } else {
                     // no region is selected, select the initial region
@@ -95,7 +95,6 @@ impl App {
                             .map(|region| region.selection_status)
                             .unwrap_or_default(),
                     );
-                    log::info!("Selected initial region at {cursor_position}");
                 }
             },
             Message::LeftMouseUp => {
@@ -117,7 +116,40 @@ impl App {
             Message::ExtendNewSelection(new_mouse_position) => {
                 self.update_selection(new_mouse_position);
             },
-            Message::CopyToClipboard => todo!(),
+            Message::CopyToClipboard => {
+                // return iced::clipboard::write("lol".to_string());
+                // wl_clipboard_rs
+                // let ctx = clipboard_rs::ClipboardContext::new().unwrap();
+                // ctx.set_text("hello world".to_string()).unwrap();
+                // TODO: send notification to the user if there is no
+                // selection to copy
+                // let Some(selected_region) = self.selected_region else {
+                //     return ().into();
+                // };
+                // crate::clipboard::copy_text_to_clipboard("hello world").unwrap();
+                // crate::clipboard::providers();
+                // let mut clipboard = arboard::Clipboard::new().unwrap();
+                // let widget::image::Handle::Rgba {
+                //     width,
+                //     height,
+                //     ref pixels,
+                //     ..
+                // } = self.screenshot
+                // else {
+                //     unreachable!();
+                // };
+                // let image_data = ImageData {
+                //     width: width as usize,
+                //     height: height as usize,
+                //     bytes: std::borrow::Cow::Borrowed(pixels),
+                // };
+                // clipboard.set_image(image_data).unwrap();
+                crate::clipboard::set_text().unwrap();
+                // // wl_clipboard_rs::copy::Options ;
+                // let mut clipboard = arboard::Clipboard::new().unwrap();
+                // clipboard.set_text("hello world").unwrap();
+                return iced::exit();
+            },
             Message::SaveScreenshot => todo!(),
             Message::InitialResize {
                 current_cursor_pos,
@@ -364,6 +396,8 @@ impl canvas::Program<Message> for App {
             },
             _ => return None,
         };
+
+        log::info!("Received message: {message:#?}");
 
         Some(Action::publish(message))
     }
