@@ -7,6 +7,8 @@ use crate::{corners::Side, selection::Selection};
 /// Represents an action happening in the application
 #[derive(Debug, Clone, Copy)]
 pub enum Message {
+    /// Do nothing
+    Noop,
     /// Exits the application
     Exit,
     /// The left mouse button is down

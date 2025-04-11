@@ -12,7 +12,7 @@ authors = ["Nik Revenco"]
 [dependencies]
 mouse_position = "0.1.4"
 xcap = { version = "0.4.1", features = ["image", "vendored"] }
-iced = { rev = "58e2d0cdcbac46a8bc0e1c19bf77bea82c2560d7", git = "https://github.com/iced-rs/iced.git", version = "0.14.0-dev", features = [
+iced = { rev = "bd90a396eb0d844e036e210ee28945973b2e4163", git = "https://github.com/nik-rev/iced.git", version = "0.14.0-dev", features = [
   "canvas",
   "image",
   "web-colors",
@@ -28,6 +28,7 @@ derive_more = { version = "2.0.1", features = ["is_variant"] }
 arboard = { version = "3.5", features = ["wayland-data-control"] }
 notify-rust = { version = "4.11.7", features = ["image"] }
 clap = { version = "4.5.35", features = ["derive"] }
+rfd = "0.15.3"
 
 [lints.rust]
 missing_docs = "warn"

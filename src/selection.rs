@@ -43,6 +43,25 @@ pub enum SelectionStatus {
 }
 
 impl Selection {
+    /// Processes an image
+    pub fn process_image(&self, width: u32, height: u32, pixels: &[u8]) -> image::DynamicImage {
+        #[expect(clippy::cast_possible_truncation, reason = "pixels must be integer")]
+        #[expect(
+            clippy::cast_sign_loss,
+            reason = "selection has been normalized so height and width will be positive"
+        )]
+        image::DynamicImage::from(
+            image::RgbaImage::from_raw(width, height, pixels.to_vec())
+                .expect("Image handle stores a valid image"),
+        )
+        .crop_imm(
+            self.x() as u32,
+            self.y() as u32,
+            self.width() as u32,
+            self.height() as u32,
+        )
+    }
+
     /// Renders border of the selection
     pub fn render_border(&self, frame: &mut iced::widget::canvas::Frame) {
         // Render the rectangle around the selection (the sides)

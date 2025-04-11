@@ -220,7 +220,26 @@ dependencies = [
  "enumflags2",
  "futures-channel",
  "futures-util",
- "rand",
+ "rand 0.8.5",
+ "serde",
+ "serde_repr",
+ "url",
+ "zbus",
+]
+
+[[package]]
+name = "ashpd"
+version = "0.11.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6cbdf310d77fd3aaee6ea2093db7011dc2d35d2eb3481e5607f1f8d942ed99df"
+dependencies = [
+ "async-fs",
+ "async-net",
+ "enumflags2",
+ "futures-channel",
+ "futures-util",
+ "rand 0.9.0",
+ "raw-window-handle",
  "serde",
  "serde_repr",
  "url",
@@ -971,7 +990,7 @@ version = "2.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "18e1a09f280e29a8b00bc7e81eca5ac87dca0575639c9422a5fa25a07bb884b8"
 dependencies = [
- "ashpd",
+ "ashpd 0.10.3",
  "async-std",
  "objc2 0.5.2",
  "objc2-foundation 0.2.2",
@@ -1303,6 +1322,7 @@ dependencies = [
  "log",
  "mouse_position",
  "notify-rust",
+ "rfd",
  "thiserror 2.0.12",
  "xcap",
 ]
@@ -1733,7 +1753,7 @@ checksum = "dfa686283ad6dd069f105e5ab091b04c62850d3e4cf5d67debad1933f55023df"
 [[package]]
 name = "iced"
 version = "0.14.0-dev"
-source = "git+https://github.com/iced-rs/iced.git?rev=58e2d0cdcbac46a8bc0e1c19bf77bea82c2560d7#58e2d0cdcbac46a8bc0e1c19bf77bea82c2560d7"
+source = "git+https://github.com/nik-rev/iced.git?rev=bd90a396eb0d844e036e210ee28945973b2e4163#bd90a396eb0d844e036e210ee28945973b2e4163"
 dependencies = [
  "iced_core",
  "iced_debug",
@@ -1749,7 +1769,7 @@ dependencies = [
 [[package]]
 name = "iced_core"
 version = "0.14.0-dev"
-source = "git+https://github.com/iced-rs/iced.git?rev=58e2d0cdcbac46a8bc0e1c19bf77bea82c2560d7#58e2d0cdcbac46a8bc0e1c19bf77bea82c2560d7"
+source = "git+https://github.com/nik-rev/iced.git?rev=bd90a396eb0d844e036e210ee28945973b2e4163#bd90a396eb0d844e036e210ee28945973b2e4163"
 dependencies = [
  "bitflags 2.9.0",
  "bytes",
@@ -1767,7 +1787,7 @@ dependencies = [
 [[package]]
 name = "iced_debug"
 version = "0.14.0-dev"
-source = "git+https://github.com/iced-rs/iced.git?rev=58e2d0cdcbac46a8bc0e1c19bf77bea82c2560d7#58e2d0cdcbac46a8bc0e1c19bf77bea82c2560d7"
+source = "git+https://github.com/nik-rev/iced.git?rev=bd90a396eb0d844e036e210ee28945973b2e4163#bd90a396eb0d844e036e210ee28945973b2e4163"
 dependencies = [
  "iced_core",
  "log",
@@ -1776,7 +1796,7 @@ dependencies = [
 [[package]]
 name = "iced_futures"
 version = "0.14.0-dev"
-source = "git+https://github.com/iced-rs/iced.git?rev=58e2d0cdcbac46a8bc0e1c19bf77bea82c2560d7#58e2d0cdcbac46a8bc0e1c19bf77bea82c2560d7"
+source = "git+https://github.com/nik-rev/iced.git?rev=bd90a396eb0d844e036e210ee28945973b2e4163#bd90a396eb0d844e036e210ee28945973b2e4163"
 dependencies = [
  "futures",
  "iced_core",
@@ -1789,7 +1809,7 @@ dependencies = [
 [[package]]
 name = "iced_graphics"
 version = "0.14.0-dev"
-source = "git+https://github.com/iced-rs/iced.git?rev=58e2d0cdcbac46a8bc0e1c19bf77bea82c2560d7#58e2d0cdcbac46a8bc0e1c19bf77bea82c2560d7"
+source = "git+https://github.com/nik-rev/iced.git?rev=bd90a396eb0d844e036e210ee28945973b2e4163#bd90a396eb0d844e036e210ee28945973b2e4163"
 dependencies = [
  "bitflags 2.9.0",
  "bytemuck",
@@ -1810,7 +1830,7 @@ dependencies = [
 [[package]]
 name = "iced_program"
 version = "0.14.0-dev"
-source = "git+https://github.com/iced-rs/iced.git?rev=58e2d0cdcbac46a8bc0e1c19bf77bea82c2560d7#58e2d0cdcbac46a8bc0e1c19bf77bea82c2560d7"
+source = "git+https://github.com/nik-rev/iced.git?rev=bd90a396eb0d844e036e210ee28945973b2e4163#bd90a396eb0d844e036e210ee28945973b2e4163"
 dependencies = [
  "iced_graphics",
  "iced_runtime",
@@ -1819,7 +1839,7 @@ dependencies = [
 [[package]]
 name = "iced_renderer"
 version = "0.14.0-dev"
-source = "git+https://github.com/iced-rs/iced.git?rev=58e2d0cdcbac46a8bc0e1c19bf77bea82c2560d7#58e2d0cdcbac46a8bc0e1c19bf77bea82c2560d7"
+source = "git+https://github.com/nik-rev/iced.git?rev=bd90a396eb0d844e036e210ee28945973b2e4163#bd90a396eb0d844e036e210ee28945973b2e4163"
 dependencies = [
  "iced_graphics",
  "iced_tiny_skia",
@@ -1831,7 +1851,7 @@ dependencies = [
 [[package]]
 name = "iced_runtime"
 version = "0.14.0-dev"
-source = "git+https://github.com/iced-rs/iced.git?rev=58e2d0cdcbac46a8bc0e1c19bf77bea82c2560d7#58e2d0cdcbac46a8bc0e1c19bf77bea82c2560d7"
+source = "git+https://github.com/nik-rev/iced.git?rev=bd90a396eb0d844e036e210ee28945973b2e4163#bd90a396eb0d844e036e210ee28945973b2e4163"
 dependencies = [
  "bytes",
  "iced_core",
@@ -1844,7 +1864,7 @@ dependencies = [
 [[package]]
 name = "iced_tiny_skia"
 version = "0.14.0-dev"
-source = "git+https://github.com/iced-rs/iced.git?rev=58e2d0cdcbac46a8bc0e1c19bf77bea82c2560d7#58e2d0cdcbac46a8bc0e1c19bf77bea82c2560d7"
+source = "git+https://github.com/nik-rev/iced.git?rev=bd90a396eb0d844e036e210ee28945973b2e4163#bd90a396eb0d844e036e210ee28945973b2e4163"
 dependencies = [
  "bytemuck",
  "cosmic-text",
@@ -1860,7 +1880,7 @@ dependencies = [
 [[package]]
 name = "iced_wgpu"
 version = "0.14.0-dev"
-source = "git+https://github.com/iced-rs/iced.git?rev=58e2d0cdcbac46a8bc0e1c19bf77bea82c2560d7#58e2d0cdcbac46a8bc0e1c19bf77bea82c2560d7"
+source = "git+https://github.com/nik-rev/iced.git?rev=bd90a396eb0d844e036e210ee28945973b2e4163#bd90a396eb0d844e036e210ee28945973b2e4163"
 dependencies = [
  "bitflags 2.9.0",
  "bytemuck",
@@ -1880,7 +1900,7 @@ dependencies = [
 [[package]]
 name = "iced_widget"
 version = "0.14.0-dev"
-source = "git+https://github.com/iced-rs/iced.git?rev=58e2d0cdcbac46a8bc0e1c19bf77bea82c2560d7#58e2d0cdcbac46a8bc0e1c19bf77bea82c2560d7"
+source = "git+https://github.com/nik-rev/iced.git?rev=bd90a396eb0d844e036e210ee28945973b2e4163#bd90a396eb0d844e036e210ee28945973b2e4163"
 dependencies = [
  "iced_renderer",
  "iced_runtime",
@@ -1894,7 +1914,7 @@ dependencies = [
 [[package]]
 name = "iced_winit"
 version = "0.14.0-dev"
-source = "git+https://github.com/iced-rs/iced.git?rev=58e2d0cdcbac46a8bc0e1c19bf77bea82c2560d7#58e2d0cdcbac46a8bc0e1c19bf77bea82c2560d7"
+source = "git+https://github.com/nik-rev/iced.git?rev=bd90a396eb0d844e036e210ee28945973b2e4163#bd90a396eb0d844e036e210ee28945973b2e4163"
 dependencies = [
  "iced_debug",
  "iced_program",
@@ -3376,6 +3396,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "pollster"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2f3a9f18d041e6d0e102a0a46750538147e5e8992d3b4873aaafee2520b00ce3"
+
+[[package]]
 name = "portable-atomic"
 version = "1.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3503,8 +3529,19 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "34af8d1a0e25924bc5b7c43c079c942339d8f0a8b57c39049bef581b46327404"
 dependencies = [
  "libc",
- "rand_chacha",
- "rand_core",
+ "rand_chacha 0.3.1",
+ "rand_core 0.6.4",
+]
+
+[[package]]
+name = "rand"
+version = "0.9.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3779b94aeb87e8bd4e834cee3650289ee9e0d5677f976ecdb6d219e5f4f6cd94"
+dependencies = [
+ "rand_chacha 0.9.0",
+ "rand_core 0.9.3",
+ "zerocopy 0.8.24",
 ]
 
 [[package]]
@@ -3514,7 +3551,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e6c10a63a0fa32252be49d21e7709d4d4baf8d231c2dbce1eaa8141b9b127d88"
 dependencies = [
  "ppv-lite86",
- "rand_core",
+ "rand_core 0.6.4",
+]
+
+[[package]]
+name = "rand_chacha"
+version = "0.9.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d3022b5f1df60f26e1ffddd6c66e8aa15de382ae63b3a0c1bfc0e4d3e3f325cb"
+dependencies = [
+ "ppv-lite86",
+ "rand_core 0.9.3",
 ]
 
 [[package]]
@@ -3524,6 +3571,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ec0be4795e2f6a28069bec0b5ff3e2ac9bafc99e6a9a7dc3547996c5c816922c"
 dependencies = [
  "getrandom 0.2.15",
+]
+
+[[package]]
+name = "rand_core"
+version = "0.9.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "99d9a13982dcf210057a8a78572b2217b667c3beacbf3a0d8b454f6f82837d38"
+dependencies = [
+ "getrandom 0.3.2",
 ]
 
 [[package]]
@@ -3564,8 +3620,8 @@ dependencies = [
  "once_cell",
  "paste",
  "profiling",
- "rand",
- "rand_chacha",
+ "rand 0.8.5",
+ "rand_chacha 0.3.1",
  "simd_helpers",
  "system-deps",
  "thiserror 1.0.69",
@@ -3676,6 +3732,30 @@ name = "renderdoc-sys"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "19b30a45b0cd0bcca8037f3d0dc3421eaf95327a17cad11964fb8179b4fc4832"
+
+[[package]]
+name = "rfd"
+version = "0.15.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "80c844748fdc82aae252ee4594a89b6e7ebef1063de7951545564cbc4e57075d"
+dependencies = [
+ "ashpd 0.11.0",
+ "block2 0.6.0",
+ "dispatch2",
+ "js-sys",
+ "log",
+ "objc2 0.6.0",
+ "objc2-app-kit 0.3.0",
+ "objc2-core-foundation",
+ "objc2-foundation 0.3.0",
+ "pollster",
+ "raw-window-handle",
+ "urlencoding",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "web-sys",
+ "windows-sys 0.59.0",
+]
 
 [[package]]
 name = "rgb"
@@ -4439,6 +4519,12 @@ dependencies = [
  "percent-encoding",
  "serde",
 ]
+
+[[package]]
+name = "urlencoding"
+version = "2.1.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "daf8dba3b7eb870caf1ddeed7bc9d2a049f3cfdfae7cb521b087cc33ae4c49da"
 
 [[package]]
 name = "utf16_iter"

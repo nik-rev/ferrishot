@@ -9,7 +9,6 @@ use iced::mouse::{Cursor, Interaction};
 use iced::widget::canvas::Path;
 use iced::widget::{self, Action, canvas, stack};
 use iced::{Element, Length, Point, Rectangle, Renderer, Size, Task, Theme, mouse};
-use image::DynamicImage;
 
 use crate::background_image::BackgroundImage;
 use crate::corners::Side;
@@ -38,6 +37,7 @@ impl Default for App {
     fn default() -> Self {
         let screenshot = crate::screenshot::screenshot().unwrap();
         let config = Config::parse();
+
         Self {
             screenshot,
             selection: None,
@@ -173,21 +173,7 @@ impl App {
                     unreachable!();
                 };
 
-                #[expect(clippy::cast_possible_truncation, reason = "pixels must be integer")]
-                #[expect(
-                    clippy::cast_sign_loss,
-                    reason = "selection has been normalized so height and width will be positive"
-                )]
-                let cropped_image = DynamicImage::from(
-                    image::RgbaImage::from_raw(width, height, pixels.to_vec())
-                        .expect("Image handle stores a valid image"),
-                )
-                .crop_imm(
-                    selection.x() as u32,
-                    selection.y() as u32,
-                    selection.width() as u32,
-                    selection.height() as u32,
-                );
+                let cropped_image = selection.process_image(width, height, pixels);
 
                 let image_data = arboard::ImageData {
                     width: cropped_image.width() as usize,
@@ -210,7 +196,68 @@ impl App {
                     Err(err) => todo!("{err}"),
                 };
             },
-            Message::SaveScreenshot => todo!(),
+            Message::SaveScreenshot => {
+                let Some(selection) = self
+                    .selection
+                    .as_ref()
+                    .map(|sel| Selection::normalize(*sel))
+                else {
+                    // TODO: instead of this, show an error to the user in
+                    // a custom widget
+                    // return ().into();
+                    return ().into();
+                };
+
+                let screenshot = self.screenshot.clone();
+
+                return /* iced::window::get_oldest().and_then(move |window_id| { */
+                    // let screenshot = screenshot.clone();
+                    // iced::window::run_with_window_handles(window_id, move |window_handle| {
+                    Task::future(async move {
+                        let Some(save_path) = rfd::AsyncFileDialog::new()
+                            .set_title("Save Screenshot")
+                            // .set_parent(&window_handle)
+                            .save_file()
+                            .await
+                        else {
+                            // TODO: instead of this, show an error to the user in
+                            // a custom widget
+                            return Message::Noop;
+                        };
+
+                        // FIXME: This is unfortunate, in the future
+                        // we can get rid of this by using a custom struct for
+                        // the image and constructing Handle on-the-fly
+                        let widget::image::Handle::Rgba {
+                            width,
+                            height,
+                            pixels,
+                            ..
+                        } = screenshot
+                        else {
+                            unreachable!();
+                        };
+
+                        let cropped_image = selection.process_image(width, height, &pixels);
+                        cropped_image
+                            .save(save_path.path())
+                            .expect("valid PNG format");
+                        Message::Exit
+                    });
+                // })
+
+                // ().into()
+
+                // iced::window::close(window_id)
+
+                // iced::window::minimize(window_id, false)
+                // .chain(save_file)
+                // .chain(iced::window::minimize(window_id, true))
+                // });
+
+                // lol
+                // todo!()
+            },
             Message::InitialResize {
                 current_cursor_pos,
                 initial_cursor_pos,
@@ -259,6 +306,7 @@ impl App {
                     Side::Left => initial_rect.with_width(|w| w - dx).with_x(|x| x + dx),
                 };
             },
+            Message::Noop => (),
         }
 
         ().into()

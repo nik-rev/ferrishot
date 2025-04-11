@@ -23,7 +23,7 @@ fn main() -> iced::Result {
 
     iced::application(App::default, App::update, App::view)
         .window(iced::window::Settings {
-            level: iced::window::Level::AlwaysOnTop,
+            level: iced::window::Level::Normal,
             fullscreen: true,
             ..Default::default()
         })
