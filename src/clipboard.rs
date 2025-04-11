@@ -13,12 +13,18 @@ use std::{
     process,
 };
 
-/// Set the text content of the clipboard
+/// Set the image content of the clipboard
 pub fn set_image(image_data: arboard::ImageData) -> Result<(), Box<dyn std::error::Error>> {
     if cfg!(target_os = "linux") {
         let clipboard_buffer_path = std::env::temp_dir().join(CLIPBOARD_BUFFER_FILE);
         let mut clipboard_buffer_file = File::create(&clipboard_buffer_path)?;
         clipboard_buffer_file.write_all(&image_data.bytes)?;
+        log::info!(
+            "Called daemon with args: {CLIPBOARD_DAEMON_ID} {} {} {}",
+            image_data.width,
+            image_data.height,
+            clipboard_buffer_path.display()
+        );
         process::Command::new(std::env::current_exe()?)
             .arg(CLIPBOARD_DAEMON_ID)
             .arg(image_data.width.to_string())
@@ -57,6 +63,7 @@ pub fn set_image(image_data: arboard::ImageData) -> Result<(), Box<dyn std::erro
 /// - path to bytes of the image
 pub fn run_clipboard_daemon() -> Result<(), arboard::Error> {
     use arboard::SetExtLinux as _;
+    // skip program name
     let mut args = std::env::args().skip(1);
 
     assert_eq!(
@@ -75,11 +82,16 @@ pub fn run_clipboard_daemon() -> Result<(), arboard::Error> {
         .expect("height")
         .parse::<usize>()
         .expect("valid image height");
-    let bytes = fs::read(args.next().expect("image path"))
+    let bytes: std::borrow::Cow<[u8]> = fs::read(args.next().expect("image path"))
         .expect("image contents")
         .into();
 
-    assert_eq!(args.next(), None);
+    assert_eq!(args.next(), None, "must pass 4 arguments");
+    assert_eq!(
+        width * height * 4,
+        bytes.len(),
+        "every 4 bytes in `bytes` represents a single RGBA pixel"
+    );
 
     arboard::Clipboard::new()?
         .set()
