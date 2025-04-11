@@ -1,5 +1,3 @@
-use std::ops::DerefMut;
-
 use iced::keyboard::{Key, Modifiers};
 use iced::mouse::{Cursor, Interaction};
 use iced::widget::{self, Action, canvas, stack};
@@ -15,8 +13,10 @@ pub const INTERACTION_AREA: f32 = 200.;
 pub const STROKE_SIZE: f32 = 2.;
 
 use crate::image_renderer::BackgroundImage;
+use crate::rectangle::RectangleExt;
 use crate::selection::{Selection, SelectionStatus};
 
+/// Holds the state for Groxshot
 #[derive(Debug)]
 pub struct App {
     /// The full screenshot of the monitor from which groxshot was invoked
@@ -37,22 +37,22 @@ pub struct MouseState {
 
 impl MouseState {
     /// Register a left mouse click
-    pub fn left_click(&mut self) {
-        self.is_left_down = true
+    pub const fn left_click(&mut self) {
+        self.is_left_down = true;
     }
 
     /// Left mouse button
-    pub fn left_release(&mut self) {
-        self.is_left_down = false
+    pub const fn left_release(&mut self) {
+        self.is_left_down = false;
     }
 
     /// If the left mouse button is clicked
-    pub fn is_left_clicked(&self) -> bool {
+    pub const fn is_left_clicked(self) -> bool {
         self.is_left_down
     }
 
     /// If the left mouse button is released
-    pub fn is_left_released(&self) -> bool {
+    pub const fn is_left_released(self) -> bool {
         !self.is_left_down
     }
 }
@@ -69,6 +69,7 @@ impl Default for App {
 
 impl App {
     /// Receives keybindings
+    #[must_use]
     pub fn handle_key_press(key: Key, mods: Modifiers) -> Option<Message> {
         match (key, mods) {
             (Key::Named(iced::keyboard::key::Named::Escape), _) => Some(Message::Exit),
@@ -88,6 +89,10 @@ impl App {
     }
 
     /// Modifies the app's state
+    ///
+    /// # Panics
+    ///
+    /// - When cannot find the cursor position
     pub fn update(&mut self, message: Message) -> Task<Message> {
         match message {
             Message::Exit => return iced::exit(),
@@ -101,7 +106,7 @@ impl App {
                     })
                 }) {
                     let resized = SelectionStatus::Resized {
-                        initial_rect: rect.normalize(),
+                        initial_rect: rect.normalize().rect,
                         initial_cursor_pos: cursor,
                     };
                     log::info!("Starting to dragging the selection: {resized:?}");
@@ -124,7 +129,7 @@ impl App {
                             .unwrap_or_default(),
                     );
                     log::info!("Selected initial region at {cursor_position}");
-                };
+                }
             },
             Message::LeftMouseUp => {
                 if let Some(selection) = self.selected_region.as_mut() {
@@ -169,12 +174,20 @@ impl App {
                 else {
                     return ().into();
                 };
+
+                let diff = cursor_pos.y - initial_cursor_pos.y;
+
                 match side {
                     Side::TopLeft => todo!(),
                     Side::TopRight => todo!(),
                     Side::BottomLeft => todo!(),
                     Side::BottomRight => todo!(),
                     Side::Top => {
+                        selected_region.rect =
+                            initial_rect.map_height(|h| h - diff).map_y(|y| y + diff);
+                    },
+                    Side::Right => todo!(),
+                    Side::Bottom => {
                         *selected_region = selected_region
                             .with_size(Size {
                                 width: initial_rect.size().width,
@@ -186,12 +199,10 @@ impl App {
                                 (initial_rect.position().y) + (cursor_pos.y - initial_cursor_pos.y),
                             ));
                     },
-                    Side::Right => todo!(),
-                    Side::Bottom => todo!(),
                     Side::Left => todo!(),
                 }
             },
-        };
+        }
 
         ().into()
     }
@@ -227,7 +238,7 @@ impl App {
     ) {
         let mut selection = Selection::new(create_selection_at);
         selection.selection_status = moving_selection;
-        self.selected_region = Some(Selection::new(create_selection_at))
+        self.selected_region = Some(Selection::new(create_selection_at));
     }
 
     /// Computes a new selection based on the current position
@@ -256,7 +267,7 @@ impl App {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub enum Message {
     /// Exits the application
     Exit,
@@ -276,14 +287,6 @@ pub enum Message {
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
-pub enum Resize {
-    /// Increase size of the selection
-    Expand,
-    /// Decreases size of the selection
-    Shrink,
-}
-
-#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Side {
     TopLeft,
     TopRight,
@@ -296,12 +299,12 @@ pub enum Side {
 }
 
 impl Side {
-    pub fn mouse_icon(&self) -> mouse::Interaction {
+    pub const fn mouse_icon(self) -> mouse::Interaction {
         match self {
-            Side::Top | Side::Bottom => mouse::Interaction::ResizingVertically,
-            Side::Right | Side::Left => mouse::Interaction::ResizingHorizontally,
-            Side::TopLeft | Side::BottomRight => mouse::Interaction::ResizingDiagonallyDown,
-            Side::BottomLeft | Side::TopRight => mouse::Interaction::ResizingDiagonallyUp,
+            Self::Top | Self::Bottom => mouse::Interaction::ResizingVertically,
+            Self::Right | Self::Left => mouse::Interaction::ResizingHorizontally,
+            Self::TopLeft | Self::BottomRight => mouse::Interaction::ResizingDiagonallyDown,
+            Self::BottomLeft | Self::TopRight => mouse::Interaction::ResizingDiagonallyUp,
         }
     }
 }
@@ -333,29 +336,29 @@ impl canvas::Program<Message> for App {
         _bounds: Rectangle,
         cursor: iced::advanced::mouse::Cursor,
     ) -> iced::advanced::mouse::Interaction {
-        if let Some(mouse_icon) = self.selected_region.and_then(|region| {
-            cursor.position().and_then(|cursor_position| {
-                region
-                    .corners()
-                    .side_at(cursor_position)
-                    .map(|corners| corners.mouse_icon())
+        self.selected_region
+            .and_then(|region| {
+                cursor.position().and_then(|cursor_position| {
+                    region
+                        .corners()
+                        .side_at(cursor_position)
+                        .map(Side::mouse_icon)
+                })
             })
-        }) {
-            mouse_icon
-        }
-        // when the cursor is inside of the selected region,
-        else if {
-            let is_left_released = state.is_left_released();
-            let is_moving_selection = self
-                .selected_region
-                .is_some_and(|selected_region| selected_region.selection_status.is_dragged());
+            .unwrap_or_else(|| {
+                let is_left_released = state.is_left_released();
+                let is_moving_selection = self
+                    .selected_region
+                    .is_some_and(|selected_region| selected_region.selection_status.is_dragged());
 
-            (is_left_released || is_moving_selection) && self.cursor_in_selection(cursor).is_some()
-        } {
-            Interaction::Grab
-        } else {
-            Interaction::Crosshair
-        }
+                let is_grab = (is_left_released || is_moving_selection)
+                    && self.cursor_in_selection(cursor).is_some();
+                if is_grab {
+                    Interaction::Grab
+                } else {
+                    Interaction::Crosshair
+                }
+            })
     }
 
     fn update(
@@ -387,7 +390,7 @@ impl canvas::Program<Message> for App {
                     && resize_area_intersection_side.is_some()
                     && self
                         .selected_region
-                        .is_none_or(|selection_region| selection_region.is_resized()) =>
+                        .is_none_or(super::selection::Selection::is_resized) =>
             {
                 // FIXME: this will not be necessary when we have `let_chains`
                 let cursor_side = resize_area_intersection_side.expect("has `.is_some()` guard");

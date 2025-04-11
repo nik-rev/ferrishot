@@ -9,7 +9,7 @@ pub struct BackgroundImage {
 }
 
 impl BackgroundImage {
-    pub fn new(image_handle: widget::image::Handle) -> Self {
+    pub const fn new(image_handle: widget::image::Handle) -> Self {
         Self { image_handle }
     }
 }

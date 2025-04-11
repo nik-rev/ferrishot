@@ -1,4 +1,4 @@
-#![cfg_attr(doc, doc = include_str!("../README.md"))]
+#![doc = include_str!("../README.md")]
 
 use groxshot::App;
 

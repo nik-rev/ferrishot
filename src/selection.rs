@@ -2,20 +2,25 @@ use delegate::delegate;
 use iced::{Point, Rectangle, Size};
 
 use crate::corners::Corners;
+use crate::rectangle::RectangleExt;
 
 /// The selected area of the desktop which will be captured
 #[derive(Debug, Default, Copy, Clone)]
 pub struct Selection {
+    /// Area represented by the selection
     pub rect: Rectangle,
-    /// The selection is currently being moved (hold left click + move)
+    /// Status of the selection
     pub selection_status: SelectionStatus,
 }
 
+/// What the selection is doing at the moment
 #[derive(Debug, Default, Clone, Copy, PartialEq)]
 pub enum SelectionStatus {
     /// The selection is currently being resized
     Resized {
+        /// Position of the selection rectangle before we started resizing it
         initial_rect: Rectangle,
+        /// Cursor position before we started resizing it
         initial_cursor_pos: Point,
     },
     /// The selection is currently being dragged
@@ -35,15 +40,15 @@ pub enum SelectionStatus {
 
 impl SelectionStatus {
     pub fn is_idle(&self) -> bool {
-        *self == SelectionStatus::Idle
+        *self == Self::Idle
     }
 
-    pub fn is_dragged(&self) -> bool {
-        matches!(self, SelectionStatus::Dragged { .. })
+    pub const fn is_dragged(&self) -> bool {
+        matches!(self, Self::Dragged { .. })
     }
 
-    pub fn is_resized(&self) -> bool {
-        matches!(self, SelectionStatus::Resized { .. })
+    pub const fn is_resized(&self) -> bool {
+        matches!(self, Self::Resized { .. })
     }
 }
 
@@ -60,56 +65,6 @@ impl Selection {
         );
     }
 
-    /// make sure that the top-left corner is ALWAYS in the top left
-    /// (it could be that top-left corner is actually on the bottom right,
-    /// and we have a negative width and height):
-    ///
-    ///                           ----------
-    ///                           |        |
-    ///                           |        | <- height: -3
-    ///                           |        |
-    /// our "top left" is here -> O---------
-    /// even if the width and height is negative
-    pub fn normalize(&self) -> Rectangle {
-        let mut rect = self.rect;
-        if rect.width.is_sign_negative() {
-            rect.x = rect.x + rect.width;
-            rect.width = rect.width.abs();
-        }
-        if rect.height.is_sign_negative() {
-            rect.y = rect.y + rect.height;
-            rect.height = rect.height.abs();
-        }
-        rect
-    }
-
-    /// If this selection contains the given point
-    pub fn contains(&self, point: Point) -> bool {
-        self.normalize().contains(point)
-    }
-
-    /// Which side contains this point, if any?
-    ///
-    /// Used for resizing the selection
-    // pub fn side_contains(&self, point: Point) -> Option<Side> {
-    //     let rect = self.normalize();
-    //     let corners = self.corners();
-
-    //     // .contains(point)
-    // }
-
-    /// Obtain coordinates of the 4 corners of the Selection
-    pub fn corners(&self) -> Corners {
-        let rect = self.normalize();
-        let top_left = rect.position();
-        Corners {
-            top_left,
-            top_right: Point::new(top_left.x + rect.width, top_left.y),
-            bottom_left: Point::new(top_left.x, top_left.y + rect.height),
-            bottom_right: Point::new(top_left.x + rect.width, top_left.y + rect.height),
-        }
-    }
-
     /// Create selection at a point with a size of zero
     pub fn new(point: Point) -> Self {
         Self {
@@ -118,37 +73,43 @@ impl Selection {
         }
     }
 
-    /// Update height and width
-    pub fn with_size(mut self, size: Size) -> Self {
-        self.rect = Rectangle::new(self.position(), size);
-        self
-    }
-
-    /// Update position of the top left corner
-    pub fn with_position(mut self, pos: Point) -> Self {
-        self.rect = Rectangle::new(pos, self.size());
-        self
-    }
-
-    /// The x-coordinate of the top left point
-    pub fn x(&self) -> f32 {
-        self.rect.x
-    }
-
-    /// The y-coordinate of the top left point
-    pub fn y(&self) -> f32 {
-        self.rect.y
-    }
-
     delegate! {
         to self.rect {
-            pub fn position(&self) -> Point;
-            pub fn size(&self) -> Size;
+            pub fn position(self) -> Point;
+            pub fn size(self) -> Size;
+            pub fn corners(self) -> Corners;
+            pub fn x(self) -> f32;
+            pub fn y(self) -> f32;
+            pub fn contains(self, point: Point) -> bool;
         }
+        #[allow(dead_code)]
+        #[expr(self.rect = $; self)]
+        to self.rect {
+            pub fn with_size(mut self, size: Size) -> Self;
+            pub fn map_size<F: FnOnce(Size) -> Size>(mut self, size: F) -> Self;
+
+            pub fn with_position(mut self, pos: Point) -> Self;
+            pub fn map_position<F: FnOnce(Point) -> Point>(mut self, pos: F) -> Self;
+
+            pub fn with_x(mut self, x: f32) -> Self;
+            pub fn map_x<F: FnOnce(f32) -> f32>(mut self, x: F) -> Self;
+
+            pub fn with_height(mut self, height: f32) -> Self;
+            pub fn map_height<F: FnOnce(f32) -> f32>(mut self, height: F) -> Self;
+
+            pub fn with_width(mut self, width: f32) -> Self;
+            pub fn map_width<F: FnOnce(f32) -> f32>(mut self, width: F) -> Self;
+
+            pub fn with_y(mut self, y: f32) -> Self;
+            pub fn map_y<F: FnOnce(f32) -> f32>(mut self, y: F) -> Self;
+
+            pub fn normalize(mut self) -> Self;
+        }
+        #[allow(dead_code)]
         to self.selection_status {
-            pub fn is_dragged(&self) -> bool;
-            pub fn is_idle(&self) -> bool;
-            pub fn is_resized(&self) -> bool;
+            pub const fn is_dragged(self) -> bool;
+            pub fn is_idle(self) -> bool;
+            pub const fn is_resized(self) -> bool;
         }
     }
 }
