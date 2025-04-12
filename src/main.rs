@@ -1,4 +1,4 @@
-#![doc = include_str!("../README.md")]
+//! The ferrishot app
 
 use ferrishot::{App, ResultExt as _};
 
