@@ -41,6 +41,24 @@ Currently, this project is under heavy development. The goal is to reach feature
 
 ## Installation
 
+### Homebrew
+
+```sh
+brew install nik-rev/tap/ferrishot
+```
+
+### PowerShell
+
+```sh
+powershell -ExecutionPolicy Bypass -c "irm https://github.com/nik-rev/countryfetch/releases/latest/download/ferrishot-installer.ps1 | iex"
+```
+
+### Shell
+
+```sh
+curl --proto '=https' --tlsv1.2 -LsSf https://github.com/nik-rev/countryfetch/releases/latest/download/ferrishot-installer.sh | sh
+```
+
 ### Nix
 
 Add it to your `flake.nix`:
