@@ -6,6 +6,8 @@ Currently, this project is under heavy development. The goal is to reach feature
 
 ## Features
 
+Run by writing `ferrishot` on the command line.
+
 - Select a region on the screen by left clicking and drag
 - Resize region by dragging on any of the sides
 - Move the region around by dragging in the center

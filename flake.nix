@@ -27,6 +27,7 @@
           wayland
           # required on Linux
           xorg.libxcb
+          xorg.libX11
           libxkbcommon
         ];
       in
