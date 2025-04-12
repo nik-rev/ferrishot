@@ -5,6 +5,7 @@ license = "MIT OR Apache-2.0"
 edition = "2024"
 description = "A cross-platform desktop screenshot app"
 repository = "https://github.com/nik-rev/ferrishot"
+homepage = "https://github.com/nik-rev/ferrishot"
 keywords = ["screenshot", "screen-capture", "capture", "flameshot"]
 categories = ["visualization", "multimedia"]
 authors = ["Nik Revenco"]
@@ -42,3 +43,8 @@ nursery = { priority = -1, level = "warn" }
 
 missing_docs_in_private_items = "warn"
 too_many_lines = "allow"
+
+# The profile that 'dist' will build with
+[profile.dist]
+inherits = "release"
+lto = "thin"

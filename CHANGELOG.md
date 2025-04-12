@@ -1,4 +1,4 @@
-# ferrishot v0.1.0
+# v0.1.0 - 12 April 2025
 
 The initial release comes with the following features:
 
