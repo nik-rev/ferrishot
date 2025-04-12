@@ -1,21 +1,24 @@
 # ferrishot
 
-An easy to use, and cross-platform screenshot app written in Rust.
+An easy-to-use, cross-platform screenshot app written in Rust.
 
-<https://github.com/user-attachments/assets/a7a69202-597b-4f25-816f-f84ce85c6313>
+Currently, this project is under heavy development. The goal is to reach feature parity with [flameshot](https://github.com/flameshot-org/flameshot) before the 1.0 release and then go beyond.
 
 ## Features
-
-Currently, this project is under heavy development. The current goal is to reach feature parity with [flameshot](https://github.com/flameshot-org/flameshot) before the 1.0 release and then go beyond.
 
 - Select a region on the screen by left clicking and drag
 - Resize region by dragging on any of the sides
 - Move the region around by dragging in the center
 - `Esc` closes the app
 - `Enter` or `Ctrl c` copy region to clipboard
-- `Ctrl s` save region to path
+- `Ctrl s` save region as an image to path
+- Instantly copy region to clipboard with `--instant` flag
 
-## Roadmap
+## Showcase
+
+<https://github.com/user-attachments/assets/a7a69202-597b-4f25-816f-f84ce85c6313>
+
+## Road map
 
 - Height & width text indicator for region
 - Ability to specify the selection absolutely (i.e., without mouse)
@@ -35,3 +38,22 @@ Currently, this project is under heavy development. The current goal is to reach
 - CLI Application
 - Config file
 - Snap to edges / borders of visible objects on the screen
+
+## Installation
+
+### Nix
+
+Add it to your `flake.nix`:
+
+```nix
+# add it to your inputs
+inputs.ferrishot.url = "github:nik-rev/ferrishot/main";
+# then use it in home-manager for example
+inputs.ferrishot.packages.${pkgs.system}.default
+```
+
+### Cargo
+
+```sh
+cargo install ferrishot
+```
