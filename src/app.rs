@@ -210,53 +210,50 @@ impl App {
 
                 let screenshot = self.screenshot.clone();
 
-                return /* iced::window::get_oldest().and_then(move |window_id| { */
-                    // let screenshot = screenshot.clone();
-                    // iced::window::run_with_window_handles(window_id, move |window_handle| {
-                    Task::future(async move {
-                        let Some(save_path) = rfd::AsyncFileDialog::new()
-                            .set_title("Save Screenshot")
-                            // .set_parent(&window_handle)
-                            .save_file()
-                            .await
-                        else {
-                            // TODO: instead of this, show an error to the user in
-                            // a custom widget
-                            return Message::Noop;
-                        };
+                // the "oldest" window actually represents the main window
+                return iced::window::get_oldest().and_then(move |window_id| {
+                    let screenshot = screenshot.clone();
+                    iced::window::run_with_window_handles(window_id, move |window_handle| {
+                        Message::SaveScreenshotStep2(
+                            // the AsyncFileDialog "absorbs" the window_handle
+                            // Even though it has a lifetime, we don't have to worry about that
+                            // The AsyncFileDialog gets created. This one we can easily send across threads
+                            rfd::AsyncFileDialog::new()
+                                .set_title("Save Screenshot")
+                                .set_parent(&window_handle),
+                            screenshot,
+                            selection,
+                        )
+                    })
+                });
+            },
+            Message::SaveScreenshotStep2(file_dialog, image_handle, selection) => {
+                return Task::future(async move {
+                    let Some(save_path) = file_dialog.save_file().await else {
+                        // TODO: instead of this, show an error to the user in
+                        // a custom widget
+                        return Message::Noop;
+                    };
 
-                        // FIXME: This is unfortunate, in the future
-                        // we can get rid of this by using a custom struct for
-                        // the image and constructing Handle on-the-fly
-                        let widget::image::Handle::Rgba {
-                            width,
-                            height,
-                            pixels,
-                            ..
-                        } = screenshot
-                        else {
-                            unreachable!();
-                        };
+                    // FIXME: This is unfortunate, in the future
+                    // we can get rid of this by using a custom struct for
+                    // the image and constructing Handle on-the-fly
+                    let widget::image::Handle::Rgba {
+                        width,
+                        height,
+                        pixels,
+                        ..
+                    } = image_handle
+                    else {
+                        unreachable!();
+                    };
 
-                        let cropped_image = selection.process_image(width, height, &pixels);
-                        cropped_image
-                            .save(save_path.path())
-                            .expect("valid PNG format");
-                        Message::Exit
-                    });
-                // })
-
-                // ().into()
-
-                // iced::window::close(window_id)
-
-                // iced::window::minimize(window_id, false)
-                // .chain(save_file)
-                // .chain(iced::window::minimize(window_id, true))
-                // });
-
-                // lol
-                // todo!()
+                    let cropped_image = selection.process_image(width, height, &pixels);
+                    cropped_image
+                        .save(save_path.path())
+                        .expect("valid PNG format");
+                    Message::Exit
+                });
             },
             Message::InitialResize {
                 current_cursor_pos,
