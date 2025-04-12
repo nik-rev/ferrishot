@@ -1,7 +1,6 @@
 //! A message represents some event in the app that mutates the state
 
 use iced::{Point, Rectangle, mouse::Cursor};
-use rfd::AsyncFileDialog;
 
 use crate::{corners::Side, selection::Selection};
 

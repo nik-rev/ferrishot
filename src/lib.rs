@@ -27,3 +27,4 @@ pub const SHADE_COLOR: iced::Color = iced::color!(0x00_00_00, 0.15);
 pub use clipboard::{CLIPBOARD_DAEMON_ID, run_clipboard_daemon};
 
 pub use app::App;
+pub use app::SAVED_IMAGE;

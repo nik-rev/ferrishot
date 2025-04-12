@@ -16,6 +16,41 @@ use crate::mouse::MouseState;
 use crate::rectangle::RectangleExt;
 use crate::selection::{Selection, SelectionStatus};
 
+/// The image to save to a file, chosen by the user in a file picker.
+///
+/// Unfortunately, there is simply no way to communicate something from
+/// the inside of an iced application to the outside: i.e. "Return" something
+/// from an iced program exiting. So we have to use a global variable for this.
+///
+/// This global is mutated just *once* at the end of the application's lifetime,
+/// when the window closes.
+///
+/// It is then accessed just *once* to open the file dialog and let the user pick
+/// where they want to save their image.
+///
+/// Yes, at the moment we want this when using Ctrl + S to save as file:
+/// 1. Close the application to save the file and generate the image we'll save
+/// 2. Open the file explorer, and save the image to the specified path
+///
+/// When the file explorer is spawned from the inside of an iced window, closing
+/// this window will then also close the file explorer. It means that we can't
+/// close the window and then spawn an explorer.
+///
+/// The other option is to have both windows open at the same time. But this
+/// would be really odd. First of all, we will need to un-fullscreen the App
+/// because the file explorer can spawn under the app.
+///
+/// This is going to be sub-optimal. Currently, we give off the illusion of
+/// drawing shapes and rectangles on top of the desktop. It is not immediately
+/// obvious that the app is just another window which is full-screen.
+/// Doing the above would break that illusion.
+///
+/// Ideally, we would be able to spawn a file explorer *above* the window without
+/// having to close this. But this seems to not be possible. Perhaps in the
+/// future there will be some kind of file explorer Iced widget that we
+/// can use instead of the native file explorer.
+pub static mut SAVED_IMAGE: Option<image::DynamicImage> = None;
+
 /// Holds the state for ferrishot
 #[derive(Debug)]
 pub struct App {
@@ -106,6 +141,7 @@ impl App {
     /// # Panics
     ///
     /// - When cannot find the cursor position
+    #[expect(clippy::needless_pass_by_value, reason = "trait function")]
     pub fn update(&mut self, message: Message) -> Task<Message> {
         match message {
             Message::Exit => return Self::exit(),
@@ -215,65 +251,39 @@ impl App {
                 };
             },
             Message::SaveScreenshot => {
-                // let Some(selection) = self
-                //     .selection
-                //     .as_ref()
-                //     .map(|sel| Selection::normalize(*sel))
-                // else {
-                // TODO: instead of this, show an error to the user in
-                // a custom widget
-                // return ().into();
-                return ().into();
-                // };
+                let Some(selection) = self
+                    .selection
+                    .as_ref()
+                    .map(|sel| Selection::normalize(*sel))
+                else {
+                    // TODO: instead of this, show an error to the user in
+                    // a custom widget
+                    return ().into();
+                };
 
-                // let screenshot = self.screenshot.clone();
+                let image_handle = self.screenshot.clone();
+                // FIXME: This is unfortunate, in the future
+                // we can get rid of this by using a custom struct for
+                // the image and constructing Handle on-the-fly
+                let widget::image::Handle::Rgba {
+                    width,
+                    height,
+                    ref pixels,
+                    ..
+                } = image_handle
+                else {
+                    unreachable!();
+                };
+                let cropped_image = selection.process_image(width, height, pixels);
 
-                // // the "oldest" window actually represents the main window
-                // return iced::window::get_oldest().and_then(move |window_id| {
-                //     let screenshot = screenshot.clone();
-                //     iced::window::run_with_window_handles(window_id, move |window_handle| {
-                //         Message::SaveScreenshotStep2(
-                //             // the AsyncFileDialog "absorbs" the window_handle
-                //             // Even though it has a lifetime, we don't have to worry about that
-                //             // The AsyncFileDialog gets created. This one we can easily send across threads
-                //             rfd::AsyncFileDialog::new()
-                //                 .set_title("Save Screenshot")
-                //                 .set_parent(&window_handle),
-                //             screenshot,
-                //             selection,
-                //         )
-                //     })
-                // });
+                // SAFETY: This mutation is guaranteed to happen just once, then
+                // the application will exit. See the comments on the static for more info
+                unsafe {
+                    SAVED_IMAGE = Some(cropped_image);
+                }
+
+                return Self::exit();
             },
-            // Message::SaveScreenshotStep2(file_dialog, image_handle, selection) => {
-            //     return Task::future(async move {
-            //         let Some(save_path) = file_dialog.save_file().await else {
-            //             // TODO: instead of this, show an error to the user in
-            //             // a custom widget
-            //             return Message::Noop;
-            //         };
-
-            //         // FIXME: This is unfortunate, in the future
-            //         // we can get rid of this by using a custom struct for
-            //         // the image and constructing Handle on-the-fly
-            //         let widget::image::Handle::Rgba {
-            //             width,
-            //             height,
-            //             pixels,
-            //             ..
-            //         } = image_handle
-            //         else {
-            //             unreachable!();
-            //         };
-
-            //         let cropped_image = selection.process_image(width, height, &pixels);
-            //         cropped_image
-            //             .save(save_path.path())
-            //             .expect("valid PNG format");
-
-            //         Message::Noop
-            //     });
-            // },
             Message::InitialResize {
                 current_cursor_pos,
                 initial_cursor_pos,

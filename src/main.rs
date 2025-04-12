@@ -21,7 +21,7 @@ fn main() {
 
     env_logger::builder().format_timestamp(None).init();
 
-    let _ = iced::application(App::default, App::update, App::view)
+    iced::application(App::default, App::update, App::view)
         .window(iced::window::Settings {
             level: iced::window::Level::Normal,
             fullscreen: true,
@@ -29,5 +29,22 @@ fn main() {
         })
         .subscription(|_state| iced::keyboard::on_key_press(App::handle_key_press))
         .title("ferrishot")
-        .run();
+        .run()
+        .expect("Failed to run the application");
+
+    // SAFETY: There are no other threads which could be accessing `SAVED_IMAGE`
+    // See the static's documentation for why we are doing this
+    #[expect(static_mut_refs, reason = "need owned value; not accessed ever after")]
+    unsafe {
+        if let Some(saved_image) = ferrishot::SAVED_IMAGE.take() {
+            let save_path = rfd::FileDialog::new()
+                .set_title("Save Screenshot")
+                .save_file()
+                .expect("Failed to open file dialog");
+
+            saved_image
+                .save(save_path)
+                .expect("Failed to save image to the chosen path");
+        }
+    }
 }
