@@ -37,14 +37,16 @@ fn main() {
     #[expect(static_mut_refs, reason = "need owned value; not accessed ever after")]
     unsafe {
         if let Some(saved_image) = ferrishot::SAVED_IMAGE.take() {
-            let save_path = rfd::FileDialog::new()
+            // NOTE: The file dialog can be closed by the user, so it is
+            // not an error if we can't get the path for one reason or another
+            if let Some(save_path) = rfd::FileDialog::new()
                 .set_title("Save Screenshot")
                 .save_file()
-                .expect("Failed to open file dialog");
-
-            saved_image
-                .save(save_path)
-                .expect("Failed to save image to the chosen path");
+            {
+                saved_image
+                    .save(save_path)
+                    .expect("Failed to save image to the chosen path");
+            }
         }
     }
 }
