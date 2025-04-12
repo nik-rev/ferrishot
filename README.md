@@ -2,6 +2,8 @@
 
 An easy to use, and cross-platform screenshot app written in Rust.
 
+https://github.com/user-attachments/assets/a7a69202-597b-4f25-816f-f84ce85c6313
+
 ## Features
 
 Currently, this project is under heavy development. The current goal is to reach feature parity with [flameshot](https://github.com/flameshot-org/flameshot) before the 1.0 release and then go beyond.
