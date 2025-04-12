@@ -17,7 +17,7 @@ pub const CORNER_RADIUS: f32 = 6.0;
 pub const SELECTION_COLOR: iced::Color = iced::Color::WHITE;
 /// The area around each side which allows that side to be hovered over and
 /// resized
-pub const INTERACTION_AREA: f32 = 20.0;
+pub const INTERACTION_AREA: f32 = 30.0;
 /// The size of the border of the square
 pub const STROKE_SIZE: f32 = 2.0;
 /// The color of the background for non-selected regions

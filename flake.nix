@@ -1,7 +1,6 @@
 {
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    flake-utils.url = "github:numtide/flake-utils";
   };
 
   outputs =
@@ -16,7 +15,9 @@
         pkgs = import nixpkgs {
           inherit system;
         };
-        inputs = with pkgs; [
+        manifest = pkgs.lib.importTOML ./Cargo.toml;
+        nativeBuildInputs = with pkgs; [ pkg-config ];
+        buildInputs = with pkgs; [
           openssl
           pkg-config
           dbus
@@ -32,8 +33,18 @@
       in
       {
         devShells.default = pkgs.mkShell {
-          buildInputs = inputs;
-          LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath inputs;
+          inherit buildInputs;
+          LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath buildInputs;
+        };
+        packages.default = pkgs.rustPlatform.buildRustPackage {
+          pname = manifest.package.name;
+          version = manifest.package.version;
+
+          src = pkgs.lib.cleanSource ./.;
+          cargoLock.lockFile = ./Cargo.lock;
+
+          inherit nativeBuildInputs;
+          inherit buildInputs;
         };
       }
     );
