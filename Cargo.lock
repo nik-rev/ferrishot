@@ -2695,6 +2695,7 @@ checksum = "6442248665a5aa2514e794af3b39661a8e73033b1cc5e59899e1276117ee4400"
 dependencies = [
  "futures-lite",
  "image 0.25.6",
+ "lazy_static",
  "log",
  "mac-notification-sys",
  "serde",
