@@ -3,6 +3,7 @@
 use crate::SHADE_COLOR;
 use crate::config::Config;
 use crate::message::Message;
+use crate::screenshot::RgbaHandle;
 use clap::Parser as _;
 use iced::keyboard::{Key, Modifiers};
 use iced::mouse::{Cursor, Interaction};
@@ -61,7 +62,7 @@ pub struct App {
     /// We then create a window spanning the entire monitor, with this
     /// screenshot as background, with a canvas rendered on top - giving the
     /// illusion that we are drawing shapes on top of the screen.
-    screenshot: widget::image::Handle,
+    screenshot: RgbaHandle,
     /// Area of the screen that is selected for capture
     selection: Option<Selection>,
     /// Configuration of the app
@@ -130,7 +131,7 @@ impl App {
     /// Renders the app
     pub fn view(&self) -> Element<Message> {
         stack![
-            BackgroundImage::new(self.screenshot.clone()),
+            BackgroundImage::new(self.screenshot.clone().into()),
             canvas(self).width(Length::Fill).height(Length::Fill),
         ]
         .into()
@@ -204,18 +205,7 @@ impl App {
                     return ().into();
                 };
 
-                // FIXME: This is unfortunate, in the future
-                // we can get rid of this by using a custom struct for
-                // the image and constructing Handle on-the-fly
-                let widget::image::Handle::Rgba {
-                    width,
-                    height,
-                    ref pixels,
-                    ..
-                } = self.screenshot
-                else {
-                    unreachable!();
-                };
+                let (width, height, pixels) = self.screenshot.raw();
 
                 let cropped_image = selection.process_image(width, height, pixels);
 
@@ -261,19 +251,7 @@ impl App {
                     return ().into();
                 };
 
-                let image_handle = self.screenshot.clone();
-                // FIXME: This is unfortunate, in the future
-                // we can get rid of this by using a custom struct for
-                // the image and constructing Handle on-the-fly
-                let widget::image::Handle::Rgba {
-                    width,
-                    height,
-                    ref pixels,
-                    ..
-                } = image_handle
-                else {
-                    unreachable!();
-                };
+                let (width, height, pixels) = self.screenshot.raw();
                 let cropped_image = selection.process_image(width, height, pixels);
 
                 let _ = SAVED_IMAGE.set(cropped_image);

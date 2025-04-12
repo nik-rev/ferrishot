@@ -1,5 +1,40 @@
 //! Takes screenshot of the desktop
 
+use iced::{advanced::image::Bytes, widget::image::Handle};
+
+/// A handle pointing to decoded image pixels in RGBA format.
+///
+/// This is a more specialized version of `iced::widget::image::Handle`
+#[derive(Debug, Clone)]
+pub struct RgbaHandle(Handle);
+
+impl RgbaHandle {
+    /// Create handle to an image represented in RGBA format
+    pub fn new(width: u32, height: u32, pixels: impl Into<Bytes>) -> Self {
+        Self(Handle::from_rgba(width, height, pixels.into()))
+    }
+
+    /// Returns the width, height and RGBA pixels
+    pub fn raw(&self) -> (u32, u32, &Bytes) {
+        let Handle::Rgba {
+            width,
+            height,
+            ref pixels,
+            ..
+        } = self.0
+        else {
+            unreachable!("handle is guaranteed to be Rgba")
+        };
+        (width, height, pixels)
+    }
+}
+
+impl From<RgbaHandle> for Handle {
+    fn from(value: RgbaHandle) -> Self {
+        value.0
+    }
+}
+
 /// Could not retrieve the screenshot
 #[derive(thiserror::Error, Debug)]
 pub enum ScreenshotError {
@@ -15,7 +50,7 @@ pub enum ScreenshotError {
 }
 
 /// Take a screenshot and return a handle to the image
-pub fn screenshot() -> Result<iced::widget::image::Handle, ScreenshotError> {
+pub fn screenshot() -> Result<RgbaHandle, ScreenshotError> {
     let mouse_position::mouse_position::Mouse::Position { x, y } =
         mouse_position::mouse_position::Mouse::get_mouse_position()
     else {
@@ -28,7 +63,7 @@ pub fn screenshot() -> Result<iced::widget::image::Handle, ScreenshotError> {
         .capture_image()
         .map_err(ScreenshotError::Screenshot)?;
 
-    Ok(iced::widget::image::Handle::from_rgba(
+    Ok(RgbaHandle::new(
         screenshot.width(),
         screenshot.height(),
         screenshot.into_raw(),
