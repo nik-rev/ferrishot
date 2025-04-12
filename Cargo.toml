@@ -28,8 +28,7 @@ derive_more = { version = "2.0.1", features = ["is_variant"] }
 arboard = { version = "3.5", features = ["wayland-data-control"] }
 notify-rust = { version = "4.11.7", features = ["image"] }
 clap = { version = "4.5.35", features = ["derive"] }
-rfd = { version = "0.15.3", path = "./rfd" }
-# rfd = "0.15.3"
+rfd = "0.15.3"
 
 [lints.rust]
 missing_docs = "warn"
