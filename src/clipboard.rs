@@ -7,11 +7,8 @@ pub const CLIPBOARD_DAEMON_ID: &str = "__ferrishot_clipboard_daemon";
 /// easiest way to do that is to create a temporary file then read it
 const CLIPBOARD_BUFFER_FILE: &str = "__ferrishot_clipboard_buffer";
 
-use std::{
-    fs::{self, File},
-    io::Write,
-    process,
-};
+use std::fs;
+use std::{fs::File, io::Write, process};
 
 /// Set the text content of the clipboard
 #[expect(dead_code, reason = "will be used later")]
@@ -94,13 +91,13 @@ pub fn set_image(
 /// 2. copy type: "image" or "text"
 ///
 /// if copy type is "image" we expect:
-///     3. width of image
-///     4. height of image
-///     5. path to bytes of the image
+///   3. width of image
+///   4. height of image
+///   5. path to bytes of the image
 ///
-///     The image must be of valid width, height and byte amount
+///   The image must be of valid width, height and byte amount
 /// if copy type is "text" we expect:
-///     3. text content which should be copied to the clipboard
+///   3. text content which should be copied to the clipboard
 pub fn run_clipboard_daemon() -> Result<(), arboard::Error> {
     use arboard::SetExtLinux as _;
     // skip program name
