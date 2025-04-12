@@ -252,7 +252,8 @@ impl App {
                     cropped_image
                         .save(save_path.path())
                         .expect("valid PNG format");
-                    Message::Exit
+
+                    Message::Noop
                 });
             },
             Message::InitialResize {

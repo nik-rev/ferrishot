@@ -101,7 +101,6 @@ pub fn set_image(
 ///     The image must be of valid width, height and byte amount
 /// if copy type is "text" we expect:
 ///     3. text content which should be copied to the clipboard
-#[cfg(target_os = "linux")]
 pub fn run_clipboard_daemon() -> Result<(), arboard::Error> {
     use arboard::SetExtLinux as _;
     // skip program name
