@@ -30,6 +30,15 @@ notify-rust = { version = "4.11.7", features = ["images"] }
 clap = { version = "4.5.35", features = ["derive"] }
 rfd = "0.15.3"
 
+# keep this in sync with what `iced` uses
+# we just want to disable the "dl-open" feature
+winit = { version = "0.30.8", default-features = false, features = [
+  "rwh_06",
+  "x11",
+  "wayland",
+  "wayland-csd-adwaita",
+] }
+
 [lints.rust]
 missing_docs = "warn"
 
