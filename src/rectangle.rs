@@ -37,12 +37,14 @@ pub impl Rectangle<f32> {
     /// (it could be that top-left corner is actually on the bottom right,
     /// and we have a negative width and height):
     ///
+    /// ```text
     ///                           ----------
     ///                           |        |
     ///                           |        | <- height: -3
     ///                           |        |
     /// our "top left" is here -> O---------
     /// even if the width and height is negative
+    /// ```
     fn normalize(mut self) -> Self {
         if self.width.is_sign_negative() {
             self.x += self.width;
