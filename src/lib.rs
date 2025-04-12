@@ -1,5 +1,6 @@
 //! The ferrishot app
 
+/// Additional extension methods for Result
 #[easy_ext::ext(ResultExt)]
 pub impl<T, E: std::fmt::Debug + std::fmt::Display> Result<T, E> {
     /// Like `Result::expect`, but also logs the failure
