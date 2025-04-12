@@ -14,7 +14,8 @@ use std::{fs::File, io::Write, process};
 /// Set the text content of the clipboard
 #[expect(dead_code, reason = "will be used later")]
 pub fn set_text(text: &str) -> Result<(), Box<dyn std::error::Error>> {
-    if cfg!(target_os = "linux") {
+    #[cfg(target_os = "linux")]
+    {
         let mut cmd = process::Command::new(std::env::current_exe()?);
 
         cmd.arg(CLIPBOARD_DAEMON_ID).arg("text").arg(text);
@@ -29,7 +30,9 @@ pub fn set_text(text: &str) -> Result<(), Box<dyn std::error::Error>> {
             .stderr(process::Stdio::null())
             .current_dir("/")
             .spawn()?;
-    } else {
+    }
+    #[cfg(not(target_os = "linux"))]
+    {
         arboard::Clipboard::new()?.set_text(text)?;
     }
 
@@ -42,12 +45,14 @@ pub fn set_text(text: &str) -> Result<(), Box<dyn std::error::Error>> {
 ///
 /// Temporary file of the saved image
 pub fn set_image(
-    image_data: arboard::ImageData,
+    image_data: &arboard::ImageData,
 ) -> Result<std::path::PathBuf, Box<dyn std::error::Error>> {
     let clipboard_buffer_path = std::env::temp_dir().join(CLIPBOARD_BUFFER_FILE);
     let mut clipboard_buffer_file = File::create(&clipboard_buffer_path)?;
     clipboard_buffer_file.write_all(&image_data.bytes)?;
-    if cfg!(target_os = "linux") {
+
+    #[cfg(target_os = "linux")]
+    {
         let mut cmd = process::Command::new(std::env::current_exe()?);
 
         cmd.arg(CLIPBOARD_DAEMON_ID)
@@ -66,7 +71,9 @@ pub fn set_image(
             .stderr(process::Stdio::null())
             .current_dir("/")
             .spawn()?;
-    } else {
+    }
+    #[cfg(not(target_os = "linux"))]
+    {
         arboard::Clipboard::new()?.set_image(image_data)?;
     }
 
