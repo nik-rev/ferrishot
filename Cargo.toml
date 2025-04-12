@@ -12,7 +12,7 @@ authors = ["Nik Revenco"]
 [dependencies]
 mouse_position = "0.1.4"
 xcap = { version = "0.4.1", features = ["image", "vendored"] }
-iced = { rev = "bd90a396eb0d844e036e210ee28945973b2e4163", git = "https://github.com/nik-rev/iced.git", version = "0.14.0-dev", features = [
+iced = { package = "ferrishot_iced", version = "0.14.1", features = [
   "canvas",
   "image",
   "web-colors",
@@ -30,14 +30,6 @@ notify-rust = { version = "4.11.7", features = ["images"] }
 clap = { version = "4.5.35", features = ["derive"] }
 rfd = "0.15.3"
 
-# keep this in sync with what `iced` uses
-# we just want to disable the "dl-open" feature
-winit = { version = "0.30.8", default-features = false, features = [
-  "rwh_06",
-  "x11",
-  "wayland",
-  "wayland-csd-adwaita",
-] }
 etcetera = "0.10.0"
 chrono = "0.4.40"
 

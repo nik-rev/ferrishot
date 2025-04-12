@@ -981,18 +981,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "43da5946c66ffcc7745f48db692ffbb10a83bfe0afd96235c5c2a4fb23994929"
 
 [[package]]
-name = "cryoglyph"
-version = "0.1.0"
-source = "git+https://github.com/iced-rs/cryoglyph.git?rev=a456d1c17bbcf33afcca41d9e5e299f9f1193819#a456d1c17bbcf33afcca41d9e5e299f9f1193819"
-dependencies = [
- "cosmic-text",
- "etagere",
- "lru",
- "rustc-hash 2.1.1",
- "wgpu",
-]
-
-[[package]]
 name = "ctor-lite"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1128,11 +1116,6 @@ name = "dpi"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f25c0e292a7ca6d6498557ff1df68f32c99850012b6ea401cf8daf771f22ff53"
-
-[[package]]
-name = "dpi"
-version = "0.1.1"
-source = "git+https://github.com/iced-rs/winit.git?rev=11414b6aa45699f038114e61b4ddf5102b2d3b4b#11414b6aa45699f038114e61b4ddf5102b2d3b4b"
 
 [[package]]
 name = "drm"
@@ -1356,15 +1339,269 @@ dependencies = [
  "easy-ext",
  "env_logger",
  "etcetera",
- "iced",
+ "ferrishot_iced",
  "image 0.25.6",
  "log",
  "mouse_position",
  "notify-rust",
  "rfd",
  "thiserror 2.0.12",
- "winit 0.30.9",
  "xcap",
+]
+
+[[package]]
+name = "ferrishot_cryoglyph"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a060ef20695ce6e13d0cc4d2a2a26b3fbb243ced96caf2b4733fb7f8c88df7a5"
+dependencies = [
+ "cosmic-text",
+ "etagere",
+ "lru",
+ "rustc-hash 2.1.1",
+ "wgpu",
+]
+
+[[package]]
+name = "ferrishot_iced"
+version = "0.14.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1dda6a8f41035c7530e5676fbd5e871651ada272618b22142c4eef28dbb3a47f"
+dependencies = [
+ "ferrishot_iced_core",
+ "ferrishot_iced_debug",
+ "ferrishot_iced_futures",
+ "ferrishot_iced_renderer",
+ "ferrishot_iced_runtime",
+ "ferrishot_iced_widget",
+ "ferrishot_iced_winit",
+ "image 0.25.6",
+ "thiserror 1.0.69",
+]
+
+[[package]]
+name = "ferrishot_iced_core"
+version = "0.14.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b916df8eaccbf2cbfec2f6bbbb31d7283cf1e96a10704e2e3a2353b71f3e59e7"
+dependencies = [
+ "bitflags 2.9.0",
+ "bytes",
+ "dark-light",
+ "glam",
+ "lilt",
+ "log",
+ "num-traits",
+ "rustc-hash 2.1.1",
+ "smol_str",
+ "thiserror 1.0.69",
+ "web-time",
+]
+
+[[package]]
+name = "ferrishot_iced_debug"
+version = "0.14.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "63447265726501d005bceeb530b826760cc75afdb521008d064f8a6fdf9d1d1a"
+dependencies = [
+ "ferrishot_iced_core",
+ "log",
+]
+
+[[package]]
+name = "ferrishot_iced_futures"
+version = "0.14.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d20ef991b24032ff9fe0a5059d37e743e1f795febb997e0862ac60bd83788aa9"
+dependencies = [
+ "ferrishot_iced_core",
+ "futures",
+ "log",
+ "rustc-hash 2.1.1",
+ "wasm-bindgen-futures",
+ "wasmtimer",
+]
+
+[[package]]
+name = "ferrishot_iced_graphics"
+version = "0.14.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3b9a64a72f3a14641dad7500b3e33b5cb1742d626e5d3b1c235865bfbe2c933a"
+dependencies = [
+ "bitflags 2.9.0",
+ "bytemuck",
+ "cosmic-text",
+ "ferrishot_iced_core",
+ "ferrishot_iced_futures",
+ "half",
+ "image 0.25.6",
+ "kamadak-exif",
+ "log",
+ "lyon_path",
+ "raw-window-handle",
+ "rustc-hash 2.1.1",
+ "thiserror 1.0.69",
+ "unicode-segmentation",
+]
+
+[[package]]
+name = "ferrishot_iced_program"
+version = "0.14.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8812c285128d3767e1e2817e7c55f9c041ced226bbd464c132207973692fe9ae"
+dependencies = [
+ "ferrishot_iced_graphics",
+ "ferrishot_iced_runtime",
+]
+
+[[package]]
+name = "ferrishot_iced_renderer"
+version = "0.14.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "56c117d93b32a719667fe8b53c4b109ae9c692b1004136d6145fca55fbb84f5a"
+dependencies = [
+ "ferrishot_iced_graphics",
+ "ferrishot_iced_tiny_skia",
+ "ferrishot_iced_wgpu",
+ "log",
+ "thiserror 1.0.69",
+]
+
+[[package]]
+name = "ferrishot_iced_runtime"
+version = "0.14.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "16864a80f6242e8a78d82cacf379def051e0418bdfdeba73b08a4faa68fb47d7"
+dependencies = [
+ "bytes",
+ "ferrishot_iced_core",
+ "ferrishot_iced_debug",
+ "ferrishot_iced_futures",
+ "raw-window-handle",
+ "thiserror 1.0.69",
+]
+
+[[package]]
+name = "ferrishot_iced_tiny_skia"
+version = "0.14.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d306892535c4187c1f0d0647d7c269a3f6204a8345240710d023560d17fa1a68"
+dependencies = [
+ "bytemuck",
+ "cosmic-text",
+ "ferrishot_iced_debug",
+ "ferrishot_iced_graphics",
+ "kurbo",
+ "log",
+ "rustc-hash 2.1.1",
+ "softbuffer",
+ "tiny-skia",
+]
+
+[[package]]
+name = "ferrishot_iced_wgpu"
+version = "0.14.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3d8835d191a47a8d3828b3169f57539337aa70a3410762f3ef5b03b7db3e8966"
+dependencies = [
+ "bitflags 2.9.0",
+ "bytemuck",
+ "ferrishot_cryoglyph",
+ "ferrishot_iced_debug",
+ "ferrishot_iced_graphics",
+ "futures",
+ "glam",
+ "guillotiere",
+ "log",
+ "lyon",
+ "rustc-hash 2.1.1",
+ "thiserror 1.0.69",
+ "wgpu",
+]
+
+[[package]]
+name = "ferrishot_iced_widget"
+version = "0.14.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ba0adc4e40221379868141dfab4442decc42ec6293534e9f9826d06338efdfac"
+dependencies = [
+ "ferrishot_iced_renderer",
+ "ferrishot_iced_runtime",
+ "log",
+ "num-traits",
+ "rustc-hash 2.1.1",
+ "thiserror 1.0.69",
+ "unicode-segmentation",
+]
+
+[[package]]
+name = "ferrishot_iced_winit"
+version = "0.14.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2e764c90ba8c0eed68af831f473b19b55560fde6405dbac91dd427d964f78cb1"
+dependencies = [
+ "ferrishot_iced_debug",
+ "ferrishot_iced_program",
+ "ferrishot_winit_fork",
+ "log",
+ "rustc-hash 2.1.1",
+ "thiserror 1.0.69",
+ "tracing",
+ "wasm-bindgen-futures",
+ "web-sys",
+ "window_clipboard",
+]
+
+[[package]]
+name = "ferrishot_winit_fork"
+version = "0.30.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b0856722af14b95fb091a8f34c6dc0784cc9b734f825bb0abe2c122a0e5d66cf"
+dependencies = [
+ "ahash",
+ "android-activity",
+ "atomic-waker",
+ "bitflags 2.9.0",
+ "block2 0.5.1",
+ "bytemuck",
+ "calloop",
+ "cfg_aliases",
+ "concurrent-queue",
+ "core-foundation 0.9.4",
+ "core-graphics 0.23.2",
+ "cursor-icon",
+ "dpi",
+ "js-sys",
+ "libc",
+ "memmap2",
+ "ndk",
+ "objc2 0.5.2",
+ "objc2-app-kit 0.2.2",
+ "objc2-foundation 0.2.2",
+ "objc2-ui-kit",
+ "orbclient",
+ "percent-encoding",
+ "pin-project",
+ "raw-window-handle",
+ "redox_syscall 0.4.1",
+ "rustix 0.38.44",
+ "sctk-adwaita",
+ "smithay-client-toolkit",
+ "smol_str",
+ "tracing",
+ "unicode-segmentation",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "wayland-backend",
+ "wayland-client",
+ "wayland-protocols 0.32.6",
+ "wayland-protocols-plasma",
+ "web-sys",
+ "web-time",
+ "windows-sys 0.52.0",
+ "x11-dl",
+ "x11rb",
+ "xkbcommon-dl",
 ]
 
 [[package]]
@@ -1821,184 +2058,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f31827a206f56af32e590ba56d5d2d085f558508192593743f16b2306495269f"
 dependencies = [
  "cc",
-]
-
-[[package]]
-name = "iced"
-version = "0.14.0-dev"
-source = "git+https://github.com/nik-rev/iced.git?rev=bd90a396eb0d844e036e210ee28945973b2e4163#bd90a396eb0d844e036e210ee28945973b2e4163"
-dependencies = [
- "iced_core",
- "iced_debug",
- "iced_futures",
- "iced_renderer",
- "iced_runtime",
- "iced_widget",
- "iced_winit",
- "image 0.25.6",
- "thiserror 1.0.69",
-]
-
-[[package]]
-name = "iced_core"
-version = "0.14.0-dev"
-source = "git+https://github.com/nik-rev/iced.git?rev=bd90a396eb0d844e036e210ee28945973b2e4163#bd90a396eb0d844e036e210ee28945973b2e4163"
-dependencies = [
- "bitflags 2.9.0",
- "bytes",
- "dark-light",
- "glam",
- "lilt",
- "log",
- "num-traits",
- "rustc-hash 2.1.1",
- "smol_str",
- "thiserror 1.0.69",
- "web-time",
-]
-
-[[package]]
-name = "iced_debug"
-version = "0.14.0-dev"
-source = "git+https://github.com/nik-rev/iced.git?rev=bd90a396eb0d844e036e210ee28945973b2e4163#bd90a396eb0d844e036e210ee28945973b2e4163"
-dependencies = [
- "iced_core",
- "log",
-]
-
-[[package]]
-name = "iced_futures"
-version = "0.14.0-dev"
-source = "git+https://github.com/nik-rev/iced.git?rev=bd90a396eb0d844e036e210ee28945973b2e4163#bd90a396eb0d844e036e210ee28945973b2e4163"
-dependencies = [
- "futures",
- "iced_core",
- "log",
- "rustc-hash 2.1.1",
- "wasm-bindgen-futures",
- "wasmtimer",
-]
-
-[[package]]
-name = "iced_graphics"
-version = "0.14.0-dev"
-source = "git+https://github.com/nik-rev/iced.git?rev=bd90a396eb0d844e036e210ee28945973b2e4163#bd90a396eb0d844e036e210ee28945973b2e4163"
-dependencies = [
- "bitflags 2.9.0",
- "bytemuck",
- "cosmic-text",
- "half",
- "iced_core",
- "iced_futures",
- "image 0.25.6",
- "kamadak-exif",
- "log",
- "lyon_path",
- "raw-window-handle",
- "rustc-hash 2.1.1",
- "thiserror 1.0.69",
- "unicode-segmentation",
-]
-
-[[package]]
-name = "iced_program"
-version = "0.14.0-dev"
-source = "git+https://github.com/nik-rev/iced.git?rev=bd90a396eb0d844e036e210ee28945973b2e4163#bd90a396eb0d844e036e210ee28945973b2e4163"
-dependencies = [
- "iced_graphics",
- "iced_runtime",
-]
-
-[[package]]
-name = "iced_renderer"
-version = "0.14.0-dev"
-source = "git+https://github.com/nik-rev/iced.git?rev=bd90a396eb0d844e036e210ee28945973b2e4163#bd90a396eb0d844e036e210ee28945973b2e4163"
-dependencies = [
- "iced_graphics",
- "iced_tiny_skia",
- "iced_wgpu",
- "log",
- "thiserror 1.0.69",
-]
-
-[[package]]
-name = "iced_runtime"
-version = "0.14.0-dev"
-source = "git+https://github.com/nik-rev/iced.git?rev=bd90a396eb0d844e036e210ee28945973b2e4163#bd90a396eb0d844e036e210ee28945973b2e4163"
-dependencies = [
- "bytes",
- "iced_core",
- "iced_debug",
- "iced_futures",
- "raw-window-handle",
- "thiserror 1.0.69",
-]
-
-[[package]]
-name = "iced_tiny_skia"
-version = "0.14.0-dev"
-source = "git+https://github.com/nik-rev/iced.git?rev=bd90a396eb0d844e036e210ee28945973b2e4163#bd90a396eb0d844e036e210ee28945973b2e4163"
-dependencies = [
- "bytemuck",
- "cosmic-text",
- "iced_debug",
- "iced_graphics",
- "kurbo",
- "log",
- "rustc-hash 2.1.1",
- "softbuffer",
- "tiny-skia",
-]
-
-[[package]]
-name = "iced_wgpu"
-version = "0.14.0-dev"
-source = "git+https://github.com/nik-rev/iced.git?rev=bd90a396eb0d844e036e210ee28945973b2e4163#bd90a396eb0d844e036e210ee28945973b2e4163"
-dependencies = [
- "bitflags 2.9.0",
- "bytemuck",
- "cryoglyph",
- "futures",
- "glam",
- "guillotiere",
- "iced_debug",
- "iced_graphics",
- "log",
- "lyon",
- "rustc-hash 2.1.1",
- "thiserror 1.0.69",
- "wgpu",
-]
-
-[[package]]
-name = "iced_widget"
-version = "0.14.0-dev"
-source = "git+https://github.com/nik-rev/iced.git?rev=bd90a396eb0d844e036e210ee28945973b2e4163#bd90a396eb0d844e036e210ee28945973b2e4163"
-dependencies = [
- "iced_renderer",
- "iced_runtime",
- "log",
- "num-traits",
- "rustc-hash 2.1.1",
- "thiserror 1.0.69",
- "unicode-segmentation",
-]
-
-[[package]]
-name = "iced_winit"
-version = "0.14.0-dev"
-source = "git+https://github.com/nik-rev/iced.git?rev=bd90a396eb0d844e036e210ee28945973b2e4163#bd90a396eb0d844e036e210ee28945973b2e4163"
-dependencies = [
- "iced_debug",
- "iced_program",
- "log",
- "rustc-hash 2.1.1",
- "thiserror 1.0.69",
- "tracing",
- "wasm-bindgen-futures",
- "web-sys",
- "window_clipboard",
- "winit 0.30.8",
 ]
 
 [[package]]
@@ -5539,109 +5598,6 @@ name = "windows_x86_64_msvc"
 version = "0.52.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "589f6da84c646204747d1270a2a5661ea66ed1cced2631d546fdfb155959f9ec"
-
-[[package]]
-name = "winit"
-version = "0.30.8"
-source = "git+https://github.com/iced-rs/winit.git?rev=11414b6aa45699f038114e61b4ddf5102b2d3b4b#11414b6aa45699f038114e61b4ddf5102b2d3b4b"
-dependencies = [
- "ahash",
- "android-activity",
- "atomic-waker",
- "bitflags 2.9.0",
- "block2 0.5.1",
- "bytemuck",
- "calloop",
- "cfg_aliases",
- "concurrent-queue",
- "core-foundation 0.9.4",
- "core-graphics 0.23.2",
- "cursor-icon",
- "dpi 0.1.1 (git+https://github.com/iced-rs/winit.git?rev=11414b6aa45699f038114e61b4ddf5102b2d3b4b)",
- "js-sys",
- "libc",
- "memmap2",
- "ndk",
- "objc2 0.5.2",
- "objc2-app-kit 0.2.2",
- "objc2-foundation 0.2.2",
- "objc2-ui-kit",
- "orbclient",
- "percent-encoding",
- "pin-project",
- "raw-window-handle",
- "redox_syscall 0.4.1",
- "rustix 0.38.44",
- "sctk-adwaita",
- "smithay-client-toolkit",
- "smol_str",
- "tracing",
- "unicode-segmentation",
- "wasm-bindgen",
- "wasm-bindgen-futures",
- "wayland-backend",
- "wayland-client",
- "wayland-protocols 0.32.6",
- "wayland-protocols-plasma",
- "web-sys",
- "web-time",
- "windows-sys 0.52.0",
- "x11-dl",
- "x11rb",
- "xkbcommon-dl",
-]
-
-[[package]]
-name = "winit"
-version = "0.30.9"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a809eacf18c8eca8b6635091543f02a5a06ddf3dad846398795460e6e0ae3cc0"
-dependencies = [
- "ahash",
- "android-activity",
- "atomic-waker",
- "bitflags 2.9.0",
- "block2 0.5.1",
- "bytemuck",
- "calloop",
- "cfg_aliases",
- "concurrent-queue",
- "core-foundation 0.9.4",
- "core-graphics 0.23.2",
- "cursor-icon",
- "dpi 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "js-sys",
- "libc",
- "memmap2",
- "ndk",
- "objc2 0.5.2",
- "objc2-app-kit 0.2.2",
- "objc2-foundation 0.2.2",
- "objc2-ui-kit",
- "orbclient",
- "percent-encoding",
- "pin-project",
- "raw-window-handle",
- "redox_syscall 0.4.1",
- "rustix 0.38.44",
- "sctk-adwaita",
- "smithay-client-toolkit",
- "smol_str",
- "tracing",
- "unicode-segmentation",
- "wasm-bindgen",
- "wasm-bindgen-futures",
- "wayland-backend",
- "wayland-client",
- "wayland-protocols 0.32.6",
- "wayland-protocols-plasma",
- "web-sys",
- "web-time",
- "windows-sys 0.52.0",
- "x11-dl",
- "x11rb",
- "xkbcommon-dl",
-]
 
 [[package]]
 name = "winnow"

@@ -186,7 +186,7 @@ impl App {
     ///
     /// # Panics
     ///
-    /// - When cannot find the cursor position
+    /// Will panic if `self.selection` is `None` when sending the `Message::InitialResize`
     #[expect(clippy::needless_pass_by_value, reason = "trait function")]
     pub fn update(&mut self, message: Message) -> Task<Message> {
         match message {
@@ -213,9 +213,8 @@ impl App {
                         initial_cursor_pos: cursor,
                     };
                     selected_region.status = dragged;
-                } else {
+                } else if let Some(cursor_position) = cursor.position() {
                     // no region is selected, select the initial region
-                    let cursor_position = cursor.position().expect("cursor to be in the monitor");
                     self.create_selection_at(
                         cursor_position,
                         self.selection

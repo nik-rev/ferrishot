@@ -55,11 +55,6 @@
 
           src = pkgs.lib.cleanSource ./.;
           cargoLock.lockFile = ./Cargo.lock;
-          cargoLock.outputHashes = {
-            "iced-0.14.0-dev" = "sha256-0Pe88fUGPZ6rpOM4yKXw73CMuyRfb90hFW/38SBd7JY=";
-            "cryoglyph-0.1.0" = "sha256-X7S9jq8wU6g1DDNEzOtP3lKWugDnpopPDBK49iWvD4o=";
-            "dpi-0.1.1" = "sha256-hlVhlQ8MmIbNFNr6BM4edKdZbe+ixnPpKm819zauFLQ=";
-          };
 
           inherit buildInputs;
 
