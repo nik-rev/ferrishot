@@ -185,10 +185,16 @@ impl App {
                     Ok(img_path) => {
                         // send desktop notification if possible, this is
                         // just a decoration though so it's ok if we fail to do this
-                        let _ = notify_rust::Notification::new()
-                            .summary(&format!("Copied image to clipboard {width}px * {height}px"))
-                            .image_path(&img_path.to_string_lossy())
-                            .show();
+                        let mut notify = notify_rust::Notification::new();
+
+                        notify
+                            .summary(&format!("Copied image to clipboard {width}px * {height}px"));
+
+                        // images are not supported on macos
+                        #[cfg(not(target_os = "macos"))]
+                        notify.image_path(&img_path.to_string_lossy());
+
+                        let _ = notify.show();
 
                         return iced::exit();
                     },
