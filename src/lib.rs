@@ -1,4 +1,4 @@
-//! The ferrishot utility functions
+//! The ferrishot app
 
 mod app;
 mod background_image;
