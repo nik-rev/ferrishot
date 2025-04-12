@@ -1,5 +1,8 @@
 //! Main logic for the application, handling of events and mutation of the state
 
+use std::borrow::Cow;
+use std::time::Instant;
+
 use crate::SHADE_COLOR;
 use crate::config::Config;
 use crate::message::Message;
@@ -52,6 +55,25 @@ use crate::selection::{Selection, SelectionStatus};
 /// can use instead of the native file explorer.
 pub static SAVED_IMAGE: std::sync::OnceLock<image::DynamicImage> = std::sync::OnceLock::new();
 
+/// Show an error message to the user
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
+struct ErrorMessage {
+    /// Error message
+    message: Cow<'static, str>,
+    /// When the error was created
+    timestamp: Instant,
+}
+
+impl ErrorMessage {
+    /// Create a new error message
+    pub fn new<T: Into<Cow<'static, str>>>(message: T) -> Self {
+        Self {
+            message: message.into(),
+            timestamp: Instant::now(),
+        }
+    }
+}
+
 /// Holds the state for ferrishot
 #[derive(Debug)]
 pub struct App {
@@ -67,6 +89,8 @@ pub struct App {
     selection: Option<Selection>,
     /// Configuration of the app
     config: Config,
+    /// Errors to display to the user
+    errors: Vec<ErrorMessage>,
 }
 
 impl Default for App {
@@ -79,6 +103,7 @@ impl Default for App {
             selection: None,
             config,
             selections_created: 0,
+            errors: vec![],
         }
     }
 }
@@ -90,6 +115,26 @@ impl App {
     /// circumstances <https://github.com/iced-rs/iced/issues/2625>
     fn exit() -> Task<Message> {
         iced::window::get_latest().then(|id| iced::window::close(id.unwrap()))
+    }
+
+    /// Add a new error to the list of errors
+    fn error<T: Into<Cow<'static, str>> + std::fmt::Display>(&mut self, error: T) {
+        log::error!("Status Error: {error}");
+        self.errors.push(ErrorMessage::new(error));
+    }
+
+    /// Retrieve all valid errors
+    #[expect(dead_code)]
+    fn errors(&self) -> Vec<String> {
+        let now = Instant::now();
+        self.errors
+            .iter()
+            .rev()
+            .map_while(|err| {
+                let time_passed = now - err.timestamp;
+                (time_passed <= crate::ERROR_TIMEOUT).then_some(err.message.to_string())
+            })
+            .collect()
     }
 
     /// Renders the black tint on regions that are not selected
@@ -200,8 +245,7 @@ impl App {
             },
             Message::CopyToClipboard => {
                 let Some(selection) = self.selection.map(Selection::normalize) else {
-                    // TODO: instead of this, show an error to the user in
-                    // a custom widget
+                    self.error("There is no selection to copy");
                     return ().into();
                 };
 
@@ -237,8 +281,10 @@ impl App {
                         return Self::exit();
                     },
                     // TODO: show error to the user in a custom widget
-                    Err(err) => todo!("{err}"),
-                };
+                    Err(err) => {
+                        self.error(format!("Could not copy the image: {err}"));
+                    },
+                }
             },
             Message::SaveScreenshot => {
                 let Some(selection) = self
