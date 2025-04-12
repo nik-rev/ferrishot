@@ -21,7 +21,7 @@ pub const INTERACTION_AREA: f32 = 20.0;
 /// The size of the border of the square
 pub const STROKE_SIZE: f32 = 2.0;
 /// The color of the background for non-selected regions
-pub const SHADE_COLOR: iced::Color = iced::color!(0x00_00_00, 0.1);
+pub const SHADE_COLOR: iced::Color = iced::color!(0x00_00_00, 0.15);
 
 #[cfg(target_os = "linux")]
 pub use clipboard::{CLIPBOARD_DAEMON_ID, run_clipboard_daemon};
