@@ -2,6 +2,15 @@
 
 use ferrishot::App;
 
+#[easy_ext::ext]
+impl<T, E: std::fmt::Debug + std::fmt::Display> Result<T, E> {
+    /// Like `Result::expect`, but also logs the failure
+    fn log_expect(self, message: &str) -> T {
+        self.inspect_err(|err| log::error!("{message}: {err}"))
+            .expect(message)
+    }
+}
+
 fn main() {
     // On linux, a daemon is required to provide clipboard access even when
     // the process dies.
@@ -14,7 +23,7 @@ fn main() {
             .as_deref()
             .is_some_and(|arg| arg == ferrishot::CLIPBOARD_DAEMON_ID)
         {
-            ferrishot::run_clipboard_daemon().unwrap();
+            ferrishot::run_clipboard_daemon().log_expect("Failed to run clipboard daemon");
             return;
         }
     }
@@ -30,7 +39,7 @@ fn main() {
         .subscription(|_state| iced::keyboard::on_key_press(App::handle_key_press))
         .title("ferrishot")
         .run()
-        .expect("Failed to run the application");
+        .log_expect("Failed to start ferrishot");
 
     // SAFETY: There are no other threads which could be accessing `SAVED_IMAGE`
     // See the static's documentation for why we are doing this
@@ -45,7 +54,7 @@ fn main() {
             {
                 saved_image
                     .save(save_path)
-                    .expect("Failed to save image to the chosen path");
+                    .log_expect("Failed to save the image");
             }
         }
     }
