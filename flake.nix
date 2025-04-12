@@ -17,31 +17,17 @@
         };
         manifest = pkgs.lib.importTOML ./Cargo.toml;
         buildInputs = with pkgs; [
-          openssl
-          pkg-config
-          dbus
+          # required for the flake
           pkgs.makeWrapper
-          fontconfig
 
-          xorg.libX11
-          xorg.libXcursor
-          xorg.xrandr
-          xorg.libXi
-          xorg.libxcb
-          libxkbcommon
-          vulkan-headers
-          vulkan-loader
+          # makes it more performant
           libGL
 
-          libxkbcommon
-          # WINIT_UNIX_BACKEND=wayland
+          # required with wayland
           wayland
-
-          # WINIT_UNIX_BACKEND=x11
-          xorg.libXcursor
-          xorg.libXrandr
-          xorg.libXi
-          xorg.libX11
+          # required on Linux
+          xorg.libxcb
+          libxkbcommon
         ];
       in
       {
