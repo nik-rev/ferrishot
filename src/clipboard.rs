@@ -2,6 +2,7 @@
 
 /// An argument that can be passed into the program to signal that it should daemonize itself. This
 /// can be anything as long as it is unlikely to be passed in by the user by mistake.
+#[cfg(target_os = "linux")]
 pub const CLIPBOARD_DAEMON_ID: &str = "__ferrishot_clipboard_daemon";
 /// In order to pass along image data from this process onto another, the
 /// easiest way to do that is to create a temporary file then read it
@@ -98,6 +99,7 @@ pub fn set_image(
 ///   The image must be of valid width, height and byte amount
 /// if copy type is "text" we expect:
 ///   3. text content which should be copied to the clipboard
+#[cfg(target_os = "linux")]
 pub fn run_clipboard_daemon() -> Result<(), arboard::Error> {
     use arboard::SetExtLinux as _;
     // skip program name

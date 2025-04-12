@@ -23,5 +23,7 @@ pub const STROKE_SIZE: f32 = 2.0;
 /// The color of the background for non-selected regions
 pub const SHADE_COLOR: iced::Color = iced::color!(0x00_00_00, 0.1);
 
-pub use app::App;
+#[cfg(target_os = "linux")]
 pub use clipboard::{CLIPBOARD_DAEMON_ID, run_clipboard_daemon};
+
+pub use app::App;
