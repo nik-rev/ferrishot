@@ -74,6 +74,8 @@ inputs.ferrishot.packages.${pkgs.system}.default
 
 ### Cargo
 
+See [`CONTRIBUTING.md`](./CONTRIBUTING.md) for details.
+
 ```sh
 cargo install ferrishot
 ```
