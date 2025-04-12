@@ -10,8 +10,8 @@ Currently, this project is under heavy development. The current goal is to reach
 - Resize region by dragging on any of the sides
 - Move the region around by dragging in the center
 - `Esc` closes the app
-- [ ] `Ctrl c` copy region to clipboard
-- [ ] `Ctrl s` save region to path
+- `Ctrl c` copy region to clipboard
+- `Ctrl s` save region to path
 
 ## Roadmap
 
