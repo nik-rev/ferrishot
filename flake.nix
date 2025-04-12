@@ -20,6 +20,8 @@
           openssl
           pkg-config
           dbus
+          pkgs.makeWrapper
+          fontconfig
 
           xorg.libX11
           xorg.libXcursor
@@ -27,8 +29,19 @@
           xorg.libXi
           xorg.libxcb
           libxkbcommon
+          vulkan-headers
           vulkan-loader
+          libGL
+
+          libxkbcommon
+          # WINIT_UNIX_BACKEND=wayland
           wayland
+
+          # WINIT_UNIX_BACKEND=x11
+          xorg.libXcursor
+          xorg.libXrandr
+          xorg.libXi
+          xorg.libX11
         ];
       in
       {
@@ -48,8 +61,12 @@
             "dpi-0.1.1" = "sha256-hlVhlQ8MmIbNFNr6BM4edKdZbe+ixnPpKm819zauFLQ=";
           };
 
-          nativeBuildInputs = buildInputs;
           inherit buildInputs;
+
+          postFixup = ''
+            wrapProgram $out/bin/ferrishot \
+              --suffix LD_LIBRARY_PATH : ${pkgs.lib.makeLibraryPath buildInputs}
+          '';
         };
       }
     );
