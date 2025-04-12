@@ -1,5 +1,14 @@
 //! The ferrishot app
 
+#[easy_ext::ext(ResultExt)]
+pub impl<T, E: std::fmt::Debug + std::fmt::Display> Result<T, E> {
+    /// Like `Result::expect`, but also logs the failure
+    fn log_expect(self, message: &str) -> T {
+        self.inspect_err(|err| log::error!("{message}: {err}"))
+            .expect(message)
+    }
+}
+
 mod app;
 mod background_image;
 mod clipboard;

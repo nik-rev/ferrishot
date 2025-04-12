@@ -1,15 +1,6 @@
 #![doc = include_str!("../README.md")]
 
-use ferrishot::App;
-
-#[easy_ext::ext]
-impl<T, E: std::fmt::Debug + std::fmt::Display> Result<T, E> {
-    /// Like `Result::expect`, but also logs the failure
-    fn log_expect(self, message: &str) -> T {
-        self.inspect_err(|err| log::error!("{message}: {err}"))
-            .expect(message)
-    }
-}
+use ferrishot::{App, ResultExt as _};
 
 fn main() {
     ferrishot::initialize_logging();

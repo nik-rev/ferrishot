@@ -45,7 +45,7 @@ pub enum ScreenshotError {
     /// There is no active monitor
     Monitor(xcap::XCapError),
     /// Could not capture the screenshot for some reason
-    #[error("Couldn not take a screenshot: {0}")]
+    #[error("Could not take a screenshot: {0}")]
     Screenshot(xcap::XCapError),
 }
 

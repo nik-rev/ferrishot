@@ -3,10 +3,10 @@
 use std::borrow::Cow;
 use std::time::Instant;
 
-use crate::SHADE_COLOR;
 use crate::config::Config;
 use crate::message::Message;
 use crate::screenshot::RgbaHandle;
+use crate::{ResultExt, SHADE_COLOR};
 use clap::Parser as _;
 use iced::keyboard::{Key, Modifiers};
 use iced::mouse::{Cursor, Interaction};
@@ -95,7 +95,8 @@ pub struct App {
 
 impl Default for App {
     fn default() -> Self {
-        let screenshot = crate::screenshot::screenshot().unwrap();
+        let screenshot = crate::screenshot::screenshot()
+            .log_expect("Failed to take a screenshot of the desktop");
         let config = Config::parse();
 
         Self {
