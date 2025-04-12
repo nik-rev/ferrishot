@@ -2,7 +2,7 @@
 
 An easy to use, and cross-platform screenshot app written in Rust.
 
-https://github.com/user-attachments/assets/a7a69202-597b-4f25-816f-f84ce85c6313
+<https://github.com/user-attachments/assets/a7a69202-597b-4f25-816f-f84ce85c6313>
 
 ## Features
 
