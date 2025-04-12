@@ -44,8 +44,15 @@ pub fn set_text(text: &str) -> Result<(), Box<dyn std::error::Error>> {
 /// # Returns
 ///
 /// Temporary file of the saved image
+#[cfg_attr(
+    target_os = "linux",
+    expect(
+        clippy::needless_pass_by_value,
+        reason = "on non-linux it is passed by value"
+    )
+)]
 pub fn set_image(
-    image_data: &arboard::ImageData,
+    image_data: arboard::ImageData,
 ) -> Result<std::path::PathBuf, Box<dyn std::error::Error>> {
     let clipboard_buffer_path = std::env::temp_dir().join(CLIPBOARD_BUFFER_FILE);
     let mut clipboard_buffer_file = File::create(&clipboard_buffer_path)?;

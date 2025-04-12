@@ -181,7 +181,11 @@ impl App {
                     bytes: std::borrow::Cow::Borrowed(cropped_image.as_bytes()),
                 };
 
-                match crate::clipboard::set_image(&image_data) {
+                #[cfg_attr(
+                    target_os = "macos",
+                    expect(unused_variables, reason = "it is used on other platforms")
+                )]
+                match crate::clipboard::set_image(image_data) {
                     Ok(img_path) => {
                         // send desktop notification if possible, this is
                         // just a decoration though so it's ok if we fail to do this
