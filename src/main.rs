@@ -2,7 +2,7 @@
 
 use ferrishot::App;
 
-fn main() -> iced::Result {
+fn main() {
     // On linux, a daemon is required to provide clipboard access even when
     // the process dies.
     //
@@ -15,13 +15,13 @@ fn main() -> iced::Result {
             .is_some_and(|arg| arg == ferrishot::CLIPBOARD_DAEMON_ID)
         {
             ferrishot::run_clipboard_daemon().unwrap();
-            return Ok(());
+            return;
         }
     }
 
     env_logger::builder().format_timestamp(None).init();
 
-    iced::application(App::default, App::update, App::view)
+    let _ = iced::application(App::default, App::update, App::view)
         .window(iced::window::Settings {
             level: iced::window::Level::Normal,
             fullscreen: true,
@@ -29,5 +29,5 @@ fn main() -> iced::Result {
         })
         .subscription(|_state| iced::keyboard::on_key_press(App::handle_key_press))
         .title("ferrishot")
-        .run()
+        .run();
 }

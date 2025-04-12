@@ -48,6 +48,14 @@ impl Default for App {
 }
 
 impl App {
+    /// Close the app
+    ///
+    /// This is like `iced::exit`, but it does not cause a segfault in special
+    /// circumstances <https://github.com/iced-rs/iced/issues/2625>
+    fn exit() -> Task<Message> {
+        iced::window::get_latest().then(|id| iced::window::close(id.unwrap()))
+    }
+
     /// Renders the black tint on regions that are not selected
     fn render_shade(&self, frame: &mut canvas::Frame, bounds: Rectangle) {
         let Some(selection) = self.selection.map(Selection::normalize) else {
@@ -100,7 +108,7 @@ impl App {
     /// - When cannot find the cursor position
     pub fn update(&mut self, message: Message) -> Task<Message> {
         match message {
-            Message::Exit => return iced::exit(),
+            Message::Exit => return Self::exit(),
             Message::LeftMouseDown(cursor) => {
                 if let Some((cursor, side, rect)) = cursor.position().and_then(|cursor_pos| {
                     self.selection.as_mut().and_then(|selected_region| {
@@ -200,72 +208,72 @@ impl App {
 
                         let _ = notify.show();
 
-                        return iced::exit();
+                        return Self::exit();
                     },
                     // TODO: show error to the user in a custom widget
                     Err(err) => todo!("{err}"),
                 };
             },
             Message::SaveScreenshot => {
-                let Some(selection) = self
-                    .selection
-                    .as_ref()
-                    .map(|sel| Selection::normalize(*sel))
-                else {
-                    // TODO: instead of this, show an error to the user in
-                    // a custom widget
-                    // return ().into();
-                    return ().into();
-                };
+                // let Some(selection) = self
+                //     .selection
+                //     .as_ref()
+                //     .map(|sel| Selection::normalize(*sel))
+                // else {
+                // TODO: instead of this, show an error to the user in
+                // a custom widget
+                // return ().into();
+                return ().into();
+                // };
 
-                let screenshot = self.screenshot.clone();
+                // let screenshot = self.screenshot.clone();
 
-                // the "oldest" window actually represents the main window
-                return iced::window::get_oldest().and_then(move |window_id| {
-                    let screenshot = screenshot.clone();
-                    iced::window::run_with_window_handles(window_id, move |window_handle| {
-                        Message::SaveScreenshotStep2(
-                            // the AsyncFileDialog "absorbs" the window_handle
-                            // Even though it has a lifetime, we don't have to worry about that
-                            // The AsyncFileDialog gets created. This one we can easily send across threads
-                            rfd::AsyncFileDialog::new()
-                                .set_title("Save Screenshot")
-                                .set_parent(&window_handle),
-                            screenshot,
-                            selection,
-                        )
-                    })
-                });
+                // // the "oldest" window actually represents the main window
+                // return iced::window::get_oldest().and_then(move |window_id| {
+                //     let screenshot = screenshot.clone();
+                //     iced::window::run_with_window_handles(window_id, move |window_handle| {
+                //         Message::SaveScreenshotStep2(
+                //             // the AsyncFileDialog "absorbs" the window_handle
+                //             // Even though it has a lifetime, we don't have to worry about that
+                //             // The AsyncFileDialog gets created. This one we can easily send across threads
+                //             rfd::AsyncFileDialog::new()
+                //                 .set_title("Save Screenshot")
+                //                 .set_parent(&window_handle),
+                //             screenshot,
+                //             selection,
+                //         )
+                //     })
+                // });
             },
-            Message::SaveScreenshotStep2(file_dialog, image_handle, selection) => {
-                return Task::future(async move {
-                    let Some(save_path) = file_dialog.save_file().await else {
-                        // TODO: instead of this, show an error to the user in
-                        // a custom widget
-                        return Message::Noop;
-                    };
+            // Message::SaveScreenshotStep2(file_dialog, image_handle, selection) => {
+            //     return Task::future(async move {
+            //         let Some(save_path) = file_dialog.save_file().await else {
+            //             // TODO: instead of this, show an error to the user in
+            //             // a custom widget
+            //             return Message::Noop;
+            //         };
 
-                    // FIXME: This is unfortunate, in the future
-                    // we can get rid of this by using a custom struct for
-                    // the image and constructing Handle on-the-fly
-                    let widget::image::Handle::Rgba {
-                        width,
-                        height,
-                        pixels,
-                        ..
-                    } = image_handle
-                    else {
-                        unreachable!();
-                    };
+            //         // FIXME: This is unfortunate, in the future
+            //         // we can get rid of this by using a custom struct for
+            //         // the image and constructing Handle on-the-fly
+            //         let widget::image::Handle::Rgba {
+            //             width,
+            //             height,
+            //             pixels,
+            //             ..
+            //         } = image_handle
+            //         else {
+            //             unreachable!();
+            //         };
 
-                    let cropped_image = selection.process_image(width, height, &pixels);
-                    cropped_image
-                        .save(save_path.path())
-                        .expect("valid PNG format");
+            //         let cropped_image = selection.process_image(width, height, &pixels);
+            //         cropped_image
+            //             .save(save_path.path())
+            //             .expect("valid PNG format");
 
-                    Message::Noop
-                });
-            },
+            //         Message::Noop
+            //     });
+            // },
             Message::InitialResize {
                 current_cursor_pos,
                 initial_cursor_pos,

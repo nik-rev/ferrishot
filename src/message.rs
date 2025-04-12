@@ -20,9 +20,6 @@ pub enum Message {
     CopyToClipboard,
     /// Save the screenshot as an image
     SaveScreenshot,
-    /// It's a little bit awkward, but this Message is actually only ever sent from part of
-    /// `SaveScreenshot`
-    SaveScreenshotStep2(AsyncFileDialog, iced::widget::image::Handle, Selection),
     /// The selection is initially resized as it was created
     InitialResize {
         /// Current position of the cursor
