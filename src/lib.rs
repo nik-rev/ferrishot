@@ -5,6 +5,7 @@ mod background_image;
 mod clipboard;
 mod config;
 mod corners;
+mod logging;
 mod message;
 mod mouse;
 mod rectangle;
@@ -28,3 +29,4 @@ pub use clipboard::{CLIPBOARD_DAEMON_ID, run_clipboard_daemon};
 
 pub use app::App;
 pub use app::SAVED_IMAGE;
+pub use logging::initialize_logging;

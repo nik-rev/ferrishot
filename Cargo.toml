@@ -4,9 +4,9 @@ version = "0.1.0"
 license = "MIT OR Apache-2.0"
 edition = "2024"
 description = "A cross-platform desktop screenshot app"
-repository = "_"
-keywords = ["_"]
-categories = ["_"]
+repository = "https://github.com/nik-rev/ferrishot"
+keywords = ["screenshot", "screen-capture", "capture", "flameshot"]
+categories = ["visualization", "multimedia"]
 authors = ["Nik Revenco"]
 
 [dependencies]
@@ -38,6 +38,8 @@ winit = { version = "0.30.8", default-features = false, features = [
   "wayland",
   "wayland-csd-adwaita",
 ] }
+etcetera = "0.10.0"
+chrono = "0.4.40"
 
 [lints.rust]
 missing_docs = "warn"

@@ -49,7 +49,7 @@ use crate::selection::{Selection, SelectionStatus};
 /// having to close this. But this seems to not be possible. Perhaps in the
 /// future there will be some kind of file explorer Iced widget that we
 /// can use instead of the native file explorer.
-pub static mut SAVED_IMAGE: Option<image::DynamicImage> = None;
+pub static SAVED_IMAGE: std::sync::OnceLock<image::DynamicImage> = std::sync::OnceLock::new();
 
 /// Holds the state for ferrishot
 #[derive(Debug)]
@@ -276,11 +276,7 @@ impl App {
                 };
                 let cropped_image = selection.process_image(width, height, pixels);
 
-                // SAFETY: This mutation is guaranteed to happen just once, then
-                // the application will exit. See the comments on the static for more info
-                unsafe {
-                    SAVED_IMAGE = Some(cropped_image);
-                }
+                let _ = SAVED_IMAGE.set(cropped_image);
 
                 return Self::exit();
             },

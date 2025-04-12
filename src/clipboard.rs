@@ -16,16 +16,11 @@ use std::{fs::File, io::Write, process};
 pub fn set_text(text: &str) -> Result<(), Box<dyn std::error::Error>> {
     #[cfg(target_os = "linux")]
     {
-        let mut cmd = process::Command::new(std::env::current_exe()?);
-
-        cmd.arg(CLIPBOARD_DAEMON_ID).arg("text").arg(text);
-
-        log::info!(
-            "setting text to the clipboard by calling the daemon with args: {:#?}",
-            cmd.get_args()
-        );
-
-        cmd.stdin(process::Stdio::null())
+        process::Command::new(std::env::current_exe()?)
+            .arg(CLIPBOARD_DAEMON_ID)
+            .arg("text")
+            .arg(text)
+            .stdin(process::Stdio::null())
             .stdout(process::Stdio::null())
             .stderr(process::Stdio::null())
             .current_dir("/")
@@ -60,20 +55,13 @@ pub fn set_image(
 
     #[cfg(target_os = "linux")]
     {
-        let mut cmd = process::Command::new(std::env::current_exe()?);
-
-        cmd.arg(CLIPBOARD_DAEMON_ID)
+        process::Command::new(std::env::current_exe()?)
+            .arg(CLIPBOARD_DAEMON_ID)
             .arg("image")
             .arg(image_data.width.to_string())
             .arg(image_data.height.to_string())
-            .arg(&clipboard_buffer_path);
-
-        log::info!(
-            "setting an image to the clipboard by calling the daemon with args: {:#?}",
-            cmd.get_args()
-        );
-
-        cmd.stdin(process::Stdio::null())
+            .arg(&clipboard_buffer_path)
+            .stdin(process::Stdio::null())
             .stdout(process::Stdio::null())
             .stderr(process::Stdio::null())
             .current_dir("/")
@@ -116,6 +104,12 @@ pub fn set_image(
 #[cfg(target_os = "linux")]
 pub fn run_clipboard_daemon() -> Result<(), arboard::Error> {
     use arboard::SetExtLinux as _;
+
+    log::info!(
+        "Spawned clipboard daemon with arguments: {:?}",
+        std::env::args().collect::<Vec<_>>()
+    );
+
     // skip program name
     let mut args = std::env::args().skip(1);
 

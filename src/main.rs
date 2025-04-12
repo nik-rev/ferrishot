@@ -12,6 +12,8 @@ impl<T, E: std::fmt::Debug + std::fmt::Display> Result<T, E> {
 }
 
 fn main() {
+    ferrishot::initialize_logging();
+
     // On linux, a daemon is required to provide clipboard access even when
     // the process dies.
     //
@@ -28,8 +30,6 @@ fn main() {
         }
     }
 
-    env_logger::builder().format_timestamp(None).init();
-
     iced::application(App::default, App::update, App::view)
         .window(iced::window::Settings {
             level: iced::window::Level::Normal,
@@ -41,21 +41,17 @@ fn main() {
         .run()
         .log_expect("Failed to start ferrishot");
 
-    // SAFETY: There are no other threads which could be accessing `SAVED_IMAGE`
-    // See the static's documentation for why we are doing this
-    #[expect(static_mut_refs, reason = "need owned value; not accessed ever after")]
-    unsafe {
-        if let Some(saved_image) = ferrishot::SAVED_IMAGE.take() {
-            // NOTE: The file dialog can be closed by the user, so it is
-            // not an error if we can't get the path for one reason or another
-            if let Some(save_path) = rfd::FileDialog::new()
-                .set_title("Save Screenshot")
-                .save_file()
-            {
-                saved_image
-                    .save(save_path)
-                    .log_expect("Failed to save the image");
-            }
+    // open file explorer to choose where to save the image
+    if let Some(saved_image) = ferrishot::SAVED_IMAGE.get() {
+        // NOTE: The file dialog can be closed by the user, so it is
+        // not an error if we can't get the path for one reason or another
+        if let Some(save_path) = rfd::FileDialog::new()
+            .set_title("Save Screenshot")
+            .save_file()
+        {
+            saved_image
+                .save(save_path)
+                .log_expect("Failed to save the image");
         }
     }
 }
