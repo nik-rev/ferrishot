@@ -264,9 +264,6 @@ impl App {
                 resize_side,
                 initial_rect,
             } => {
-                // FIXME: this is awkward. We know that self.selected_region EXISTS
-                // when we send the Resize message, so ideally we would send a mutable
-                // reference. But Messages cannot send mutable references from what I can tell
                 let selected_region = self
                     .selection
                     .as_mut()
