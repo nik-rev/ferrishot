@@ -30,9 +30,7 @@ x86_64-unknown-linux-gnu = "ubuntu-24.04"
 aarch64-unknown-linux-gnu = "ubuntu-24.04"
 
 [dist.dependencies.apt]
-libxcb1-dev = "*"
+libgl-dev = "*"
 libx11-dev = "*"
 libx11-xcb-dev = "*"
-libxcb-render0-dev = "*"
-libxcb-shape0-dev = "*"
-libxcb-xfixes0-dev = "*"
+libxcbcommon-dev = "*"

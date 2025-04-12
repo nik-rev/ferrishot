@@ -2,12 +2,12 @@
 
 On Windows and MacOS there are no dependencies.
 
-On Linux, you will need these:
+On Linux, you will need these (`apt` package manager names):
 
-- `ligGL`
-- `libxcb`
-- `libxkb`
-- `libX11`
+- `libgl-dev`
+- `libx11-dev`
+- `libx11-xcb-dev`
+- `libxcbcommon-dev`
 
 If you use wayland you will also need `wayland` lib.
 
