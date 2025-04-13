@@ -8,7 +8,7 @@
         </picture>
       </a>
       <br />
-      ferrishot
+      <span color="#dea584">ferrishot<span />
     </h1>
     <h4>Screenshot app written in Rust</h4>
   </p>
