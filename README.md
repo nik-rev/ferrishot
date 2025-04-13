@@ -1,8 +1,8 @@
 # ferrishot
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./logo_dark.png">
-  <img src="./logo_light.png">
+  <source media="(prefers-color-scheme: dark)" srcset="./logo_dark.svg">
+  <img src="./logo_light.svg">
 </picture>
 
 An easy-to-use, cross-platform screenshot app written in Rust.
