@@ -1,4 +1,8 @@
 //! Icons for ferrishot
+//!
+//! Icons are stored in the `icons/` directory.
+//! Icons are declared at the invocation of the `icons!` macro.
+//! Each `Icon` must have a corresponding `icons/Icon.svg` file.
 
 use iced::{Color, Length, widget};
 
