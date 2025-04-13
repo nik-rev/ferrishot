@@ -52,4 +52,6 @@ pub enum Message {
         /// Current selection
         selection: Selection,
     },
+    /// Set the selection to the entire screen
+    FullSelection,
 }

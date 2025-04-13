@@ -353,6 +353,21 @@ impl App {
                     resize_side: SideOrCorner::Corner(corners),
                 };
             },
+            Message::FullSelection => {
+                let (width, height, _) = self.screenshot.raw();
+                #[expect(
+                    clippy::cast_precision_loss,
+                    reason = "we cannot do anything about this; pixels in image are integers"
+                )]
+                {
+                    self.selection = Some(Selection::new(Point { x: 0.0, y: 0.0 }).with_size(
+                        |_| Size {
+                            width: width as f32,
+                            height: height as f32,
+                        },
+                    ));
+                }
+            },
         }
 
         ().into()
@@ -593,6 +608,7 @@ impl canvas::Program<Message> for App {
             {
                 Message::ExtendNewSelection(*position)
             },
+            Mouse(mouse::Event::ButtonPressed(mouse::Button::Middle)) => Message::FullSelection,
             _ => return None,
         };
 
