@@ -5,7 +5,7 @@
         <img height="64px" width="64px" src="logo.svg" />
       </a>
       <br />
-      ferrishot
+      <i>ferri</i>shot
     </h1>
     <h4>Screenshot app written in Rust</h4>
   </p>
