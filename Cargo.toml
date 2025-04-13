@@ -41,6 +41,8 @@ missing_docs = "warn"
 pedantic = { priority = -1, level = "warn" }
 nursery = { priority = -1, level = "warn" }
 
+unwrap_used = "warn"
+missing_assert_message = "warn"
 missing_docs_in_private_items = "warn"
 too_many_lines = "allow"
 

@@ -29,7 +29,15 @@ pub fn initialize_logging() {
     };
 
     log_to_file().unwrap_or_else(|err| {
+        // logs to the terminal if we can't log to the file
         env_logger::builder().init();
         log::warn!("Failed to open the log file: {err}");
     });
+
+    // all panic messages will be logged to the log file
+    let default_panic = std::panic::take_hook();
+    std::panic::set_hook(Box::new(move |info| {
+        log::error!("PANIC at {:?}: {:?}", info.location(), info.payload());
+        default_panic(info);
+    }));
 }

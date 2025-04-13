@@ -1,6 +1,6 @@
 //! The ferrishot app
 
-use ferrishot::{App, ResultExt as _};
+use ferrishot::App;
 
 fn main() {
     ferrishot::initialize_logging();
@@ -16,7 +16,7 @@ fn main() {
             .as_deref()
             .is_some_and(|arg| arg == ferrishot::CLIPBOARD_DAEMON_ID)
         {
-            ferrishot::run_clipboard_daemon().log_expect("Failed to run clipboard daemon");
+            ferrishot::run_clipboard_daemon().expect("Failed to run clipboard daemon");
             return;
         }
     }
@@ -30,7 +30,7 @@ fn main() {
         .subscription(|_state| iced::keyboard::on_key_press(App::handle_key_press))
         .title("ferrishot")
         .run()
-        .log_expect("Failed to start ferrishot");
+        .expect("Failed to start ferrishot");
 
     // open file explorer to choose where to save the image
     if let Some(saved_image) = ferrishot::SAVED_IMAGE.get() {
@@ -42,7 +42,7 @@ fn main() {
         {
             saved_image
                 .save(save_path)
-                .log_expect("Failed to save the image");
+                .expect("Failed to save the image");
         }
     }
 }

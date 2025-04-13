@@ -3,10 +3,10 @@
 use std::borrow::Cow;
 use std::time::Instant;
 
+use crate::SHADE_COLOR;
 use crate::config::Config;
 use crate::message::Message;
 use crate::screenshot::RgbaHandle;
-use crate::{ResultExt, SHADE_COLOR};
 use clap::Parser as _;
 use iced::keyboard::{Key, Modifiers};
 use iced::mouse::{Cursor, Interaction};
@@ -95,8 +95,8 @@ pub struct App {
 
 impl Default for App {
     fn default() -> Self {
-        let screenshot = crate::screenshot::screenshot()
-            .log_expect("Failed to take a screenshot of the desktop");
+        let screenshot =
+            crate::screenshot::screenshot().expect("Failed to take a screenshot of the desktop");
         let config = Config::parse();
 
         Self {
@@ -115,7 +115,7 @@ impl App {
     /// This is like `iced::exit`, but it does not cause a segfault in special
     /// circumstances <https://github.com/iced-rs/iced/issues/2625>
     fn exit() -> Task<Message> {
-        iced::window::get_latest().then(|id| iced::window::close(id.unwrap()))
+        iced::window::get_latest().then(|id| iced::window::close(id.expect("window to exist")))
     }
 
     /// Add a new error to the list of errors
