@@ -15,7 +15,7 @@ use iced::widget::{self, Action, canvas, stack};
 use iced::{Element, Length, Point, Rectangle, Renderer, Size, Task, Theme, mouse};
 
 use crate::background_image::BackgroundImage;
-use crate::corners::Side;
+use crate::corners::{Side, SideOrCorner};
 use crate::mouse::MouseState;
 use crate::rectangle::RectangleExt;
 use crate::selection::{Selection, SelectionStatus};
@@ -325,28 +325,34 @@ impl App {
                 // It will then be true for all cases
 
                 selected_region.rect = match resize_side {
-                    Side::TopLeft => initial_rect
-                        .with_pos(|_| current_cursor_pos)
-                        .with_width(|w| w - dx)
-                        .with_height(|h| h - dy),
-                    Side::TopRight => initial_rect
-                        .with_width(|w| w + dx)
-                        .with_y(|y| y + dy)
-                        .with_height(|h| h - dy),
-                    Side::BottomLeft => initial_rect
-                        .with_x(|x| x + dx)
-                        .with_width(|w| w - dx)
-                        .with_height(|h| h + dy),
-                    Side::BottomRight => {
-                        initial_rect.with_width(|w| w + dx).with_height(|h| h + dy)
+                    SideOrCorner::Side(side) => match side {
+                        Side::Top => initial_rect.with_height(|h| h - dy).with_y(|y| y + dy),
+                        Side::Right => initial_rect.with_width(|w| w + dx),
+                        Side::Bottom => initial_rect.with_height(|h| h + dy),
+                        Side::Left => initial_rect.with_width(|w| w - dx).with_x(|x| x + dx),
                     },
-                    Side::Top => initial_rect.with_height(|h| h - dy).with_y(|y| y + dy),
-                    Side::Right => initial_rect.with_width(|w| w + dx),
-                    Side::Bottom => initial_rect.with_height(|h| h + dy),
-                    Side::Left => initial_rect.with_width(|w| w - dx).with_x(|x| x + dx),
+                    SideOrCorner::Corner(corner) => {
+                        corner.resize_rect(initial_rect, current_cursor_pos, initial_cursor_pos)
+                    },
+                }
+            },
+            Message::ResizingToCursor {
+                cursor_pos,
+                selection,
+            } => {
+                let (corner_point, corners) = selection.corners().nearest_corner(cursor_pos);
+                let sel = self
+                    .selection
+                    .as_mut()
+                    .expect("is inside of `.is_some_and()` guard");
+
+                sel.rect = corners.resize_rect(selection.rect, cursor_pos, corner_point);
+                sel.status = SelectionStatus::Resized {
+                    initial_rect: sel.rect,
+                    initial_cursor_pos: cursor_pos,
+                    resize_side: SideOrCorner::Corner(corners),
                 };
             },
-            Message::Noop => (),
         }
 
         ().into()
@@ -444,7 +450,7 @@ impl canvas::Program<Message> for App {
                 // happens often when we are dragging the mouse fast), we don't want the cursor to change
                 cursor
                     .position()
-                    .and_then(|cursor| sel.corners().side_at(cursor).map(Side::mouse_icon))
+                    .and_then(|cursor| sel.corners().side_at(cursor).map(SideOrCorner::mouse_icon))
                     // for example, if we start dragging top right corner, and move mouse to the
                     // top left corner, we want the cursor to switch appropriately
                     .or_else(|| {
@@ -483,6 +489,25 @@ impl canvas::Program<Message> for App {
                 state.left_click();
                 Message::LeftMouseDown(cursor)
             },
+            Mouse(mouse::Event::ButtonPressed(mouse::Button::Right)) => {
+                state.right_click();
+                if let Some(cursor) = cursor.position() {
+                    if let Some(selection) = self.selection {
+                        Message::ResizingToCursor {
+                            cursor_pos: cursor,
+                            selection: selection.norm(),
+                        }
+                    } else {
+                        return None;
+                    }
+                } else {
+                    return None;
+                }
+            },
+            Mouse(mouse::Event::ButtonReleased(mouse::Button::Right)) => {
+                state.right_release();
+                return None;
+            },
             Mouse(mouse::Event::ButtonReleased(mouse::Button::Left)) => {
                 state.left_release();
                 if self.config.instant && self.selections_created == 1 {
@@ -514,7 +539,31 @@ impl canvas::Program<Message> for App {
                 }
             },
             Mouse(mouse::Event::CursorMoved { position })
+                if state.is_right_clicked()
+                    && state.is_left_released()
+                    && self
+                        .selection
+                        .is_some_and(super::selection::Selection::is_resized) =>
+            {
+                // FIXME: this will not be necessary when we have `let_chains`
+                let SelectionStatus::Resized {
+                    resize_side,
+                    initial_rect,
+                    initial_cursor_pos,
+                } = self.selection.expect("has `.is_some()` guard").status
+                else {
+                    unreachable!();
+                };
+                Message::InitialResize {
+                    current_cursor_pos: *position,
+                    resize_side,
+                    initial_cursor_pos,
+                    initial_rect,
+                }
+            },
+            Mouse(mouse::Event::CursorMoved { position })
                 if state.is_left_clicked()
+                    && state.is_right_released()
                     && self
                         .selection
                         .is_some_and(super::selection::Selection::is_dragged) =>
@@ -537,6 +586,7 @@ impl canvas::Program<Message> for App {
             },
             Mouse(mouse::Event::CursorMoved { position })
                 if state.is_left_clicked()
+                    && state.is_right_released()
                     && self
                         .selection
                         .is_some_and(super::selection::Selection::is_idle) =>

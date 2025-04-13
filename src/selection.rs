@@ -3,7 +3,7 @@ use delegate::delegate;
 use iced::{Point, Rectangle, Size};
 
 use crate::corners::Corners;
-use crate::corners::Side;
+use crate::corners::SideOrCorner;
 use crate::rectangle::RectangleExt;
 
 /// The selected area of the desktop which will be captured
@@ -24,8 +24,8 @@ pub enum SelectionStatus {
         initial_rect: Rectangle,
         /// Cursor position before we started resizing it
         initial_cursor_pos: Point,
-        /// The side being resized
-        resize_side: Side,
+        /// The side or corner being resized
+        resize_side: SideOrCorner,
     },
     /// The selection is currently being dragged
     ///

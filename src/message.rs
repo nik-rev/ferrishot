@@ -2,13 +2,11 @@
 
 use iced::{Point, Rectangle, mouse::Cursor};
 
-use crate::{corners::Side, selection::Selection};
+use crate::{corners::SideOrCorner, selection::Selection};
 
 /// Represents an action happening in the application
 #[derive(Debug, Clone)]
 pub enum Message {
-    /// Do nothing
-    Noop,
     /// Exits the application
     Exit,
     /// The left mouse button is down
@@ -26,7 +24,7 @@ pub enum Message {
         /// Initial position of the cursor
         initial_cursor_pos: Point,
         /// Which side we are currently resizing
-        resize_side: Side,
+        resize_side: SideOrCorner,
         /// Selection rectangle as it looked like when we just started resizing
         initial_rect: Rectangle,
     },
@@ -45,5 +43,13 @@ pub enum Message {
         current_selection: Selection,
         /// Top-left corner of the selection before we started moving it
         initial_rect_pos: Point,
+    },
+    /// Holding right-click, the selection will move the
+    /// nearest corner to the cursor
+    ResizingToCursor {
+        /// Current position of the cursor
+        cursor_pos: Point,
+        /// Current selection
+        selection: Selection,
     },
 }

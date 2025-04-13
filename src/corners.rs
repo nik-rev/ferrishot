@@ -1,11 +1,11 @@
 //! `Corners` represents the 4 vertices of a `iced::Rectangle`
 use iced::{Point, Rectangle, mouse};
 
-use crate::{CORNER_RADIUS, INTERACTION_AREA, SELECTION_COLOR};
+use crate::{CORNER_RADIUS, INTERACTION_AREA, SELECTION_COLOR, rectangle::RectangleExt as _};
 
-/// The point that is currently being resized
+/// Corner of a rectangle
 #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
-pub enum Side {
+pub enum Corner {
     /// Top-left corner
     TopLeft,
     /// Top-right corner
@@ -14,6 +14,50 @@ pub enum Side {
     BottomLeft,
     /// Bottom-right corner
     BottomRight,
+}
+
+impl Corner {
+    /// # Arguments
+    ///
+    /// - `self`: The corner, next to which we are resizing
+    /// - `initial_rect`: The rectangle before we started resizing it
+    /// - `current_cursor_pos`: Current position of the cursor
+    /// - `initial_cursor_pos`: Position of the cursor before we started
+    ///   resizing the rectangle
+    ///
+    /// # Returns
+    ///
+    /// The resized rectangle. The corner opposite to `self` is guaranteed to
+    /// remain in-place.
+    pub fn resize_rect(
+        self,
+        initial_rect: Rectangle,
+        current_cursor_pos: Point,
+        initial_cursor_pos: Point,
+    ) -> Rectangle {
+        let dy = current_cursor_pos.y - initial_cursor_pos.y;
+        let dx = current_cursor_pos.x - initial_cursor_pos.x;
+        match self {
+            Self::TopLeft => initial_rect
+                .with_pos(|_| current_cursor_pos)
+                .with_width(|w| w - dx)
+                .with_height(|h| h - dy),
+            Self::TopRight => initial_rect
+                .with_width(|w| w + dx)
+                .with_y(|y| y + dy)
+                .with_height(|h| h - dy),
+            Self::BottomLeft => initial_rect
+                .with_x(|x| x + dx)
+                .with_width(|w| w - dx)
+                .with_height(|h| h + dy),
+            Self::BottomRight => initial_rect.with_width(|w| w + dx).with_height(|h| h + dy),
+        }
+    }
+}
+
+/// Side of a rectangle
+#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub enum Side {
     /// Top side
     Top,
     /// Right side
@@ -24,14 +68,27 @@ pub enum Side {
     Left,
 }
 
-impl Side {
+/// Side and corner
+#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub enum SideOrCorner {
+    /// One of the 4 sides of a rectangle
+    Side(Side),
+    /// One of the 4 corners of a rectangle
+    Corner(Corner),
+}
+
+impl SideOrCorner {
     /// Obtain the appropriate mouse cursor for the given side
     pub const fn mouse_icon(self) -> mouse::Interaction {
         match self {
-            Self::Top | Self::Bottom => mouse::Interaction::ResizingVertically,
-            Self::Right | Self::Left => mouse::Interaction::ResizingHorizontally,
-            Self::TopLeft | Self::BottomRight => mouse::Interaction::ResizingDiagonallyDown,
-            Self::BottomLeft | Self::TopRight => mouse::Interaction::ResizingDiagonallyUp,
+            Self::Side(side) => match side {
+                Side::Top | Side::Bottom => mouse::Interaction::ResizingVertically,
+                Side::Right | Side::Left => mouse::Interaction::ResizingHorizontally,
+            },
+            Self::Corner(corner) => match corner {
+                Corner::TopLeft | Corner::BottomRight => mouse::Interaction::ResizingDiagonallyDown,
+                Corner::TopRight | Corner::BottomLeft => mouse::Interaction::ResizingDiagonallyUp,
+            },
         }
     }
 }
@@ -50,6 +107,24 @@ pub struct Corners {
 }
 
 impl Corners {
+    /// Finds the nearest corner to this point
+    pub fn nearest_corner(&self, point: Point) -> (Point, Corner) {
+        let corners = [
+            (self.top_left, Corner::TopLeft),
+            (self.top_right, Corner::TopRight),
+            (self.bottom_left, Corner::BottomLeft),
+            (self.bottom_right, Corner::BottomRight),
+        ];
+        corners
+            .into_iter()
+            .min_by(|(point_a, _), (point_b, _)| {
+                point
+                    .distance(*point_a)
+                    .total_cmp(&point.distance(*point_b))
+            })
+            .expect("There to be at least 1 element")
+    }
+
     /// Render the circles for each side
     pub fn render_circles(&self, frame: &mut iced::widget::canvas::Frame) {
         for circle in [
@@ -65,7 +140,7 @@ impl Corners {
     }
 
     /// Return the interaction side for a point, if exists
-    pub fn side_at(&self, point: Point) -> Option<Side> {
+    pub fn side_at(&self, point: Point) -> Option<SideOrCorner> {
         let top = Rectangle {
             x: self.top_left.x,
             y: self.top_left.y - INTERACTION_AREA / 2.,
@@ -117,16 +192,16 @@ impl Corners {
 
         [
             // NOTE: the corners shall come first since the corners and sides will intersect
-            (top_left, Side::TopLeft),
-            (top_right, Side::TopRight),
-            (bottom_left, Side::BottomLeft),
-            (bottom_right, Side::BottomRight),
+            (top_left, SideOrCorner::Corner(Corner::TopLeft)),
+            (top_right, SideOrCorner::Corner(Corner::TopRight)),
+            (bottom_left, SideOrCorner::Corner(Corner::BottomLeft)),
+            (bottom_right, SideOrCorner::Corner(Corner::BottomRight)),
             // the sides will also intersect at the vertices, but that's fine since the vertices
             // will take priority
-            (top, Side::Top),
-            (right, Side::Right),
-            (left, Side::Left),
-            (bottom, Side::Bottom),
+            (top, SideOrCorner::Side(Side::Top)),
+            (right, SideOrCorner::Side(Side::Right)),
+            (left, SideOrCorner::Side(Side::Left)),
+            (bottom, SideOrCorner::Side(Side::Bottom)),
         ]
         .into_iter()
         .find_map(|(dir, side)| dir.contains(point).then_some(side))
