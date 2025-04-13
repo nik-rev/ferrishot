@@ -5,8 +5,8 @@
     <h1>
       <a href="https://github.com/flameshot-org/flameshot">
         <picture >
-          <source media="(prefers-color-scheme: dark)" srcset="./logo_dark.svg" />
-          <img height="64px" width="64px" src="./logo_light.svg" />
+          <source media="(prefers-color-scheme: dark)" srcset="./logo-dark.svg" />
+          <img height="64px" width="64px" src="./logo-light.svg" />
         </picture>
       </a>
       <br />
