@@ -1,7 +1,7 @@
 <div align="center">
   <p>
     <h1>
-      <a href="https://github.com/flameshot-org/flameshot">
+      <a href="https://github.com/nik-rev/ferrishot">
         <img height="64px" width="64px" src="logo.svg" />
       </a>
       <br />
