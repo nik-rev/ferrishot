@@ -55,10 +55,10 @@ impl Selection {
                 .expect("Image handle stores a valid image"),
         )
         .crop_imm(
-            self.x() as u32,
-            self.y() as u32,
-            self.width() as u32,
-            self.height() as u32,
+            self.rect.x as u32,
+            self.rect.y as u32,
+            self.rect.width as u32,
+            self.rect.height as u32,
         )
     }
 
@@ -84,21 +84,12 @@ impl Selection {
 
     delegate! {
         to self.rect {
-            /// The position of the top left corner of the selection
-            #[call(position)]
-            pub fn pos(self) -> Point;
             /// The height and width of the selection
             pub fn size(self) -> Size;
+            /// Get the position
+            pub fn pos(self) -> Point;
             /// Top-left, top-right, bottom-left and bottom-right points
             pub fn corners(self) -> Corners;
-            /// The width of the selection
-            pub fn width(self) -> f32;
-            /// The height of the selection
-            pub fn height(self) -> f32;
-            /// x-coordinate of the top left corner of the selection
-            pub fn x(self) -> f32;
-            /// y-coordinate of the top left corner of the selection
-            pub fn y(self) -> f32;
             /// Whether this selection contains a given point
             pub fn contains(self, point: Point) -> bool;
             /// Position of the top left corner
@@ -113,41 +104,20 @@ impl Selection {
         #[allow(dead_code)]
         #[expr(self.rect = $; self)]
         to self.rect {
-            /// Set the size of the of the selection
-            pub fn set_size(mut self, size: Size) -> Self;
-            /// Compute the size of the selection from a closure
-            pub fn with_size<F: FnOnce(Size) -> Size>(mut self, size: F) -> Self;
-
-            /// Compute the position of the top point of the selection
-            pub fn set_pos(mut self, pos: Point) -> Self;
-            /// Compute the position of the top point of the selection from a closure
-            pub fn with_pos<F: FnOnce(Point) -> Point>(mut self, pos: F) -> Self;
-
-            /// Set the x coordinate of the top point of the selection
-            pub fn set_x(mut self, x: f32) -> Self;
-            /// Compute the x coordinate of the top point of the selection from a closure
-            pub fn with_x<F: FnOnce(f32) -> f32>(mut self, x: F) -> Self;
-
-            /// Set the x coordinate of the top point of the selection
-            pub fn set_height(mut self, height: f32) -> Self;
-            /// Compute the x coordinate of the top point of the selection from a closure
-            pub fn with_height<F: FnOnce(f32) -> f32>(mut self, height: F) -> Self;
-
-            /// Set the x coordinate of the top point of the selection
-            pub fn set_width(mut self, width: f32) -> Self;
-            /// Compute the x coordinate of the top point of the selection from a closure
-            pub fn with_width<F: FnOnce(f32) -> f32>(mut self, width: F) -> Self;
-
-            /// Set the y coordinate of the top point of the selection
-            pub fn set_y(mut self, y: f32) -> Self;
-            /// Compute the y coordinate of the top point of the selection from a closure
-            pub fn with_y<F: FnOnce(f32) -> f32>(mut self, y: F) -> Self;
-
+            /// Update the size of the rect
+            pub fn with_size<F: FnOnce(Size) -> Size>(mut self, f: F) -> Self;
+            /// Update the position of the top left corner
+            pub fn with_pos<F: FnOnce(Point) -> Point>(mut self, f: F) -> Self;
+            /// Update the selection's height
+            pub fn with_height<F: FnOnce(f32) -> f32>(mut self, f: F) -> Self;
+            /// Update the selection's width
+            pub fn with_width<F: FnOnce(f32) -> f32>(mut self, f: F) -> Self;
+            /// Update the x coordinate of the top left corner
+            pub fn with_x<F: FnOnce(f32) -> f32>(mut self, f: F) -> Self;
+            /// Update the y coordinate of the top left corner
+            pub fn with_y<F: FnOnce(f32) -> f32>(mut self, f: F) -> Self;
             /// Make sure the width and height is not negative
-            // TODO: remove this function
-            // We're using it *everywhere* but instead it would be better if
-            // it was impossible to create a rectangle with a negative width or height
-            pub fn normalize(mut self) -> Self;
+            pub fn norm(mut self) -> Self;
         }
         to self.status {
             /// The selection is currently being dragged

@@ -140,8 +140,8 @@ impl App {
 
     /// Renders the black tint on regions that are not selected
     fn render_shade(&self, frame: &mut canvas::Frame, bounds: Rectangle) {
-        let Some(selection) = self.selection.map(Selection::normalize) else {
-            frame.fill_rectangle(bounds.pos(), bounds.size(), SHADE_COLOR);
+        let Some(selection) = self.selection.map(Selection::norm) else {
+            frame.fill_rectangle(bounds.position(), bounds.size(), SHADE_COLOR);
             return;
         };
 
@@ -202,7 +202,7 @@ impl App {
                     })
                 }) {
                     let resized = SelectionStatus::Resized {
-                        initial_rect: rect.normalize().rect,
+                        initial_rect: rect.norm().rect,
                         initial_cursor_pos: cursor,
                         resize_side: side,
                     };
@@ -235,16 +235,16 @@ impl App {
                 current_selection,
                 initial_rect_pos,
             } => {
-                self.selection = Some(
-                    current_selection
-                        .set_pos(initial_rect_pos + (current_cursor_pos - initial_cursor_pos)),
-                );
+                self.selection =
+                    Some(current_selection.with_pos(|_| {
+                        initial_rect_pos + (current_cursor_pos - initial_cursor_pos)
+                    }));
             },
             Message::ExtendNewSelection(new_mouse_position) => {
                 self.update_selection(new_mouse_position);
             },
             Message::CopyToClipboard => {
-                let Some(selection) = self.selection.map(Selection::normalize) else {
+                let Some(selection) = self.selection.map(Selection::norm) else {
                     self.error("There is no selection to copy");
                     return ().into();
                 };
@@ -287,10 +287,7 @@ impl App {
                 }
             },
             Message::SaveScreenshot => {
-                let Some(selection) = self
-                    .selection
-                    .as_ref()
-                    .map(|sel| Selection::normalize(*sel))
+                let Some(selection) = self.selection.as_ref().map(|sel| Selection::norm(*sel))
                 else {
                     // TODO: instead of this, show an error to the user in
                     // a custom widget
@@ -329,7 +326,7 @@ impl App {
 
                 selected_region.rect = match resize_side {
                     Side::TopLeft => initial_rect
-                        .set_pos(current_cursor_pos)
+                        .with_pos(|_| current_cursor_pos)
                         .with_width(|w| w - dx)
                         .with_height(|h| h - dy),
                     Side::TopRight => initial_rect
@@ -368,11 +365,9 @@ impl App {
     /// the cursor
     fn cursor_in_selection_mut(&mut self, cursor: Cursor) -> Option<(Point, &mut Selection)> {
         self.selection.as_mut().and_then(|sel| {
-            cursor.position().and_then(|cursor_pos| {
-                sel.normalize()
-                    .contains(cursor_pos)
-                    .then_some((cursor_pos, sel))
-            })
+            cursor
+                .position()
+                .and_then(|cursor_pos| sel.norm().contains(cursor_pos).then_some((cursor_pos, sel)))
         })
     }
 
@@ -404,12 +399,12 @@ impl App {
     //                    |
     //                   y2    ~      ~       ~   ~  x2y2 <- create_selection_at (can move)
             };
-            let width = other.x - selected_region.x();
-            let height = other.y - selected_region.y();
+            let width = other.x - selected_region.rect.x;
+            let height = other.y - selected_region.rect.y;
 
             Selection::default()
-                .set_pos(selected_region.pos())
-                .set_size(Size { width, height })
+                .with_pos(|_| selected_region.pos())
+                .with_size(|_| Size { width, height })
         });
     }
 }
@@ -429,7 +424,7 @@ impl canvas::Program<Message> for App {
 
         self.render_shade(&mut frame, bounds);
 
-        if let Some(selection) = self.selection.map(Selection::normalize) {
+        if let Some(selection) = self.selection.map(Selection::norm) {
             selection.render_border(&mut frame);
             selection.corners().render_circles(&mut frame);
         }
