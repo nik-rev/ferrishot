@@ -1,11 +1,20 @@
 # ferrishot
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./logo_dark.svg">
-  <img src="./logo_light.svg">
-</picture>
-
-An easy-to-use, cross-platform screenshot app written in Rust.
+<div align="center">
+  <p>
+    <h1>
+      <a href="https://github.com/flameshot-org/flameshot">
+        <picture>
+          <source media="(prefers-color-scheme: dark)" srcset="./logo_dark.svg" />
+          <img src="./logo_light.svg" />
+        </picture>
+      </a>
+      <br />
+      ferrishot
+    </h1>
+    <h4>Screenshot app written in Rust</h4>
+  </p>
+</div>
 
 Currently, this project is under heavy development. The goal is to reach feature parity with [flameshot](https://github.com/flameshot-org/flameshot) before the 1.0 release and then go beyond
 
