@@ -6,14 +6,13 @@ use std::time::Instant;
 use crate::config::Config;
 use crate::message::Message;
 use crate::screenshot::RgbaHandle;
-use crate::{SHADE_COLOR, icon, icons};
+use crate::{SHADE_COLOR, icon};
 use clap::Parser as _;
-use iced::border::Radius;
 use iced::keyboard::{Key, Modifiers};
 use iced::mouse::{Cursor, Interaction};
 use iced::widget::canvas::Path;
-use iced::widget::{self, Action, Container, Row, Svg, canvas, row, stack, svg};
-use iced::{Color, Element, Length, Pixels, Point, Rectangle, Renderer, Size, Task, Theme, mouse};
+use iced::widget::{self, Action, canvas, row, stack};
+use iced::{Element, Length, Point, Rectangle, Renderer, Size, Task, Theme, mouse};
 
 use crate::background_image::BackgroundImage;
 use crate::corners::{Side, SideOrCorner};
@@ -108,13 +107,6 @@ impl Default for App {
             errors: vec![],
         }
     }
-}
-
-/// helper for buttons
-macro_rules! button {
-    ($icon:ident) => {
-        Self::style_icon(svg::Handle::from_memory(crate::$icon))
-    };
 }
 
 impl App {
