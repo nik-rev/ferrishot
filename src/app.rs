@@ -8,11 +8,12 @@ use crate::config::Config;
 use crate::message::Message;
 use crate::screenshot::RgbaHandle;
 use clap::Parser as _;
+use iced::border::Radius;
 use iced::keyboard::{Key, Modifiers};
 use iced::mouse::{Cursor, Interaction};
 use iced::widget::canvas::Path;
-use iced::widget::{self, Action, canvas, stack};
-use iced::{Element, Length, Point, Rectangle, Renderer, Size, Task, Theme, mouse};
+use iced::widget::{self, Action, Row, Svg, canvas, row, stack, svg};
+use iced::{Color, Element, Length, Pixels, Point, Rectangle, Renderer, Size, Task, Theme, mouse};
 
 use crate::background_image::BackgroundImage;
 use crate::corners::{Side, SideOrCorner};
@@ -109,6 +110,13 @@ impl Default for App {
     }
 }
 
+/// helper for buttons
+macro_rules! button {
+    ($icon:ident) => {
+        Self::style_icon(svg::Handle::from_memory(crate::$icon))
+    };
+}
+
 impl App {
     /// Close the app
     ///
@@ -174,11 +182,38 @@ impl App {
         }
     }
 
+    /// Apply styles to the button
+    fn style_icon<'a>(handle: iced::widget::svg::Handle) -> widget::Button<'a, Message> {
+        widget::button(
+            widget::Svg::new(handle)
+                .style(|_, _| widget::svg::Style {
+                    color: Some(crate::ICON_COLOR),
+                })
+                .width(crate::ICON_SIZE)
+                .height(crate::ICON_SIZE),
+        )
+        .width(crate::ICON_BUTTON_SIZE)
+        .height(crate::ICON_BUTTON_SIZE)
+        .style(|_, _| {
+            let mut style =
+                widget::button::Style::default().with_background(crate::ICON_BACKGROUND);
+            style.border = iced::Border::default().rounded(Radius::new(Pixels::from(100)));
+            style
+        })
+    }
+
     /// Renders the app
     pub fn view(&self) -> Element<Message> {
+        let clipboard = button!(CLIPBOARD_ICON).on_press(Message::CopyToClipboard);
+        let exit = button!(CLOSE_ICON).on_press(Message::Exit);
+        let save = button!(SAVE_ICON).on_press(Message::SaveScreenshot);
+        let full_selection = button!(FULLSCREEN_ICON).on_press(Message::FullSelection);
+        let row = row![clipboard, exit, save, full_selection];
+
         stack![
             BackgroundImage::new(self.screenshot.clone().into()),
             canvas(self).width(Length::Fill).height(Length::Fill),
+            row,
         ]
         .into()
     }
@@ -353,6 +388,7 @@ impl App {
                     resize_side: SideOrCorner::Corner(corners),
                 };
             },
+            // TODO: animate this
             Message::FullSelection => {
                 let (width, height, _) = self.screenshot.raw();
                 #[expect(
