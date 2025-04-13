@@ -10,19 +10,18 @@ macro_rules! icon {
 
 /// Apply styles to the button
 pub fn button<'a>(icon: crate::icons::Icon) -> iced::Element<'a, crate::message::Message> {
-    use crate::icons;
     widget::button(
         widget::Svg::new(icon.svg())
             .style(|_, _| widget::svg::Style {
-                color: Some(icons::ICON_COLOR),
+                color: Some(ICON_COLOR),
             })
-            .width(icons::ICON_SIZE)
-            .height(icons::ICON_SIZE),
+            .width(ICON_SIZE)
+            .height(ICON_SIZE),
     )
-    .width(icons::ICON_BUTTON_SIZE)
-    .height(icons::ICON_BUTTON_SIZE)
+    .width(ICON_BUTTON_SIZE)
+    .height(ICON_BUTTON_SIZE)
     .style(|_, _| {
-        let mut style = widget::button::Style::default().with_background(icons::ICON_BACKGROUND);
+        let mut style = widget::button::Style::default().with_background(ICON_BACKGROUND);
         style.border =
             iced::Border::default().rounded(iced::border::Radius::new(iced::Pixels::from(100)));
         style
@@ -30,13 +29,13 @@ pub fn button<'a>(icon: crate::icons::Icon) -> iced::Element<'a, crate::message:
     .into()
 }
 
-/// width and height
+/// Width and height for icon buttons
 pub const ICON_SIZE: Length = Length::Fixed(32.0);
 /// Color used for the icons
 pub const ICON_COLOR: Color = iced::color!(0xff_ff_ff);
 /// Color to use for the background of icons
 pub const ICON_BACKGROUND: Color = iced::color!(0x0f_0f_0f);
-/// inner icon
+/// Size of the button for the icon
 pub const ICON_BUTTON_SIZE: Length = Length::Fixed(48.0);
 
 /// Generates handles for macros and automatically includes all the icons
