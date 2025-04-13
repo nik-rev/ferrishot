@@ -1,6 +1,6 @@
 <div align="center">
   <p>
-    <h1>
+    <h1 style="color:#dea584">
       <a href="https://github.com/flameshot-org/flameshot">
         <picture >
           <source media="(prefers-color-scheme: dark)" srcset="./logo-dark.svg" />
@@ -8,7 +8,7 @@
         </picture>
       </a>
       <br />
-      <span color="#dea584">ferrishot<span />
+      ferrishot
     </h1>
     <h4>Screenshot app written in Rust</h4>
   </p>
