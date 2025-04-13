@@ -5,14 +5,11 @@
         <img height="64px" width="64px" src="logo.svg" />
       </a>
       <br />
-      <strong>ferri</strong>shot
+      ferrishot
     </h1>
     <h4>Screenshot app written in Rust</h4>
   </p>
 </div>
-
-$\color{hsl(0,100%,50%)}{\textsf{lorem ipsum}}$
-
 
 Currently, this project is under heavy development. The goal is to reach feature parity with [flameshot](https://github.com/flameshot-org/flameshot) before the 1.0 release and then go beyond
 
