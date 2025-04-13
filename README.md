@@ -11,6 +11,10 @@
   </p>
 </div>
 
+${\textsf{\color{lightgreen}Green}}$
+${\textsf{\color{#ff0000}Green}}$ a
+
+
 Currently, this project is under heavy development. The goal is to reach feature parity with [flameshot](https://github.com/flameshot-org/flameshot) before the 1.0 release and then go beyond
 
 ## Features
