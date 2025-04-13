@@ -2,10 +2,7 @@
   <p>
     <h1 style="color:#dea584 !important">
       <a href="https://github.com/flameshot-org/flameshot">
-        <picture >
-          <source media="(prefers-color-scheme: dark)" srcset="./logo_dark.svg" />
-          <img height="64px" width="64px" src="./logo_dark.svg" />
-        </picture>
+        <img height="64px" width="64px" src="./logo_dark.svg" />
       </a>
       <br />
       ferrishot
