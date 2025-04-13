@@ -1,2 +1,4 @@
 - Right-click will _snap_ the closest corner to the cursor
 - Show a basic message when first spawned
+-
+- QR Code?!
