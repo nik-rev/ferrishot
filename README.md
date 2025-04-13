@@ -1,8 +1,8 @@
 <div align="center">
   <p>
-    <h1 style="color:#dea584 !important">
+    <h1>
       <a href="https://github.com/flameshot-org/flameshot">
-        <img height="64px" width="64px" src="./logo-dark.svg" />
+        <img height="64px" width="64px" src="logo.svg" />
       </a>
       <br />
       ferrishot
