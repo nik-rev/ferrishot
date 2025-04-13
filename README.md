@@ -11,7 +11,7 @@
   </p>
 </div>
 
-${\textsf{\color{lightgreen}Green}}$
+$`${\textsf{\color{lightgreen}Green}}$`$
 ${\textsf{\color{#ff0000}Green}}$ a
 
 
