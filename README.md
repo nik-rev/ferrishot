@@ -1,5 +1,3 @@
-# ferrishot
-
 <div align="center">
   <p>
     <h1>
