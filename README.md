@@ -1,10 +1,10 @@
 <div align="center">
   <p>
-    <h1 style="color:#dea584">
+    <h1 style="color:#dea584 !important">
       <a href="https://github.com/flameshot-org/flameshot">
         <picture >
           <source media="(prefers-color-scheme: dark)" srcset="./logo_dark.svg" />
-          <img height="64px" width="64px" src="./logo_light.svg" />
+          <img height="64px" width="64px" src="./logo_dark.svg" />
         </picture>
       </a>
       <br />
