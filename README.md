@@ -5,16 +5,11 @@
         <img height="64px" width="64px" src="logo.svg" />
       </a>
       <br />
-      <span style="color: #ff0000 !important !important;">ferri</span>shot
+      <strong>ferri</strong>shot
     </h1>
     <h4>Screenshot app written in Rust</h4>
   </p>
 </div>
-
-$`${\textsf{\color{lightgreen}Green}}$`$
-${\textsf{\color{#ff0000}Green}}$ a
-
-$`\sqrt{3x-1}+(1+x)^2`$
 
 Currently, this project is under heavy development. The goal is to reach feature parity with [flameshot](https://github.com/flameshot-org/flameshot) before the 1.0 release and then go beyond
 
