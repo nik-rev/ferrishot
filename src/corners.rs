@@ -2,7 +2,7 @@
 use iced::{Point, Rectangle, mouse};
 
 use crate::{
-    constants::{FRAME_CIRCLE_RADIUS, FRAME_COLOR, FRAME_INTERACTION_AREA},
+    constants::{FRAME_CIRCLE_RADIUS, FRAME_INTERACTION_AREA},
     rectangle::RectangleExt as _,
 };
 
@@ -129,7 +129,11 @@ impl Corners {
     }
 
     /// Render the circles for each side
-    pub fn render_circles(&self, frame: &mut iced::widget::canvas::Frame) {
+    pub fn render_circles(
+        &self,
+        frame: &mut iced::widget::canvas::Frame,
+        accent_color: iced::Color,
+    ) {
         for circle in [
             self.top_left,
             self.top_right,
@@ -138,7 +142,7 @@ impl Corners {
         ]
         .map(|corner| iced::widget::canvas::Path::circle(corner, FRAME_CIRCLE_RADIUS))
         {
-            frame.fill(&circle, FRAME_COLOR);
+            frame.fill(&circle, accent_color);
         }
     }
 

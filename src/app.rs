@@ -1,20 +1,18 @@
 //! Main logic for the application, handling of events and mutation of the state
 
 use std::borrow::Cow;
-use std::fs;
 use std::time::Instant;
 
-use crate::config::Config;
+use crate::config::CONFIG;
 use crate::constants::{ERROR_TIMEOUT, NON_SELECTED_REGION_COLOR};
 use crate::icon;
 use crate::message::Message;
 use crate::screenshot::RgbaHandle;
-use clap::Parser as _;
 use iced::keyboard::{Key, Modifiers};
 use iced::mouse::{Cursor, Interaction};
 use iced::widget::canvas::Path;
 use iced::widget::{self, Action, canvas, stack, text};
-use iced::{Element, Length, Point, Rectangle, Renderer, Size, Task, Theme, mouse};
+use iced::{Color, Element, Length, Point, Rectangle, Renderer, Size, Task, Theme, mouse};
 
 use crate::background_image::BackgroundImage;
 use crate::corners::{Side, SideOrCorner};
@@ -89,8 +87,6 @@ pub struct App {
     screenshot: RgbaHandle,
     /// Area of the screen that is selected for capture
     selection: Option<Selection>,
-    /// Configuration of the app
-    config: Config,
     /// Errors to display to the user
     errors: Vec<ErrorMessage>,
 }
@@ -99,12 +95,10 @@ impl Default for App {
     fn default() -> Self {
         let screenshot =
             crate::screenshot::screenshot().expect("Failed to take a screenshot of the desktop");
-        let config = Config::parse();
 
         Self {
             screenshot,
             selection: None,
-            config,
             selections_created: 0,
             errors: vec![],
         }
@@ -465,8 +459,10 @@ impl canvas::Program<Message> for App {
         self.render_shade(&mut frame, bounds);
 
         if let Some(selection) = self.selection.map(Selection::norm) {
-            selection.render_border(&mut frame);
-            selection.corners().render_circles(&mut frame);
+            selection.render_border(&mut frame, CONFIG.accent_color.into());
+            selection
+                .corners()
+                .render_circles(&mut frame, CONFIG.accent_color.into());
         }
 
         vec![frame.into_geometry()]
@@ -544,7 +540,7 @@ impl canvas::Program<Message> for App {
             }
             Mouse(mouse::Event::ButtonReleased(mouse::Button::Left)) => {
                 state.left_release();
-                if self.config.instant && self.selections_created == 1 {
+                if CONFIG.instant && self.selections_created == 1 {
                     Message::CopyToClipboard
                 } else {
                     Message::EnterIdle

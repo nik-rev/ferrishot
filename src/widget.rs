@@ -1,7 +1,10 @@
 //! Widgets with custom styles
-use iced::{Background, Border, Color, Element, Length, Shadow, widget};
+use iced::{Background, Border, Color, Element, Length, Shadow, Theme, widget};
 
-use crate::constants::{DROP_SHADOW, ICON_BACKGROUND, ICON_BUTTON_SIZE, ICON_COLOR, ICON_SIZE};
+use crate::{
+    constants::{DROP_SHADOW, ICON_BUTTON_SIZE, ICON_SIZE},
+    stdx::foreground_for,
+};
 
 /// Create a new tooltip
 pub fn tooltip<'a, Message>(
@@ -23,16 +26,16 @@ pub fn tooltip<'a, Message>(
 pub fn icon<'a, Message>(icon: crate::icons::Icon) -> widget::Button<'a, Message> {
     widget::button(
         widget::Svg::new(icon.svg())
-            .style(|_, _| widget::svg::Style {
-                color: Some(ICON_COLOR),
+            .style(|t: &Theme, _| widget::svg::Style {
+                color: Some(foreground_for(t.palette().primary)),
             })
             .width(Length::Fixed(ICON_SIZE))
             .height(Length::Fixed(ICON_SIZE)),
     )
     .width(Length::Fixed(ICON_BUTTON_SIZE))
     .height(Length::Fixed(ICON_BUTTON_SIZE))
-    .style(|_, _| {
-        let mut style = widget::button::Style::default().with_background(ICON_BACKGROUND);
+    .style(move |t: &Theme, _| {
+        let mut style = widget::button::Style::default().with_background(t.palette().primary);
         style.shadow = DROP_SHADOW;
         style.border = iced::Border::default()
             .rounded(iced::border::Radius::new(iced::Pixels::from(f32::INFINITY)));

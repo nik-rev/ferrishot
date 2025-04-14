@@ -4,7 +4,7 @@ use iced::widget::{Column, Row, Space, row, tooltip};
 use iced::{Element, Length, Padding};
 use iced::{Point, Rectangle, Size};
 
-use crate::constants::{DROP_SHADOW_COLOR, FRAME_COLOR, SPACE_BETWEEN_ICONS};
+use crate::constants::{DROP_SHADOW_COLOR, SPACE_BETWEEN_ICONS};
 use crate::constants::{FRAME_WIDTH, ICON_BUTTON_SIZE};
 use crate::corners::Corners;
 use crate::corners::SideOrCorner;
@@ -71,7 +71,7 @@ impl Selection {
     }
 
     /// Renders border of the selection
-    pub fn render_border(&self, frame: &mut iced::widget::canvas::Frame) {
+    pub fn render_border(&self, frame: &mut iced::widget::canvas::Frame, color: iced::Color) {
         // Render the rectangle around the selection (the sides)
         frame.stroke_rectangle(
             self.pos(),
@@ -84,7 +84,7 @@ impl Selection {
             self.pos(),
             self.size(),
             iced::widget::canvas::Stroke::default()
-                .with_color(FRAME_COLOR)
+                .with_color(color)
                 .with_width(FRAME_WIDTH),
         );
     }
