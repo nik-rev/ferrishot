@@ -11,7 +11,7 @@ pub enum Message {
     Exit,
     /// The left mouse button is down
     LeftMouseDown(Cursor),
-    /// The left mouse button is up
+    /// Enter idle mode
     EnterIdle,
     /// Copy the screenshot to the clipboard
     CopyToClipboard,
