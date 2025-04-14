@@ -12,7 +12,7 @@ use clap::Parser as _;
 use iced::keyboard::{Key, Modifiers};
 use iced::mouse::{Cursor, Interaction};
 use iced::widget::canvas::Path;
-use iced::widget::{self, Action, canvas, stack, text, tooltip};
+use iced::widget::{self, Action, canvas, stack, text};
 use iced::{Element, Length, Point, Rectangle, Renderer, Size, Task, Theme, mouse};
 
 use crate::background_image::BackgroundImage;
@@ -171,6 +171,7 @@ impl App {
             (Key::Character(ch), Modifiers::CTRL) if ch == "c" => Some(Message::CopyToClipboard),
             (Key::Named(iced::keyboard::key::Named::Enter), _) => Some(Message::CopyToClipboard),
             (Key::Character(ch), Modifiers::CTRL) if ch == "s" => Some(Message::SaveScreenshot),
+            (Key::Named(iced::keyboard::key::Named::F11), _) => Some(Message::FullSelection),
             _ => None,
         }
     }
@@ -182,18 +183,21 @@ impl App {
 
     /// Renders the app
     pub fn view(&self) -> Element<Message> {
-        let mut icons = vec![];
-        for _ in 0..20 {
-            icons.push((
+        let icons = vec![
+            (
                 icon!(Fullscreen).on_press(Message::FullSelection).into(),
-                "hello",
-            ));
-        }
-        // how many elements can we fit on the bottom
-        // then how many elements can we fit on the right
-        // then how many elements can we fit on the top
-        // then how many elements can we fit on the left
-        // Repeat the above 4 steps but with -2 elements per row/col
+                "Select entire monitor (F11)",
+            ),
+            (
+                icon!(Clipboard).on_press(Message::CopyToClipboard).into(),
+                "Copy to Clipboard (Enter)",
+            ),
+            (
+                icon!(Save).on_press(Message::SaveScreenshot).into(),
+                "Save Screenshot (Ctrl + S)",
+            ),
+            (icon!(Close).on_press(Message::Exit).into(), "Exit (Esc)"),
+        ];
 
         stack![
             // the taken screenshot in the background
