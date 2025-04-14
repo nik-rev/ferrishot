@@ -1,6 +1,4 @@
 //! A `Selection` is the structure representing a selected area in the background image
-use std::iter;
-
 use delegate::delegate;
 use iced::widget::{Column, Row, Space, row, tooltip};
 use iced::{Element, Length, Padding};
@@ -161,6 +159,56 @@ impl Selection {
         self,
         icons: Vec<(Element<'a, Message>, &'static str)>,
     ) -> Element<'a, Message> {
+        fn add_elements_until_min<'a, const MIN_ELEMENTS: usize>(
+            mut icons: Vec<Element<'a, Message>>,
+            mut iter: impl Iterator<Item = (Element<'a, Message>, &'static str)>,
+            padding: &mut f32,
+            total_icons_positioned: &mut usize,
+            tooltip_position: tooltip::Position,
+        ) -> Vec<Element<'a, Message>> {
+            while icons.len() < MIN_ELEMENTS {
+                if let Some((next, tooltip_str)) = iter.by_ref().next() {
+                    icons.push(iced::widget::tooltip(next, tooltip_str, tooltip_position).into());
+                    *total_icons_positioned += 1;
+                    *padding -= PX_PER_ICON / 2.0;
+                } else {
+                    break;
+                }
+            }
+            icons
+        }
+
+        fn position_icons_in_line<'a>(
+            space_available: f32,
+            tooltip_position: tooltip::Position,
+            total_icons_positioned: &mut usize,
+            mut icons_iter: impl Iterator<Item = (Element<'a, Message>, &'static str)>,
+            icons_len: usize,
+        ) -> (Vec<Element<'a, Message>>, f32) {
+            let icons_left_to_position = icons_len - *total_icons_positioned;
+            let icons_rendered_here =
+                ((space_available / PX_PER_ICON) as usize).min(icons_left_to_position);
+            *total_icons_positioned += icons_rendered_here;
+
+            // we do this thing because we need to know exactly
+            // how many elems we got. size_hint may be unreliable
+            let mut icons = Vec::with_capacity(icons_rendered_here);
+            for _ in 0..icons_rendered_here {
+                if let Some((icon, tooltip_info)) = icons_iter.by_ref().next() {
+                    icons.push(iced::widget::tooltip(icon, tooltip_info, tooltip_position).into());
+                }
+            }
+
+            // if there is just 0 element it will take away the icon padding so it can be negative
+            // ensure it is positive
+            let space_used = (icons.len() as f32)
+                .mul_add(PX_PER_ICON, -SPACE_BETWEEN_ICONS)
+                .max(0.0);
+
+            let padding = (space_available - space_used) / 2.0;
+
+            (icons, padding)
+        }
         // Here is the behaviour that we want
         //
         // We have a list of icons we want to render.
@@ -179,217 +227,139 @@ impl Selection {
         let mut icons_iter = icons.into_iter();
         let mut total_icons_positioned = 0;
 
-        let mut position_icons_in_line = |space_available: f32,
-                                          tooltip_position: tooltip::Position|
-         -> (Vec<Element<'_, Message>>, f32) {
-            let icons_left_to_position = icons_len - total_icons_positioned;
-            let icons_rendered_here =
-                ((space_available / PX_PER_ICON) as usize).min(icons_left_to_position);
-            total_icons_positioned += icons_rendered_here;
-
-            // we do this thing because we need to know exactly
-            // how many elems we got. size_hint may be unreliable
-            let mut icons = Vec::with_capacity(icons_rendered_here);
-            for _ in 0..icons_rendered_here {
-                if let Some((icon, tooltip_info)) = icons_iter.by_ref().next() {
-                    icons.push(iced::widget::tooltip(icon, tooltip_info, tooltip_position).into());
-                }
-            }
-
-            // if there is just 0 element it will take away the icon padding so it can be negative
-            // ensure it is positive
-            let space_used = (icons.len() as f32)
-                .mul_add(PX_PER_ICON, -SPACE_BETWEEN_ICONS)
-                .max(0.0);
-
-            let padding = (space_available - space_used) / 2.0;
-
-            (icons, padding)
-        };
-
         // first position the icons on each side (bottom -> right -> top -> left)
 
-        let (mut bottom_icons, mut bottom_padding) =
-            position_icons_in_line(sel.rect.width, tooltip::Position::Bottom);
-        let (mut right_icons, mut right_padding) =
-            position_icons_in_line(sel.rect.height, tooltip::Position::Right);
-        let (mut top_icons, mut top_padding) =
-            position_icons_in_line(sel.rect.width, tooltip::Position::Top);
-        let (mut left_icons, mut left_padding) =
-            position_icons_in_line(sel.rect.height, tooltip::Position::Left);
+        let (bottom_icons, mut bottom_padding) = position_icons_in_line(
+            sel.rect.width,
+            tooltip::Position::Bottom,
+            &mut total_icons_positioned,
+            &mut icons_iter,
+            icons_len,
+        );
+        let (right_icons, mut right_padding) = position_icons_in_line(
+            sel.rect.height,
+            tooltip::Position::Right,
+            &mut total_icons_positioned,
+            &mut icons_iter,
+            icons_len,
+        );
+        let (top_icons, mut top_padding) = position_icons_in_line(
+            sel.rect.width,
+            tooltip::Position::Top,
+            &mut total_icons_positioned,
+            &mut icons_iter,
+            icons_len,
+        );
+        let (left_icons, mut left_padding) = position_icons_in_line(
+            sel.rect.height,
+            tooltip::Position::Left,
+            &mut total_icons_positioned,
+            &mut icons_iter,
+            icons_len,
+        );
 
         // if we reach here, our selection is to small to nicely
         // render all of the icons so we must "stack" them somehow
 
         // for the 4 sides, combined they will fit at LEAST 8 icons (3 top 3 bottom 1 right 1 left)
 
-        while bottom_icons.len() < MIN_TOP_BOTTOM_ICONS {
-            if let Some((next, tooltip_str)) = icons_iter.by_ref().next() {
-                bottom_icons.push(
-                    iced::widget::tooltip(next, tooltip_str, tooltip::Position::Bottom).into(),
-                );
-                total_icons_positioned += 1;
-                bottom_padding -= PX_PER_ICON / 2.0;
-            } else {
-                break;
-            }
-        }
+        let bottom_icons = add_elements_until_min::<MIN_TOP_BOTTOM_ICONS>(
+            bottom_icons,
+            &mut icons_iter,
+            &mut bottom_padding,
+            &mut total_icons_positioned,
+            tooltip::Position::Bottom,
+        );
 
-        while top_icons.len() < MIN_TOP_BOTTOM_ICONS {
-            if let Some((next, tooltip_str)) = icons_iter.by_ref().next() {
-                top_icons.push(
-                    iced::widget::tooltip(next, tooltip_str, tooltip::Position::Bottom).into(),
-                );
-                total_icons_positioned += 1;
-                top_padding -= PX_PER_ICON / 2.0;
-            } else {
-                break;
-            }
-        }
+        let top_icons = add_elements_until_min::<MIN_TOP_BOTTOM_ICONS>(
+            top_icons,
+            &mut icons_iter,
+            &mut top_padding,
+            &mut total_icons_positioned,
+            tooltip::Position::Top,
+        );
 
-        while left_icons.len() < MIN_SIDE_ICONS {
-            if let Some((icon, tooltip_str)) = icons_iter.by_ref().next() {
-                left_icons.push(
-                    iced::widget::tooltip(icon, tooltip_str, tooltip::Position::Bottom).into(),
-                );
-                total_icons_positioned += 1;
-                left_padding -= PX_PER_ICON / 2.0;
-            } else {
-                break;
-            }
-        }
+        let left_icons = add_elements_until_min::<MIN_SIDE_ICONS>(
+            left_icons,
+            &mut icons_iter,
+            &mut left_padding,
+            &mut total_icons_positioned,
+            tooltip::Position::Left,
+        );
 
-        while right_icons.len() < MIN_SIDE_ICONS {
-            if let Some((icon, tooltip_str)) = icons_iter.by_ref().next() {
-                right_icons.push(
-                    iced::widget::tooltip(icon, tooltip_str, tooltip::Position::Bottom).into(),
-                );
-                total_icons_positioned += 1;
-                right_padding -= PX_PER_ICON / 2.0;
-            } else {
-                break;
-            }
-        }
+        let right_icons = add_elements_until_min::<MIN_SIDE_ICONS>(
+            right_icons,
+            &mut icons_iter,
+            &mut right_padding,
+            &mut total_icons_positioned,
+            tooltip::Position::Right,
+        );
 
         // position two additional rows of icons on top and bottom
         // if we STILL have extra icons left
 
-        let mut position_icons_in_line = |space_available: f32,
-                                          tooltip_position: tooltip::Position|
-         -> (Vec<Element<'_, Message>>, f32) {
-            let icons_left_to_position = icons_len - total_icons_positioned;
-            let icons_rendered_here =
-                ((space_available / PX_PER_ICON) as usize).min(icons_left_to_position);
-            total_icons_positioned += icons_rendered_here;
+        let (extra_top_icons, mut extra_top_padding) = position_icons_in_line(
+            sel.rect.width,
+            tooltip::Position::Top,
+            &mut total_icons_positioned,
+            &mut icons_iter,
+            icons_len,
+        );
+        let (extra_bottom_icons, mut extra_bottom_padding) = position_icons_in_line(
+            sel.rect.width,
+            tooltip::Position::Bottom,
+            &mut total_icons_positioned,
+            &mut icons_iter,
+            icons_len,
+        );
 
-            // we do this thing because we need to know exactly
-            // how many elems we got. size_hint may be unreliable
-            let mut icons = Vec::with_capacity(icons_rendered_here);
-            for _ in 0..icons_rendered_here {
-                if let Some((icon, tooltip_info)) = icons_iter.by_ref().next() {
-                    icons.push(iced::widget::tooltip(icon, tooltip_info, tooltip_position).into());
-                }
-            }
+        let extra_bottom_icons = add_elements_until_min::<MIN_TOP_BOTTOM_ICONS>(
+            extra_bottom_icons,
+            &mut icons_iter,
+            &mut extra_bottom_padding,
+            &mut total_icons_positioned,
+            tooltip::Position::Bottom,
+        );
 
-            // if there is just 0 element it will take away the icon padding so it can be negative
-            // ensure it is positive
-            let space_used = (icons.len() as f32)
-                .mul_add(PX_PER_ICON, -SPACE_BETWEEN_ICONS)
-                .max(0.0);
+        let extra_top_icons = add_elements_until_min::<MIN_TOP_BOTTOM_ICONS>(
+            extra_top_icons,
+            &mut icons_iter,
+            &mut extra_top_padding,
+            &mut total_icons_positioned,
+            tooltip::Position::Top,
+        );
 
-            let padding = (space_available - space_used) / 2.0;
+        let (extra_extra_top_icons, mut extra_extra_top_padding) = position_icons_in_line(
+            sel.rect.width,
+            tooltip::Position::Top,
+            &mut total_icons_positioned,
+            &mut icons_iter,
+            icons_len,
+        );
 
-            (icons, padding)
-        };
+        let (extra_extra_bottom_icons, mut extra_extra_bottom_padding) = position_icons_in_line(
+            sel.rect.width,
+            tooltip::Position::Bottom,
+            &mut total_icons_positioned,
+            &mut icons_iter,
+            icons_len,
+        );
 
-        let (mut extra_top_icons, mut extra_top_padding) =
-            position_icons_in_line(sel.rect.width, tooltip::Position::Top);
-        let (mut extra_bottom_icons, mut extra_bottom_padding) =
-            position_icons_in_line(sel.rect.width, tooltip::Position::Bottom);
+        let extra_extra_top_icons = add_elements_until_min::<MIN_TOP_BOTTOM_ICONS>(
+            extra_extra_top_icons,
+            &mut icons_iter,
+            &mut extra_extra_top_padding,
+            &mut total_icons_positioned,
+            tooltip::Position::Top,
+        );
 
-        while extra_bottom_icons.len() < MIN_TOP_BOTTOM_ICONS {
-            if let Some((next, tooltip_str)) = icons_iter.by_ref().next() {
-                extra_bottom_icons.push(
-                    iced::widget::tooltip(next, tooltip_str, tooltip::Position::Bottom).into(),
-                );
-                total_icons_positioned += 1;
-                extra_bottom_padding -= PX_PER_ICON / 2.0;
-            } else {
-                break;
-            }
-        }
-
-        while extra_top_icons.len() < MIN_TOP_BOTTOM_ICONS {
-            if let Some((next, tooltip_str)) = icons_iter.by_ref().next() {
-                extra_top_icons
-                    .push(iced::widget::tooltip(next, tooltip_str, tooltip::Position::Top).into());
-                total_icons_positioned += 1;
-                extra_top_padding -= PX_PER_ICON / 2.0;
-            } else {
-                break;
-            }
-        }
-        let mut position_icons_in_line = |space_available: f32,
-                                          tooltip_position: tooltip::Position|
-         -> (Vec<Element<'_, Message>>, f32) {
-            let icons_left_to_position = icons_len - total_icons_positioned;
-            let icons_rendered_here =
-                ((space_available / PX_PER_ICON) as usize).min(icons_left_to_position);
-            total_icons_positioned += icons_rendered_here;
-
-            // we do this thing because we need to know exactly
-            // how many elems we got. size_hint may be unreliable
-            let mut icons = Vec::with_capacity(icons_rendered_here);
-            for _ in 0..icons_rendered_here {
-                if let Some((icon, tooltip_info)) = icons_iter.by_ref().next() {
-                    icons.push(iced::widget::tooltip(icon, tooltip_info, tooltip_position).into());
-                }
-            }
-
-            // if there is just 0 element it will take away the icon padding so it can be negative
-            // ensure it is positive
-            let space_used = (icons.len() as f32)
-                .mul_add(PX_PER_ICON, -SPACE_BETWEEN_ICONS)
-                .max(0.0);
-
-            let padding = (space_available - space_used) / 2.0;
-
-            (icons, padding)
-        };
-
-        let extra_top_icons_len = extra_bottom_icons.len();
-        let extra_bottom_icons_len = extra_top_icons.len();
-
-        let (mut extra_extra_top_icons, mut extra_extra_top_padding) =
-            position_icons_in_line(sel.rect.width, tooltip::Position::Top);
-        let (mut extra_extra_bottom_icons, mut extra_extra_bottom_padding) =
-            position_icons_in_line(sel.rect.width, tooltip::Position::Bottom);
-
-        while extra_extra_bottom_icons.len() < MIN_TOP_BOTTOM_ICONS {
-            if let Some((next, tooltip_str)) = icons_iter.by_ref().next() {
-                extra_extra_bottom_icons.push(
-                    iced::widget::tooltip(next, tooltip_str, tooltip::Position::Bottom).into(),
-                );
-                total_icons_positioned += 1;
-                extra_extra_bottom_padding -= PX_PER_ICON / 2.0;
-            } else {
-                break;
-            }
-        }
-
-        while extra_extra_top_icons.len() < MIN_TOP_BOTTOM_ICONS {
-            if let Some((next, tooltip_str)) = icons_iter.by_ref().next() {
-                extra_extra_top_icons
-                    .push(iced::widget::tooltip(next, tooltip_str, tooltip::Position::Top).into());
-                total_icons_positioned += 1;
-                extra_extra_top_padding -= PX_PER_ICON / 2.0;
-            } else {
-                break;
-            }
-        }
-
-        let extra_extra_top_icons_len = extra_extra_bottom_icons.len();
-        let extra_extra_bottom_icons_len = extra_extra_top_icons.len();
+        let extra_extra_bottom_icons = add_elements_until_min::<MIN_TOP_BOTTOM_ICONS>(
+            extra_extra_bottom_icons,
+            &mut icons_iter,
+            &mut extra_extra_bottom_padding,
+            &mut total_icons_positioned,
+            tooltip::Position::Bottom,
+        );
 
         debug_assert!(
             icons_iter.as_slice().is_empty(),
@@ -405,7 +375,7 @@ impl Selection {
             .width(PX_PER_ICON)
             .padding(Padding::default().top(left_padding));
 
-        let mut top_icons_count = 0;
+        let mut top_icon_rows_count = 0;
         let top_icons: Column<_> = vec![
             (extra_extra_top_icons, extra_extra_top_padding),
             (extra_top_icons, extra_top_padding),
@@ -414,7 +384,7 @@ impl Selection {
         .into_iter()
         .filter_map(|(icons, padding)| {
             (!icons.is_empty()).then(|| {
-                top_icons_count += 1;
+                top_icon_rows_count += 1;
                 row![
                     Space::with_width(sel.rect.x),
                     Row::from_vec(icons)
@@ -457,7 +427,7 @@ impl Selection {
         iced::widget::column![
             // just whitespace necessary to align the icons to the selection
             Space::with_height(Length::Fixed(
-                (top_icons_count as f32).mul_add(-PX_PER_ICON, sel.rect.y - height_added / 2.0)
+                (top_icon_rows_count as f32).mul_add(-PX_PER_ICON, sel.rect.y - height_added / 2.0)
             ))
             .width(Length::Fill),
             // top icon row
