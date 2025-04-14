@@ -91,6 +91,6 @@ pub struct Config {
     #[arg(long)]
     pub instant: bool,
     /// Color for elements in the UI, such as the selection border and buttons
-    #[arg(long, value_name = "HEX_COLOR", default_value_t = crate::constants::PALETTE.primary.into())]
+    #[arg(long, value_name = "HEX_COLOR", default_value_t = iced::color!(0xab_61_37).into())]
     pub accent_color: Color,
 }

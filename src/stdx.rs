@@ -6,6 +6,7 @@ use iced::Color;
 /// to make sure that it is readable?
 ///
 /// Formula from <https://stackoverflow.com/a/3943023>
+#[must_use]
 pub fn foreground_for(color: Color) -> Color {
     let luma_coefficient = |x: f32| {
         if x <= 0.04045 {

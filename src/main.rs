@@ -31,15 +31,21 @@ fn main() {
         .subscription(|_state| iced::keyboard::on_key_press(App::handle_key_press))
         .title("ferrishot")
         .theme(|_| {
-            Theme::custom(
+            Theme::custom_with_fn(
                 "ferrishot".to_string(),
                 iced::theme::Palette {
-                    background: iced::Color::WHITE,
-                    text: iced::Color::BLACK,
                     primary: ferrishot::CONFIG.accent_color.into(),
-                    success: iced::color!(0x12_66_4f),
-                    warning: iced::color!(0xff_c1_4e),
-                    danger: iced::color!(0xc3_42_3f),
+                    ..iced::theme::Palette::LIGHT
+                },
+                |palette| iced::theme::palette::Extended {
+                    primary: iced::theme::palette::Primary {
+                        base: iced::theme::palette::Pair {
+                            color: iced::Color::BLACK,
+                            text: ferrishot::foreground_for(palette.primary),
+                        },
+                        ..iced::theme::palette::EXTENDED_LIGHT.primary
+                    },
+                    ..*iced::theme::palette::EXTENDED_LIGHT
                 },
             )
         })

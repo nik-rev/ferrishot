@@ -12,7 +12,7 @@ use iced::keyboard::{Key, Modifiers};
 use iced::mouse::{Cursor, Interaction};
 use iced::widget::canvas::Path;
 use iced::widget::{self, Action, canvas, stack, text};
-use iced::{Color, Element, Length, Point, Rectangle, Renderer, Size, Task, Theme, mouse};
+use iced::{Element, Length, Point, Rectangle, Renderer, Size, Task, Theme, mouse};
 
 use crate::background_image::BackgroundImage;
 use crate::corners::{Side, SideOrCorner};

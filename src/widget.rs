@@ -1,10 +1,7 @@
 //! Widgets with custom styles
-use iced::{Background, Border, Color, Element, Length, Shadow, Theme, widget};
+use iced::{Background, Border, Element, Length, Shadow, Theme, widget};
 
-use crate::{
-    constants::{DROP_SHADOW, ICON_BUTTON_SIZE, ICON_SIZE},
-    stdx::foreground_for,
-};
+use crate::constants::{DROP_SHADOW, ICON_BUTTON_SIZE, ICON_SIZE};
 
 /// Create a new tooltip
 pub fn tooltip<'a, Message>(
@@ -13,8 +10,8 @@ pub fn tooltip<'a, Message>(
     position: widget::tooltip::Position,
 ) -> widget::Tooltip<'a, Message> {
     widget::Tooltip::new(content, tooltip, position)
-        .style(|_| widget::container::Style {
-            text_color: Some(Color::WHITE),
+        .style(|theme| widget::container::Style {
+            text_color: Some(theme.palette().text),
             background: Some(Background::Color(iced::color!(0x00_00_00, 0.8))),
             border: Border::default(),
             shadow: Shadow::default(),
@@ -26,16 +23,16 @@ pub fn tooltip<'a, Message>(
 pub fn icon<'a, Message>(icon: crate::icons::Icon) -> widget::Button<'a, Message> {
     widget::button(
         widget::Svg::new(icon.svg())
-            .style(|t: &Theme, _| widget::svg::Style {
-                color: Some(foreground_for(t.palette().primary)),
+            .style(|theme: &Theme, _| widget::svg::Style {
+                color: Some(theme.extended_palette().primary.base.text),
             })
             .width(Length::Fixed(ICON_SIZE))
             .height(Length::Fixed(ICON_SIZE)),
     )
     .width(Length::Fixed(ICON_BUTTON_SIZE))
     .height(Length::Fixed(ICON_BUTTON_SIZE))
-    .style(move |t: &Theme, _| {
-        let mut style = widget::button::Style::default().with_background(t.palette().primary);
+    .style(move |theme: &Theme, _| {
+        let mut style = widget::button::Style::default().with_background(theme.palette().primary);
         style.shadow = DROP_SHADOW;
         style.border = iced::Border::default()
             .rounded(iced::border::Radius::new(iced::Pixels::from(f32::INFINITY)));

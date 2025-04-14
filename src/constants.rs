@@ -1,16 +1,6 @@
 //! Configurable constant knobs
-use iced::{Color, Shadow, color, theme::Palette};
+use iced::{Color, Shadow, color};
 use std::time::Duration;
-
-/// Ferrishot's custom theme
-pub const PALETTE: Palette = Palette {
-    background: Color::WHITE,
-    text: Color::BLACK,
-    primary: color!(0xab_61_37),
-    success: color!(0x12_66_4f),
-    warning: color!(0xff_c1_4e),
-    danger: color!(0xc3_42_3f),
-};
 
 /// When there is an error, display it for this amount of time
 pub const ERROR_TIMEOUT: Duration = Duration::from_secs(5);
