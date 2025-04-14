@@ -7,7 +7,7 @@
 /// Helper to create a styled button with an icon
 #[macro_export]
 macro_rules! icon {
-    ($icon:ident) => {{ $crate::widget::icon($crate::icons::Icon::$icon) }};
+    ($icon:ident) => {{ $crate::widgets::icon($crate::icons::Icon::$icon) }};
 }
 
 /// Generates handles for macros and automatically includes all the icons

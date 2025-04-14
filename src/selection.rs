@@ -172,7 +172,7 @@ impl Selection {
         ) -> Vec<Element<'a, Message>> {
             while icons.len() < MIN_ELEMENTS {
                 if let Some((next, tooltip_str)) = iter.by_ref().next() {
-                    icons.push(crate::widget::tooltip(next, tooltip_str, tooltip_position).into());
+                    icons.push(crate::widgets::tooltip(next, tooltip_str, tooltip_position).into());
                     *total_icons_positioned += 1;
                     *padding -= PX_PER_ICON / 2.0;
                 } else {
@@ -199,7 +199,7 @@ impl Selection {
             let mut icons = Vec::with_capacity(icons_rendered_here);
             for _ in 0..icons_rendered_here {
                 if let Some((icon, tooltip_str)) = icons_iter.by_ref().next() {
-                    icons.push(crate::widget::tooltip(icon, tooltip_str, tooltip_position).into());
+                    icons.push(crate::widgets::tooltip(icon, tooltip_str, tooltip_position).into());
                 }
             }
 

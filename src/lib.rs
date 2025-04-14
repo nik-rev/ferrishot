@@ -1,5 +1,11 @@
 //! The ferrishot app
 
+// TODO: once iced v14 releases,
+// and this crate updates to use this version,
+// we don't need to vendor it anymore
+mod iced_aw;
+
+use iced_aw::style;
 mod app;
 mod background_image;
 mod clipboard;
@@ -14,7 +20,7 @@ mod rectangle;
 mod screenshot;
 mod selection;
 mod stdx;
-mod widget;
+mod widgets;
 
 #[cfg(target_os = "linux")]
 pub use clipboard::{CLIPBOARD_DAEMON_ID, run_clipboard_daemon};

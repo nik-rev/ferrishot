@@ -11,7 +11,7 @@ use crate::screenshot::RgbaHandle;
 use iced::keyboard::{Key, Modifiers};
 use iced::mouse::{Cursor, Interaction};
 use iced::widget::canvas::Path;
-use iced::widget::{self, Action, canvas, stack, text};
+use iced::widget::{self, Action, Row, canvas, stack};
 use iced::{Element, Length, Point, Rectangle, Renderer, Size, Task, Theme, mouse};
 
 use crate::background_image::BackgroundImage;
@@ -189,6 +189,11 @@ impl App {
             (icon!(Close).on_press(Message::Exit).into(), "Exit (Esc)"),
         ];
 
+        #[expect(
+            clippy::cast_possible_truncation,
+            clippy::cast_sign_loss,
+            reason = "images can only have integer width value"
+        )]
         stack![
             // the taken screenshot in the background
             BackgroundImage::new(self.screenshot.clone().into()),
@@ -196,10 +201,26 @@ impl App {
             canvas(self).width(Length::Fill).height(Length::Fill),
         ]
         .push_maybe(
+            // icons around the selection
             self.selection
                 .filter(|sel| sel.is_idle())
                 .map(|sel| sel.render_icons(icons)),
         )
+        .push_maybe(self.selection.map(|sel| {
+            let rect = sel.norm().rect;
+            let (width, height, _) = self.screenshot.raw();
+            let x = crate::iced_aw::NumberInput::new(
+                &(rect.width as u32),
+                0..width,
+                Message::ResizeHorizontally,
+            );
+            let y = crate::iced_aw::NumberInput::new(
+                &(rect.height as u32),
+                0..height,
+                Message::ResizeVertically,
+            );
+            Row::new().push(x).push(y)
+        }))
         .into()
     }
 
@@ -211,6 +232,16 @@ impl App {
     #[expect(clippy::needless_pass_by_value, reason = "trait function")]
     pub fn update(&mut self, message: Message) -> Task<Message> {
         match message {
+            #[expect(clippy::cast_precision_loss, reason = "dont care about precision")]
+            Message::ResizeVertically(new_height) => {
+                self.selection.as_mut().expect
+                    ("this message is sent when the inputs update. they can only render if the selection is not None").rect.height = new_height as f32;
+            }
+            #[expect(clippy::cast_precision_loss, reason = "dont care about precision")]
+            Message::ResizeHorizontally(new_width) => {
+                self.selection.as_mut().expect("this message is sent when the inputs update. they can only render if the selection is not None").rect.width = new_width as f32;
+            }
+            Message::None => (),
             Message::Exit => return Self::exit(),
             Message::LeftMouseDown(cursor) => {
                 if let Some((cursor, side, rect)) = cursor.position().and_then(|cursor_pos| {

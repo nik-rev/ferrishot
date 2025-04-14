@@ -1356,6 +1356,7 @@ dependencies = [
  "log",
  "mouse_position",
  "notify-rust",
+ "num-traits",
  "rfd",
  "tempfile",
  "thiserror 2.0.12",

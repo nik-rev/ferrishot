@@ -7,6 +7,12 @@ use crate::{corners::SideOrCorner, selection::Selection};
 /// Represents an action happening in the application
 #[derive(Debug, Clone)]
 pub enum Message {
+    /// do nothing
+    None,
+    /// Change the height of the selection
+    ResizeVertically(u32),
+    /// Change the width of the selection
+    ResizeHorizontally(u32),
     /// Exits the application
     Exit,
     /// The left mouse button is down
