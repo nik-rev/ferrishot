@@ -2,6 +2,8 @@
 use delegate::delegate;
 use iced::{Point, Rectangle, Size};
 
+use crate::constants::FRAME_COLOR;
+use crate::constants::FRAME_WIDTH;
 use crate::corners::Corners;
 use crate::corners::SideOrCorner;
 use crate::rectangle::RectangleExt;
@@ -72,8 +74,8 @@ impl Selection {
             self.pos(),
             self.size(),
             iced::widget::canvas::Stroke::default()
-                .with_color(crate::SELECTION_COLOR)
-                .with_width(crate::STROKE_SIZE),
+                .with_color(FRAME_COLOR)
+                .with_width(FRAME_WIDTH),
         );
     }
 

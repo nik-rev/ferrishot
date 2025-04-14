@@ -4,7 +4,9 @@
 //! Icons are declared at the invocation of the `icons!` macro.
 //! Each `Icon` must have a corresponding `icons/Icon.svg` file.
 
-use iced::{Color, Length, widget};
+use iced::{Length, widget};
+
+use crate::constants::{ICON_BACKGROUND, ICON_BUTTON_SIZE, ICON_COLOR, ICON_SIZE};
 
 /// Helper to create a styled button with an icon
 #[macro_export]
@@ -32,18 +34,6 @@ pub fn button<'a>(icon: crate::icons::Icon) -> iced::Element<'a, crate::message:
     })
     .into()
 }
-
-/// Width and height for icon buttons
-pub const ICON_SIZE: f32 = 32.0;
-/// Color used for the icons
-pub const ICON_COLOR: Color = iced::color!(0xff_ff_ff);
-/// Color to use for the background of icons
-pub const ICON_BACKGROUND: Color = iced::color!(0x0f_0f_0f);
-/// Size of the button for the icon, which includes the
-/// icon itself and space around it (bigger than `ICON_SIZE`)
-pub const ICON_BUTTON_SIZE: f32 = 48.0;
-/// padding between icons
-pub const ICON_PADDING: f32 = 2.0;
 
 /// Generates handles for macros and automatically includes all the icons
 macro_rules! icons {

@@ -1,24 +1,21 @@
 //! Main logic for the application, handling of events and mutation of the state
 
 use std::borrow::Cow;
-use std::iter;
 use std::time::Instant;
 
 use crate::config::Config;
-use crate::icons::{ICON_BUTTON_SIZE, ICON_PADDING, ICON_SIZE};
+use crate::constants::{
+    ERROR_TIMEOUT, FRAME_WIDTH, ICON_BUTTON_SIZE, NON_SELECTED_REGION_COLOR, SPACE_BETWEEN_ICONS,
+};
+use crate::icon;
 use crate::message::Message;
 use crate::screenshot::RgbaHandle;
-use crate::{SHADE_COLOR, icon};
 use clap::Parser as _;
-use iced::alignment::{Horizontal, Vertical};
 use iced::keyboard::{Key, Modifiers};
 use iced::mouse::{Cursor, Interaction};
 use iced::widget::canvas::Path;
-use iced::widget::{
-    self, Action, Column, Container, Row, Space, bottom_right, canvas, column, container, row,
-    stack, text,
-};
-use iced::{Color, Element, Length, Padding, Point, Rectangle, Renderer, Size, Task, Theme, mouse};
+use iced::widget::{self, Action, Column, Row, Space, canvas, column, row, stack, text};
+use iced::{Element, Length, Padding, Point, Rectangle, Renderer, Size, Task, Theme, mouse};
 
 use crate::background_image::BackgroundImage;
 use crate::corners::{Side, SideOrCorner};
@@ -139,7 +136,7 @@ impl App {
             .rev()
             .map_while(|err| {
                 let time_passed = now - err.timestamp;
-                (time_passed <= crate::ERROR_TIMEOUT).then_some(err.message.to_string())
+                (time_passed <= ERROR_TIMEOUT).then_some(err.message.to_string())
             })
             .collect()
     }
@@ -147,7 +144,7 @@ impl App {
     /// Renders the black tint on regions that are not selected
     fn render_shade(&self, frame: &mut canvas::Frame, bounds: Rectangle) {
         let Some(selection) = self.selection.map(Selection::norm) else {
-            frame.fill_rectangle(bounds.position(), bounds.size(), SHADE_COLOR);
+            frame.fill_rectangle(bounds.position(), bounds.size(), NON_SELECTED_REGION_COLOR);
             return;
         };
 
@@ -165,7 +162,7 @@ impl App {
             p.move_to(selection.top_left());
         });
 
-        frame.fill(&outside, SHADE_COLOR);
+        frame.fill(&outside, NON_SELECTED_REGION_COLOR);
     }
 
     /// Receives keybindings
@@ -218,7 +215,7 @@ impl App {
         ]
         // additional UI elements such as buttons
         .push_maybe(self.selection.filter(|sel| sel.is_idle()).map(|sel| {
-            const PX_PER_ICON: f32 = ICON_PADDING + ICON_BUTTON_SIZE;
+            const PX_PER_ICON: f32 = SPACE_BETWEEN_ICONS + ICON_BUTTON_SIZE;
             let sel = sel.norm();
             let icons_len = icons.len();
             let mut icons_iter = icons.into_iter();
@@ -240,7 +237,7 @@ impl App {
                 // if there is just 0 element it will take away the icon padding so it can be negative
                 // ensure it is positive
                 let space_used = (elems.len() as f32)
-                    .mul_add(PX_PER_ICON, -ICON_PADDING)
+                    .mul_add(PX_PER_ICON, -SPACE_BETWEEN_ICONS)
                     .max(0.0);
                 let padding = (space_available - space_used) / 2.0;
 
@@ -249,22 +246,22 @@ impl App {
 
             let (bottom, padding) = icons_amount(sel.rect.width);
             let bottom = Row::from_vec(bottom)
-                .spacing(ICON_PADDING)
+                .spacing(SPACE_BETWEEN_ICONS)
                 .padding(Padding::default().left(padding));
 
             let (right, padding) = icons_amount(sel.rect.height);
             let right = Column::from_vec(right)
-                .spacing(ICON_PADDING)
+                .spacing(SPACE_BETWEEN_ICONS)
                 .padding(Padding::default().top(padding));
 
             let (top, padding) = icons_amount(sel.rect.width);
             let top = Row::from_vec(top)
-                .spacing(ICON_PADDING)
+                .spacing(SPACE_BETWEEN_ICONS)
                 .padding(Padding::default().left(padding));
 
             let (left, padding) = icons_amount(sel.rect.height);
             let left = Column::from_vec(left)
-                .spacing(ICON_PADDING)
+                .spacing(SPACE_BETWEEN_ICONS)
                 .padding(Padding::default().top(padding));
 
             column![
@@ -273,10 +270,11 @@ impl App {
                 row![
                     Space::with_width(sel.rect.x - PX_PER_ICON).height(Length::Fill),
                     left,
-                    Space::with_width(sel.rect.width).height(Length::Fill),
+                    Space::with_width(FRAME_WIDTH.mul_add(2.0, sel.rect.width))
+                        .height(Length::Fill),
                     right
                 ]
-                .height(sel.rect.height),
+                .height(FRAME_WIDTH.mul_add(2.0, sel.rect.height)),
                 row![Space::with_width(sel.rect.x), bottom],
             ]
         }))

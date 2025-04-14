@@ -1,7 +1,10 @@
 //! `Corners` represents the 4 vertices of a `iced::Rectangle`
 use iced::{Point, Rectangle, mouse};
 
-use crate::{CORNER_RADIUS, INTERACTION_AREA, SELECTION_COLOR, rectangle::RectangleExt as _};
+use crate::{
+    constants::{FRAME_CIRCLE_RADIUS, FRAME_COLOR, FRAME_INTERACTION_AREA},
+    rectangle::RectangleExt as _,
+};
 
 /// Corner of a rectangle
 #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
@@ -133,9 +136,9 @@ impl Corners {
             self.bottom_left,
             self.bottom_right,
         ]
-        .map(|corner| iced::widget::canvas::Path::circle(corner, CORNER_RADIUS))
+        .map(|corner| iced::widget::canvas::Path::circle(corner, FRAME_CIRCLE_RADIUS))
         {
-            frame.fill(&circle, SELECTION_COLOR);
+            frame.fill(&circle, FRAME_COLOR);
         }
     }
 
@@ -143,51 +146,51 @@ impl Corners {
     pub fn side_at(&self, point: Point) -> Option<SideOrCorner> {
         let top = Rectangle {
             x: self.top_left.x,
-            y: self.top_left.y - INTERACTION_AREA / 2.,
+            y: self.top_left.y - FRAME_INTERACTION_AREA / 2.,
             width: self.top_right.x - self.top_left.x,
-            height: INTERACTION_AREA,
+            height: FRAME_INTERACTION_AREA,
         };
         let bottom = Rectangle {
             x: self.bottom_left.x,
-            y: self.bottom_left.y - INTERACTION_AREA / 2.,
+            y: self.bottom_left.y - FRAME_INTERACTION_AREA / 2.,
             width: self.bottom_right.x - self.bottom_left.x,
-            height: INTERACTION_AREA,
+            height: FRAME_INTERACTION_AREA,
         };
         let left = Rectangle {
-            x: self.top_left.x - INTERACTION_AREA / 2.,
+            x: self.top_left.x - FRAME_INTERACTION_AREA / 2.,
             y: self.top_left.y,
-            width: INTERACTION_AREA,
+            width: FRAME_INTERACTION_AREA,
             height: self.bottom_left.y - self.top_left.y,
         };
         let right = Rectangle {
-            x: self.top_right.x - INTERACTION_AREA / 2.,
+            x: self.top_right.x - FRAME_INTERACTION_AREA / 2.,
             y: self.top_right.y,
-            width: INTERACTION_AREA,
+            width: FRAME_INTERACTION_AREA,
             height: self.bottom_right.y - self.top_right.y,
         };
         let top_left = Rectangle {
-            x: self.top_left.x - INTERACTION_AREA / 2.,
-            y: self.top_left.y - INTERACTION_AREA / 2.,
-            width: INTERACTION_AREA,
-            height: INTERACTION_AREA,
+            x: self.top_left.x - FRAME_INTERACTION_AREA / 2.,
+            y: self.top_left.y - FRAME_INTERACTION_AREA / 2.,
+            width: FRAME_INTERACTION_AREA,
+            height: FRAME_INTERACTION_AREA,
         };
         let top_right = Rectangle {
-            x: self.top_right.x - INTERACTION_AREA / 2.,
-            y: self.top_right.y - INTERACTION_AREA / 2.,
-            width: INTERACTION_AREA,
-            height: INTERACTION_AREA,
+            x: self.top_right.x - FRAME_INTERACTION_AREA / 2.,
+            y: self.top_right.y - FRAME_INTERACTION_AREA / 2.,
+            width: FRAME_INTERACTION_AREA,
+            height: FRAME_INTERACTION_AREA,
         };
         let bottom_left = Rectangle {
-            x: self.bottom_left.x - INTERACTION_AREA / 2.,
-            y: self.bottom_left.y - INTERACTION_AREA / 2.,
-            width: INTERACTION_AREA,
-            height: INTERACTION_AREA,
+            x: self.bottom_left.x - FRAME_INTERACTION_AREA / 2.,
+            y: self.bottom_left.y - FRAME_INTERACTION_AREA / 2.,
+            width: FRAME_INTERACTION_AREA,
+            height: FRAME_INTERACTION_AREA,
         };
         let bottom_right = Rectangle {
-            x: self.bottom_right.x - INTERACTION_AREA / 2.,
-            y: self.bottom_right.y - INTERACTION_AREA / 2.,
-            width: INTERACTION_AREA,
-            height: INTERACTION_AREA,
+            x: self.bottom_right.x - FRAME_INTERACTION_AREA / 2.,
+            y: self.bottom_right.y - FRAME_INTERACTION_AREA / 2.,
+            width: FRAME_INTERACTION_AREA,
+            height: FRAME_INTERACTION_AREA,
         };
 
         [
