@@ -194,7 +194,6 @@ impl App {
             BackgroundImage::new(self.screenshot.clone().into()),
             // the border around the selection
             canvas(self).width(Length::Fill).height(Length::Fill),
-            text(format!("{:?}", self.selection.map(|s| s.status))),
         ]
         .push_maybe(
             self.selection

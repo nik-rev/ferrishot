@@ -11,8 +11,8 @@ pub fn tooltip<'a, Message>(
 ) -> widget::Tooltip<'a, Message> {
     widget::Tooltip::new(content, tooltip, position)
         .style(|theme| widget::container::Style {
-            text_color: Some(theme.palette().text),
-            background: Some(Background::Color(iced::color!(0x00_00_00, 0.8))),
+            text_color: Some(theme.palette().background),
+            background: Some(Background::Color(theme.palette().text)),
             border: Border::default(),
             shadow: Shadow::default(),
         })
