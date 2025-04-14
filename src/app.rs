@@ -197,7 +197,7 @@ impl App {
     )]
     pub fn view(&self) -> Element<Message> {
         let mut icons = vec![];
-        for _ in 0..100 {
+        for _ in 0..20 {
             icons.push(icon!(Fullscreen));
         }
         // how many elements can we fit on the bottom
@@ -222,47 +222,52 @@ impl App {
             let mut total_icons_rendered = 0;
 
             let mut icons_amount = |space_available: f32| {
-                let icons_rendered = ((space_available / PX_PER_ICON) as usize)
-                    .min(icons_len - total_icons_rendered);
-                total_icons_rendered += icons_rendered;
+                let icons_left_to_render = icons_len - total_icons_rendered;
+                let icons_rendered_here =
+                    ((space_available / PX_PER_ICON) as usize).min(icons_left_to_render);
+                total_icons_rendered += icons_rendered_here;
 
                 // we do this thing because we need to know exactly
                 // how many elems we got. size_hint may be unreliable
-                let mut elems = Vec::with_capacity(icons_rendered);
-                for _ in 0..icons_rendered {
+                let mut icons = Vec::with_capacity(icons_rendered_here);
+                for _ in 0..icons_rendered_here {
                     if let Some(icon) = icons_iter.by_ref().next() {
-                        elems.push(icon);
+                        icons.push(icon);
                     }
                 }
+
                 // if there is just 0 element it will take away the icon padding so it can be negative
                 // ensure it is positive
-                let space_used = (elems.len() as f32)
+                let space_used = (icons.len() as f32)
                     .mul_add(PX_PER_ICON, -SPACE_BETWEEN_ICONS)
                     .max(0.0);
+
                 let padding = (space_available - space_used) / 2.0;
 
-                (elems, padding)
+                (icons, padding)
             };
 
-            let (bottom, padding) = icons_amount(sel.rect.width);
+            let (bottom, bottom_padding) = icons_amount(sel.rect.width);
+            let (right, right_padding) = icons_amount(sel.rect.height);
+            let (top, top_padding) = icons_amount(sel.rect.width);
+            let (left, left_padding) = icons_amount(sel.rect.height);
+
             let bottom = Row::from_vec(bottom)
                 .spacing(SPACE_BETWEEN_ICONS)
-                .padding(Padding::default().left(padding));
-
-            let (right, padding) = icons_amount(sel.rect.height);
+                .height(PX_PER_ICON)
+                .padding(Padding::default().left(bottom_padding));
             let right = Column::from_vec(right)
                 .spacing(SPACE_BETWEEN_ICONS)
-                .padding(Padding::default().top(padding));
-
-            let (top, padding) = icons_amount(sel.rect.width);
+                .width(PX_PER_ICON)
+                .padding(Padding::default().top(right_padding));
             let top = Row::from_vec(top)
                 .spacing(SPACE_BETWEEN_ICONS)
-                .padding(Padding::default().left(padding));
-
-            let (left, padding) = icons_amount(sel.rect.height);
+                .height(PX_PER_ICON)
+                .padding(Padding::default().left(top_padding));
             let left = Column::from_vec(left)
                 .spacing(SPACE_BETWEEN_ICONS)
-                .padding(Padding::default().top(padding));
+                .width(PX_PER_ICON)
+                .padding(Padding::default().top(left_padding));
 
             column![
                 Space::with_height(Length::Fixed(sel.rect.y - PX_PER_ICON)).width(Length::Fill),

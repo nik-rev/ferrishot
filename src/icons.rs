@@ -28,8 +28,8 @@ pub fn button<'a>(icon: crate::icons::Icon) -> iced::Element<'a, crate::message:
     .height(Length::Fixed(ICON_BUTTON_SIZE))
     .style(|_, _| {
         let mut style = widget::button::Style::default().with_background(ICON_BACKGROUND);
-        style.border =
-            iced::Border::default().rounded(iced::border::Radius::new(iced::Pixels::from(100)));
+        style.border = iced::Border::default()
+            .rounded(iced::border::Radius::new(iced::Pixels::from(f32::INFINITY)));
         style
     })
     .into()

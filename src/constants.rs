@@ -1,7 +1,6 @@
 //! Configurable constant knobs
-use std::time::Duration;
-
 use iced::Color;
+use std::time::Duration;
 
 /// When there is an error, display it for this amount of time
 pub const ERROR_TIMEOUT: Duration = Duration::from_secs(5);
@@ -20,10 +19,10 @@ pub const NON_SELECTED_REGION_COLOR: Color = iced::color!(0x00_00_00, 0.15);
 pub const ICON_COLOR: Color = iced::color!(0xff_ff_ff);
 /// Color to use for the background of icons
 pub const ICON_BACKGROUND: Color = iced::color!(0x0f_0f_0f);
+/// Width and height for icons *inside* of buttons
+pub const ICON_SIZE: f32 = 32.0;
 /// Size of the button for the icon, which includes the
 /// icon itself and space around it (bigger than `ICON_SIZE`)
 pub const ICON_BUTTON_SIZE: f32 = 48.0;
-/// Width and height for icons *inside* of buttons
-pub const ICON_SIZE: f32 = 32.0;
 /// padding between icons
 pub const SPACE_BETWEEN_ICONS: f32 = 2.0;
