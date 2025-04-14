@@ -1357,6 +1357,7 @@ dependencies = [
  "mouse_position",
  "notify-rust",
  "rfd",
+ "tempfile",
  "thiserror 2.0.12",
  "xcap",
 ]

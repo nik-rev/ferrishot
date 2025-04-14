@@ -1,6 +1,7 @@
 //! Main logic for the application, handling of events and mutation of the state
 
 use std::borrow::Cow;
+use std::fs;
 use std::time::Instant;
 
 use crate::config::Config;

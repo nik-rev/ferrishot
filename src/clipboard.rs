@@ -4,9 +4,6 @@
 /// can be anything as long as it is unlikely to be passed in by the user by mistake.
 #[cfg(target_os = "linux")]
 pub const CLIPBOARD_DAEMON_ID: &str = "__ferrishot_clipboard_daemon";
-/// In order to pass along image data from this process onto another, the
-/// easiest way to do that is to create a temporary file then read it
-const CLIPBOARD_BUFFER_FILE: &str = "__ferrishot_clipboard_buffer";
 
 use std::fs;
 use std::{fs::File, io::Write, process};
@@ -49,7 +46,10 @@ pub fn set_text(text: &str) -> Result<(), Box<dyn std::error::Error>> {
 pub fn set_image(
     image_data: arboard::ImageData,
 ) -> Result<std::path::PathBuf, Box<dyn std::error::Error>> {
-    let clipboard_buffer_path = std::env::temp_dir().join(CLIPBOARD_BUFFER_FILE);
+    let clipboard_buffer_path = tempfile::Builder::new()
+        .keep(true)
+        .tempfile()
+        .expect("failed to create a temporary file, for storage of image data");
     let mut clipboard_buffer_file = File::create(&clipboard_buffer_path)?;
     clipboard_buffer_file.write_all(&image_data.bytes)?;
 
@@ -60,7 +60,7 @@ pub fn set_image(
             .arg("image")
             .arg(image_data.width.to_string())
             .arg(image_data.height.to_string())
-            .arg(&clipboard_buffer_path)
+            .arg(clipboard_buffer_path.path())
             .stdin(process::Stdio::null())
             .stdout(process::Stdio::null())
             .stderr(process::Stdio::null())
@@ -72,7 +72,7 @@ pub fn set_image(
         arboard::Clipboard::new()?.set_image(image_data)?;
     }
 
-    Ok(clipboard_buffer_path)
+    Ok(clipboard_buffer_path.path().to_path_buf())
 }
 
 /// Runs a process in the background that provides clipboard access,
@@ -131,9 +131,8 @@ pub fn run_clipboard_daemon() -> Result<(), arboard::Error> {
                 .expect("height")
                 .parse::<usize>()
                 .expect("valid image height");
-            let bytes: std::borrow::Cow<[u8]> = fs::read(args.next().expect("image path"))
-                .expect("image contents")
-                .into();
+            let path = args.next().expect("image path");
+            let bytes: std::borrow::Cow<[u8]> = fs::read(&path).expect("image contents").into();
 
             assert_eq!(args.next(), None, "unexpected extra args");
             assert_eq!(
@@ -150,6 +149,8 @@ pub fn run_clipboard_daemon() -> Result<(), arboard::Error> {
                     height,
                     bytes,
                 })?;
+
+            fs::remove_file(path).expect("failed to remove file");
         }
         "text" => {
             let text = args.next().expect("text");
