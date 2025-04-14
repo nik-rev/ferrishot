@@ -1,7 +1,6 @@
 //! The ferrishot app
 
 use ferrishot::App;
-use iced::Theme;
 
 fn main() {
     ferrishot::initialize_logging();
@@ -30,25 +29,7 @@ fn main() {
         })
         .subscription(|_state| iced::keyboard::on_key_press(App::handle_key_press))
         .title("ferrishot")
-        .theme(|_| {
-            Theme::custom_with_fn(
-                "ferrishot".to_string(),
-                iced::theme::Palette {
-                    primary: ferrishot::CONFIG.accent_color.into(),
-                    ..iced::theme::Palette::LIGHT
-                },
-                |palette| iced::theme::palette::Extended {
-                    primary: iced::theme::palette::Primary {
-                        base: iced::theme::palette::Pair {
-                            color: iced::Color::BLACK,
-                            text: ferrishot::foreground_for(palette.primary),
-                        },
-                        ..iced::theme::palette::EXTENDED_LIGHT.primary
-                    },
-                    ..*iced::theme::palette::EXTENDED_LIGHT
-                },
-            )
-        })
+        .theme(App::theme)
         .run()
         .expect("Failed to start ferrishot");
 

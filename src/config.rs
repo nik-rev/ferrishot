@@ -6,7 +6,7 @@ use clap::Parser;
 
 /// A wrapper for `iced::Color` to allow it to be used with `clap`
 #[derive(Clone, Debug, Copy, PartialEq)]
-pub struct Color(iced::Color);
+pub struct Color(pub iced::Color);
 
 /// Parsing hex color failed
 #[derive(Debug, thiserror::Error)]
@@ -68,12 +68,6 @@ impl fmt::Display for Color {
             (self.0.g * 255.0) as u8,
             (self.0.b * 255.0) as u8
         )
-    }
-}
-
-impl From<Color> for iced::Color {
-    fn from(value: Color) -> Self {
-        value.0
     }
 }
 

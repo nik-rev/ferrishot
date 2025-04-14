@@ -5,14 +5,17 @@ use std::time::Instant;
 
 use crate::config::CONFIG;
 use crate::constants::{ERROR_TIMEOUT, NON_SELECTED_REGION_COLOR};
-use crate::icon;
 use crate::message::Message;
 use crate::screenshot::RgbaHandle;
+use crate::{foreground_for, icon};
 use iced::keyboard::{Key, Modifiers};
 use iced::mouse::{Cursor, Interaction};
+use iced::theme::palette::{self, EXTENDED_DARK, Pair};
 use iced::widget::canvas::Path;
-use iced::widget::{self, Action, Row, canvas, stack};
-use iced::{Element, Length, Point, Rectangle, Renderer, Size, Task, Theme, mouse};
+use iced::widget::{self, Action, Space, canvas, column, row, stack};
+use iced::{
+    Color, Element, Length, Point, Rectangle, Renderer, Size, Task, Theme, color, mouse, theme,
+};
 
 use crate::background_image::BackgroundImage;
 use crate::corners::{Side, SideOrCorner};
@@ -106,6 +109,44 @@ impl Default for App {
 }
 
 impl App {
+    /// Name of the application
+    pub const NAME: &str = "ferrishot";
+
+    /// Styles and theme for the app
+    pub fn theme(&self) -> Theme {
+        Theme::custom_with_fn(
+            Self::NAME.to_string(),
+            theme::Palette {
+                primary: CONFIG.accent_color.0,
+                ..theme::Palette::DARK
+            },
+            |p| palette::Extended {
+                background: palette::Background {
+                    base: Pair {
+                        color: p.background,
+                        text: p.text,
+                    },
+                    weak: Pair {
+                        text: color!(0x69_69_69),
+                        color: Color::TRANSPARENT,
+                    },
+                    ..EXTENDED_DARK.background
+                },
+                primary: palette::Primary {
+                    base: Pair {
+                        color: p.primary,
+                        text: foreground_for(p.primary),
+                    },
+                    weak: Pair {
+                        color: p.primary.scale_alpha(0.3),
+                        ..EXTENDED_DARK.primary.weak
+                    },
+                    ..EXTENDED_DARK.primary
+                },
+                ..*EXTENDED_DARK
+            },
+        )
+    }
     /// Close the app
     ///
     /// This is like `iced::exit`, but it does not cause a segfault in special
@@ -209,17 +250,29 @@ impl App {
         .push_maybe(self.selection.map(|sel| {
             let rect = sel.norm().rect;
             let (width, height, _) = self.screenshot.raw();
-            let x = crate::iced_aw::NumberInput::new(
-                &(rect.width as u32),
+            let x = crate::widgets::dimension_indicator(
+                rect.width as u32,
                 0..width,
                 Message::ResizeHorizontally,
             );
-            let y = crate::iced_aw::NumberInput::new(
-                &(rect.height as u32),
+            let y = crate::widgets::dimension_indicator(
+                rect.height as u32,
                 0..height,
                 Message::ResizeVertically,
             );
-            Row::new().push(x).push(y)
+
+            let space_y = Space::with_height(rect.bottom_right().y);
+            let space_x = Space::with_width(rect.bottom_right().x);
+
+            column![
+                space_y,
+                row![
+                    space_x,
+                    row![x, widget::text("px")],
+                    widget::text("x"),
+                    row![y, widget::text("px")]
+                ]
+            ]
         }))
         .into()
     }
@@ -489,10 +542,10 @@ impl canvas::Program<Message> for App {
         self.render_shade(&mut frame, bounds);
 
         if let Some(selection) = self.selection.map(Selection::norm) {
-            selection.render_border(&mut frame, CONFIG.accent_color.into());
+            selection.render_border(&mut frame, CONFIG.accent_color.0);
             selection
                 .corners()
-                .render_circles(&mut frame, CONFIG.accent_color.into());
+                .render_circles(&mut frame, CONFIG.accent_color.0);
         }
 
         vec![frame.into_geometry()]

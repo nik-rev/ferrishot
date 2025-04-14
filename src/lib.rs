@@ -5,6 +5,7 @@
 // we don't need to vendor it anymore
 mod iced_aw;
 
+mod theme;
 use iced_aw::style;
 mod app;
 mod background_image;
