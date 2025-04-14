@@ -37,6 +37,9 @@ pub enum SelectionStatus {
         /// Position of the cursor when we just started dragging the selection
         initial_cursor_pos: Point,
     },
+    /// The selection is currently being created, e.g.
+    /// hold left click and drag
+    Create,
     /// The selection is not moving
     #[default]
     Idle,
@@ -126,6 +129,8 @@ impl Selection {
             pub const fn is_idle(self) -> bool;
             /// The selection is being resized
             pub const fn is_resized(self) -> bool;
+            /// The selection is being resized
+            pub const fn is_create(self) -> bool;
         }
     }
 }

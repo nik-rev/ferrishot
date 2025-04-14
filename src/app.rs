@@ -1,18 +1,21 @@
 //! Main logic for the application, handling of events and mutation of the state
 
 use std::borrow::Cow;
+use std::iter;
 use std::time::Instant;
 
 use crate::config::Config;
+use crate::icons::{ICON_PADDING, ICON_SIZE};
 use crate::message::Message;
 use crate::screenshot::RgbaHandle;
 use crate::{SHADE_COLOR, icon};
 use clap::Parser as _;
+use iced::alignment::{Horizontal, Vertical};
 use iced::keyboard::{Key, Modifiers};
 use iced::mouse::{Cursor, Interaction};
 use iced::widget::canvas::Path;
-use iced::widget::{self, Action, canvas, row, stack};
-use iced::{Element, Length, Point, Rectangle, Renderer, Size, Task, Theme, mouse};
+use iced::widget::{self, Action, Column, Row, Space, canvas, column, container, row, stack, text};
+use iced::{Color, Element, Length, Point, Rectangle, Renderer, Size, Task, Theme, mouse};
 
 use crate::background_image::BackgroundImage;
 use crate::corners::{Side, SideOrCorner};
@@ -180,7 +183,20 @@ impl App {
     // let full_selection = button!(FULLSCREEN_ICON).on_press(Message::FullSelection);
 
     /// Renders the app
+    #[expect(
+        clippy::cast_possible_truncation,
+        reason = "we only care about the amount of items we can render at most"
+    )]
+    #[expect(
+        clippy::cast_sign_loss,
+        reason = "normalized, so width nor height will be negative"
+    )]
     pub fn view(&self) -> Element<Message> {
+        dbg!(self.selection.map(|s| s.status));
+        let mut icons = vec![];
+        for _ in 0..28 {
+            icons.push(icon!(Fullscreen));
+        }
         // how many elements can we fit on the bottom
         // then how many elements can we fit on the right
         // then how many elements can we fit on the top
@@ -188,10 +204,64 @@ impl App {
         // Repeat the above 4 steps but with -2 elements per row/col
 
         stack![
+            // the taken screenshot in the background
             BackgroundImage::new(self.screenshot.clone().into()),
+            // the border around the selection
             canvas(self).width(Length::Fill).height(Length::Fill),
-            row![icon!(Save), icon!(Circle), icon!(Fullscreen)]
+            text(format!("{:?}", self.selection.map(|s| s.status))),
         ]
+        // additional UI elements such as buttons
+        .push_maybe(self.selection.filter(|sel| sel.is_idle()).map(|sel| {
+            const PX_PER_ICON: f32 = ICON_PADDING + ICON_SIZE;
+
+            let icons_len = icons.len();
+
+            let mut icons_iter = icons.into_iter();
+
+            let sel = sel.norm();
+            let how_many_icons_can_render_horizontally = (sel.rect.width / PX_PER_ICON) as usize;
+            let how_many_icons_can_render_vertically = (sel.rect.height / PX_PER_ICON) as usize;
+
+            let bottom_amount = how_many_icons_can_render_horizontally.min(icons_len);
+
+            let bottom = iter::once(Space::with_width(sel.rect.x - PX_PER_ICON).into())
+                .chain(icons_iter.by_ref().take(bottom_amount))
+                .collect::<Row<_>>();
+
+            let right_amount = how_many_icons_can_render_vertically.min(icons_len - bottom_amount);
+
+            let right = icons_iter
+                .by_ref()
+                .take(right_amount)
+                .collect::<Column<_>>();
+
+            let top_amount = how_many_icons_can_render_horizontally
+                .min(icons_len - (bottom_amount + right_amount));
+
+            let top = iter::once(Space::with_width(sel.rect.x - PX_PER_ICON).into())
+                .chain(icons_iter.by_ref().take(top_amount))
+                .collect::<Row<_>>();
+
+            let left_amount = how_many_icons_can_render_vertically
+                .min(icons_len - (bottom_amount + right_amount + top_amount));
+
+            let left = icons_iter.by_ref().take(left_amount).collect::<Column<_>>();
+
+            let intermost = row![
+                Space::with_width(sel.rect.x - PX_PER_ICON),
+                left,
+                Space::with_width(sel.rect.width),
+                right
+            ]
+            .height(sel.rect.height);
+
+            column![
+                Space::with_height(Length::Fixed(sel.rect.y - PX_PER_ICON)),
+                top,
+                intermost,
+                bottom,
+            ]
+        }))
         .into()
     }
 
@@ -228,12 +298,7 @@ impl App {
                     selected_region.status = dragged;
                 } else if let Some(cursor_position) = cursor.position() {
                     // no region is selected, select the initial region
-                    self.create_selection_at(
-                        cursor_position,
-                        self.selection
-                            .map(|region| region.status)
-                            .unwrap_or_default(),
-                    );
+                    self.create_selection_at(cursor_position);
                 }
             },
             Message::LeftMouseUp => {
@@ -406,15 +471,11 @@ impl App {
     }
 
     /// Create an empty selection at the current position
-    pub fn create_selection_at(
-        &mut self,
-        create_selection_at: Point,
-        moving_selection: SelectionStatus,
-    ) {
+    pub fn create_selection_at(&mut self, create_selection_at: Point) {
         let mut selection = Selection::new(create_selection_at);
-        selection.status = moving_selection;
+        selection.status = SelectionStatus::Create;
         self.selections_created += 1;
-        self.selection = Some(Selection::new(create_selection_at));
+        self.selection = Some(selection);
     }
 
     /// Computes a new selection based on the current position
@@ -436,7 +497,7 @@ impl App {
             let width = other.x - selected_region.rect.x;
             let height = other.y - selected_region.rect.y;
 
-            Selection::default()
+            selected_region
                 .with_pos(|_| selected_region.pos())
                 .with_size(|_| Size { width, height })
         });
@@ -617,7 +678,7 @@ impl canvas::Program<Message> for App {
                     && state.is_right_released()
                     && self
                         .selection
-                        .is_some_and(super::selection::Selection::is_idle) =>
+                        .is_some_and(|sel| sel.is_idle() || sel.is_create()) =>
             {
                 Message::ExtendNewSelection(*position)
             },
