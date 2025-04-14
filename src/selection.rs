@@ -4,7 +4,7 @@ use iced::widget::{Column, Row, Space, row, tooltip};
 use iced::{Element, Length, Padding};
 use iced::{Point, Rectangle, Size};
 
-use crate::constants::{FRAME_COLOR, SPACE_BETWEEN_ICONS};
+use crate::constants::{DROP_SHADOW_COLOR, FRAME_COLOR, SPACE_BETWEEN_ICONS};
 use crate::constants::{FRAME_WIDTH, ICON_BUTTON_SIZE};
 use crate::corners::Corners;
 use crate::corners::SideOrCorner;
@@ -73,6 +73,13 @@ impl Selection {
     /// Renders border of the selection
     pub fn render_border(&self, frame: &mut iced::widget::canvas::Frame) {
         // Render the rectangle around the selection (the sides)
+        frame.stroke_rectangle(
+            self.pos(),
+            self.size(),
+            iced::widget::canvas::Stroke::default()
+                .with_color(DROP_SHADOW_COLOR)
+                .with_width(FRAME_WIDTH * 2.0),
+        );
         frame.stroke_rectangle(
             self.pos(),
             self.size(),
@@ -152,9 +159,6 @@ impl Selection {
         clippy::cast_sign_loss,
         reason = "normalized, so width nor height will be negative"
     )]
-    // TODO: this function contains a lot of duplication, the insides should be refactored
-    // it guarantees to display a minimum of 22 icons even when the selection is very small
-    // but this number needs to be updated in the future if we add more icons than that
     pub fn render_icons<'a>(
         self,
         icons: Vec<(Element<'a, Message>, &'static str)>,
@@ -168,7 +172,7 @@ impl Selection {
         ) -> Vec<Element<'a, Message>> {
             while icons.len() < MIN_ELEMENTS {
                 if let Some((next, tooltip_str)) = iter.by_ref().next() {
-                    icons.push(iced::widget::tooltip(next, tooltip_str, tooltip_position).into());
+                    icons.push(crate::widget::tooltip(next, tooltip_str, tooltip_position).into());
                     *total_icons_positioned += 1;
                     *padding -= PX_PER_ICON / 2.0;
                 } else {
@@ -194,8 +198,8 @@ impl Selection {
             // how many elems we got. size_hint may be unreliable
             let mut icons = Vec::with_capacity(icons_rendered_here);
             for _ in 0..icons_rendered_here {
-                if let Some((icon, tooltip_info)) = icons_iter.by_ref().next() {
-                    icons.push(iced::widget::tooltip(icon, tooltip_info, tooltip_position).into());
+                if let Some((icon, tooltip_str)) = icons_iter.by_ref().next() {
+                    icons.push(crate::widget::tooltip(icon, tooltip_str, tooltip_position).into());
                 }
             }
 

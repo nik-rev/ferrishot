@@ -176,11 +176,6 @@ impl App {
         }
     }
 
-    // let clipboard = button!(CLIPBOARD_ICON).on_press(Message::CopyToClipboard);
-    // let exit = button!(CLOSE_ICON).on_press(Message::Exit);
-    // let save = button!(SAVE_ICON).on_press(Message::SaveScreenshot);
-    // let full_selection = button!(FULLSCREEN_ICON).on_press(Message::FullSelection);
-
     /// Renders the app
     pub fn view(&self) -> Element<Message> {
         let icons = vec![

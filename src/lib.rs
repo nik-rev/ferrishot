@@ -13,6 +13,7 @@ mod mouse;
 mod rectangle;
 mod screenshot;
 mod selection;
+mod widget;
 
 #[cfg(target_os = "linux")]
 pub use clipboard::{CLIPBOARD_DAEMON_ID, run_clipboard_daemon};

@@ -4,34 +4,10 @@
 //! Icons are declared at the invocation of the `icons!` macro.
 //! Each `Icon` must have a corresponding `icons/Icon.svg` file.
 
-use iced::{Length, widget};
-
-use crate::constants::{ICON_BACKGROUND, ICON_BUTTON_SIZE, ICON_COLOR, ICON_SIZE};
-
 /// Helper to create a styled button with an icon
 #[macro_export]
 macro_rules! icon {
-    ($icon:ident) => {{ $crate::icons::button($crate::icons::Icon::$icon) }};
-}
-
-/// Apply styles to the button
-pub fn button<'a, Message>(icon: crate::icons::Icon) -> iced::widget::Button<'a, Message> {
-    widget::button(
-        widget::Svg::new(icon.svg())
-            .style(|_, _| widget::svg::Style {
-                color: Some(ICON_COLOR),
-            })
-            .width(Length::Fixed(ICON_SIZE))
-            .height(Length::Fixed(ICON_SIZE)),
-    )
-    .width(Length::Fixed(ICON_BUTTON_SIZE))
-    .height(Length::Fixed(ICON_BUTTON_SIZE))
-    .style(|_, _| {
-        let mut style = widget::button::Style::default().with_background(ICON_BACKGROUND);
-        style.border = iced::Border::default()
-            .rounded(iced::border::Radius::new(iced::Pixels::from(f32::INFINITY)));
-        style
-    })
+    ($icon:ident) => {{ $crate::widget::icon($crate::icons::Icon::$icon) }};
 }
 
 /// Generates handles for macros and automatically includes all the icons
