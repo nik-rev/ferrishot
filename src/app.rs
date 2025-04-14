@@ -217,115 +217,68 @@ impl App {
             text(format!("{:?}", self.selection.map(|s| s.status))),
         ]
         // additional UI elements such as buttons
-        .push_maybe(self.selection./* filter(|sel| sel.is_idle()). */map(|sel| {
+        .push_maybe(self.selection.filter(|sel| sel.is_idle()).map(|sel| {
             const PX_PER_ICON: f32 = ICON_PADDING + ICON_BUTTON_SIZE;
             let sel = sel.norm();
-
             let icons_len = icons.len();
-
             let mut icons_iter = icons.into_iter();
+            let mut total_icons_rendered = 0;
 
-            let how_many_icons_can_render_horizontally = (sel.rect.width / PX_PER_ICON) as usize;
-            let how_many_icons_can_render_vertically = (sel.rect.height / PX_PER_ICON) as usize;
+            let mut icons_amount = |space_available: f32| {
+                let icons_rendered = ((space_available / PX_PER_ICON) as usize)
+                    .min(icons_len - total_icons_rendered);
+                total_icons_rendered += icons_rendered;
 
-            macro_rules! foo {
-                ($amount:ident, $Row_or_Col:ident, $space_available:expr, $left_or_top:ident) => {{
-                    // we do this thing because we need to know exactly
-                    // how many elems we got. size_hint may be unreliable
-                    let mut elems = Vec::with_capacity($amount);
-                    for _ in 0..$amount {
-                        if let Some(icon) = icons_iter.by_ref().next() {
-                            elems.push(icon);
-                        }
+                // we do this thing because we need to know exactly
+                // how many elems we got. size_hint may be unreliable
+                let mut elems = Vec::with_capacity(icons_rendered);
+                for _ in 0..icons_rendered {
+                    if let Some(icon) = icons_iter.by_ref().next() {
+                        elems.push(icon);
                     }
-                    // if there is just 0 element it will take away the icon padding so it can be negative
-                    // ensure it is positive
-                    let space_used = (elems.len() as f32)
-                        .mul_add(PX_PER_ICON, -ICON_PADDING)
-                        .max(0.0);
+                }
+                // if there is just 0 element it will take away the icon padding so it can be negative
+                // ensure it is positive
+                let space_used = (elems.len() as f32)
+                    .mul_add(PX_PER_ICON, -ICON_PADDING)
+                    .max(0.0);
+                let padding = (space_available - space_used) / 2.0;
 
-                    $Row_or_Col::from_vec(elems)
-                        .spacing(ICON_PADDING)
-                        .padding(Padding::default().$left_or_top(($space_available - space_used) / 2.0))
-                }};
-            }
-
-            let bottom_amount = how_many_icons_can_render_horizontally.min(icons_len);
-            let bottom = row![
-                Space::with_width(sel.rect.x).height(Length::Fixed(PX_PER_ICON)),
-                foo!(bottom_amount, Row, sel.rect.width, left)
-            ];
-
-            let right_amount = how_many_icons_can_render_vertically.min(icons_len - bottom_amount);
-            let right = foo!(right_amount, Column, sel.rect.height, top);
-
-            // let right = icons_iter
-            //     .by_ref()
-            //     .take(right_amount)
-            //     .collect::<Column<_>>()
-            //     .width(PX_PER_ICON);
-
-            let top_amount = how_many_icons_can_render_horizontally
-                .min(icons_len - (bottom_amount + right_amount));
-            let top = row![
-                Space::with_width(sel.rect.x)
-                    .height(Length::Fixed(PX_PER_ICON)),
-                foo!(top_amount, Row, sel.rect.width, left)
-            ];
-
-            // let top = iter::once(
-            //     Space::with_width(sel.rect.x)
-            //         .height(Length::Fixed(PX_PER_ICON))
-            //         .into(),
-            // )
-            // .chain(icons_iter.by_ref().take(top_amount))
-            // .collect::<Row<_>>();
-
-            let left_amount = how_many_icons_can_render_vertically
-                .min(icons_len - (bottom_amount + right_amount + top_amount));
-
-            let left = foo!(left_amount, Column, sel.rect.height, top);
-
-            // let left = icons_iter
-            //     .by_ref()
-            //     .take(left_amount)
-            //     .collect::<Column<_>>()
-            //     .width(PX_PER_ICON);
-
-            let red_bg = iced::widget::container::Style {
-                background: Some(iced::color!(0xff_00_00).into()),
-                ..Default::default()
-            };
-            let green_bg = iced::widget::container::Style {
-                background: Some(iced::color!(0x00_ff_00).into()),
-                ..Default::default()
-            };
-            let blue_bg = iced::widget::container::Style {
-                background: Some(iced::color!(0x00_00_ff).into()),
-                ..Default::default()
+                (elems, padding)
             };
 
-            let space_top_length = sel.rect.y - PX_PER_ICON;
-            let space_left_length = sel.rect.x - PX_PER_ICON;
-            let space_inside_length = sel.rect.width;
+            let (bottom, padding) = icons_amount(sel.rect.width);
+            let bottom = Row::from_vec(bottom)
+                .spacing(ICON_PADDING)
+                .padding(Padding::default().left(padding));
 
-            let space_top = Container::new(
-                Space::with_height(Length::Fixed(space_top_length)).width(Length::Fill),
-            )
-            .height(space_top_length)
-            .style(move |_| blue_bg);
-            let space_left =
-                Container::new(Space::with_width(space_left_length).height(Length::Fill))
-                    .width(space_left_length)
-                    .style(move |_| red_bg);
-            let space_inside =
-                Container::new(Space::with_width(space_inside_length).height(Length::Fill))
-                    .width(space_inside_length)
-                    .style(move |_| green_bg);
+            let (right, padding) = icons_amount(sel.rect.height);
+            let right = Column::from_vec(right)
+                .spacing(ICON_PADDING)
+                .padding(Padding::default().top(padding));
 
-            let intermost = row![space_left, left, space_inside, right].height(sel.rect.height);
+            let (top, padding) = icons_amount(sel.rect.width);
+            let top = Row::from_vec(top)
+                .spacing(ICON_PADDING)
+                .padding(Padding::default().left(padding));
 
-            column![space_top, top, intermost, bottom]
+            let (left, padding) = icons_amount(sel.rect.height);
+            let left = Column::from_vec(left)
+                .spacing(ICON_PADDING)
+                .padding(Padding::default().top(padding));
+
+            column![
+                Space::with_height(Length::Fixed(sel.rect.y - PX_PER_ICON)).width(Length::Fill),
+                row![Space::with_width(sel.rect.x), top],
+                row![
+                    Space::with_width(sel.rect.x - PX_PER_ICON).height(Length::Fill),
+                    left,
+                    Space::with_width(sel.rect.width).height(Length::Fill),
+                    right
+                ]
+                .height(sel.rect.height),
+                row![Space::with_width(sel.rect.x), bottom],
+            ]
         }))
         .into()
     }
