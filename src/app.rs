@@ -215,13 +215,23 @@ impl App {
         ]
         // additional UI elements such as buttons
         .push_maybe(self.selection.filter(|sel| sel.is_idle()).map(|sel| {
+            // Here is the behaviour that we want
+            //
+            // We have a list of icons we want to render.
+            // We want to render every single one of them.
+            // Each icon should not be shrunk, nor should it render in weird positions
+            //
+            // for each side in [bottom, right, top, left] we render
+            // all of the icons that fit on that side.
+            //
+            // But then we may have a small selection which doesn't manage to render all of the icons
             const PX_PER_ICON: f32 = SPACE_BETWEEN_ICONS + ICON_BUTTON_SIZE;
             let sel = sel.norm();
             let icons_len = icons.len();
             let mut icons_iter = icons.into_iter();
             let mut total_icons_rendered = 0;
 
-            let mut icons_amount = |space_available: f32| {
+            let mut position_icons_in_line = |space_available: f32| {
                 let icons_left_to_render = icons_len - total_icons_rendered;
                 let icons_rendered_here =
                     ((space_available / PX_PER_ICON) as usize).min(icons_left_to_render);
@@ -247,40 +257,89 @@ impl App {
                 (icons, padding)
             };
 
-            let (bottom, bottom_padding) = icons_amount(sel.rect.width);
-            let (right, right_padding) = icons_amount(sel.rect.height);
-            let (top, top_padding) = icons_amount(sel.rect.width);
-            let (left, left_padding) = icons_amount(sel.rect.height);
+            // first position the icons on each side (bottom -> right -> top -> left)
 
-            let bottom = Row::from_vec(bottom)
+            let (mut bottom_icons, mut bottom_padding) = position_icons_in_line(sel.rect.width);
+            let (mut right_icons, mut right_padding) = position_icons_in_line(sel.rect.height);
+            let (mut top_icons, mut top_padding) = position_icons_in_line(sel.rect.width);
+            let (mut left_icons, mut left_padding) = position_icons_in_line(sel.rect.height);
+
+            // if we reach here, our selection is to small to nicely
+            // render all of the icons so we must "stack" them somehow
+
+            // for the 4 sides, combined they will fit at LEAST 8 icons (3 top 3 bottom 1 right 1 left)
+
+            while bottom_icons.len() < 3 {
+                if let Some(next) = icons_iter.by_ref().next() {
+                    bottom_icons.push(next);
+                    bottom_padding -= PX_PER_ICON / 2.0;
+                } else {
+                    break;
+                }
+            }
+
+            while top_icons.len() < 3 {
+                if let Some(next) = icons_iter.by_ref().next() {
+                    top_icons.push(next);
+                    top_padding -= PX_PER_ICON / 2.0;
+                } else {
+                    break;
+                }
+            }
+
+            if left_icons.is_empty() {
+                if let Some(icon) = icons_iter.by_ref().next() {
+                    left_icons.push(icon);
+                    left_padding -= PX_PER_ICON / 2.0;
+                }
+            }
+
+            if right_icons.is_empty() {
+                if let Some(icon) = icons_iter.by_ref().next() {
+                    right_icons.push(icon);
+                    right_padding -= PX_PER_ICON / 2.0;
+                }
+            }
+
+            let bottom_icons = Row::from_vec(bottom_icons)
                 .spacing(SPACE_BETWEEN_ICONS)
                 .height(PX_PER_ICON)
                 .padding(Padding::default().left(bottom_padding));
-            let right = Column::from_vec(right)
+            let right_icons = Column::from_vec(right_icons)
                 .spacing(SPACE_BETWEEN_ICONS)
                 .width(PX_PER_ICON)
                 .padding(Padding::default().top(right_padding));
-            let top = Row::from_vec(top)
+            let top_icons = Row::from_vec(top_icons)
                 .spacing(SPACE_BETWEEN_ICONS)
                 .height(PX_PER_ICON)
                 .padding(Padding::default().left(top_padding));
-            let left = Column::from_vec(left)
+            let left_icons = Column::from_vec(left_icons)
                 .spacing(SPACE_BETWEEN_ICONS)
                 .width(PX_PER_ICON)
                 .padding(Padding::default().top(left_padding));
 
+            let x = FRAME_WIDTH.mul_add(2.0, sel.rect.height);
+
+            // the left and right rows should be large enough to have at least 1 icon
+            // always.
+            let height_added = (PX_PER_ICON - x).max(0.0);
+
+            dbg!(height_added);
+
             column![
-                Space::with_height(Length::Fixed(sel.rect.y - PX_PER_ICON)).width(Length::Fill),
-                row![Space::with_width(sel.rect.x), top],
+                Space::with_height(Length::Fixed(sel.rect.y - PX_PER_ICON - height_added / 2.0))
+                    .width(Length::Fill),
+                row![Space::with_width(sel.rect.x), top_icons],
                 row![
                     Space::with_width(sel.rect.x - PX_PER_ICON).height(Length::Fill),
-                    left,
+                    left_icons,
                     Space::with_width(FRAME_WIDTH.mul_add(2.0, sel.rect.width))
                         .height(Length::Fill),
-                    right
+                    right_icons
                 ]
-                .height(FRAME_WIDTH.mul_add(2.0, sel.rect.height)),
-                row![Space::with_width(sel.rect.x), bottom],
+                .padding(Padding::default().top(height_added / 2.0))
+                .height(x + height_added),
+                row![Space::with_width(sel.rect.x), bottom_icons],
             ]
         }))
         .into()
