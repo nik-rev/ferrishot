@@ -43,7 +43,7 @@ pub const ICON_BACKGROUND: Color = iced::color!(0x0f_0f_0f);
 /// icon itself and space around it (bigger than `ICON_SIZE`)
 pub const ICON_BUTTON_SIZE: f32 = 48.0;
 /// padding between icons
-pub const ICON_PADDING: f32 = 0.0;
+pub const ICON_PADDING: f32 = 2.0;
 
 /// Generates handles for macros and automatically includes all the icons
 macro_rules! icons {

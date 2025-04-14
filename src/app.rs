@@ -5,7 +5,7 @@ use std::iter;
 use std::time::Instant;
 
 use crate::config::Config;
-use crate::icons::{ICON_PADDING, ICON_SIZE};
+use crate::icons::{ICON_BUTTON_SIZE, ICON_PADDING, ICON_SIZE};
 use crate::message::Message;
 use crate::screenshot::RgbaHandle;
 use crate::{SHADE_COLOR, icon};
@@ -14,8 +14,11 @@ use iced::alignment::{Horizontal, Vertical};
 use iced::keyboard::{Key, Modifiers};
 use iced::mouse::{Cursor, Interaction};
 use iced::widget::canvas::Path;
-use iced::widget::{self, Action, Column, Row, Space, canvas, column, container, row, stack, text};
-use iced::{Color, Element, Length, Point, Rectangle, Renderer, Size, Task, Theme, mouse};
+use iced::widget::{
+    self, Action, Column, Container, Row, Space, bottom_right, canvas, column, container, row,
+    stack, text,
+};
+use iced::{Color, Element, Length, Padding, Point, Rectangle, Renderer, Size, Task, Theme, mouse};
 
 use crate::background_image::BackgroundImage;
 use crate::corners::{Side, SideOrCorner};
@@ -188,13 +191,16 @@ impl App {
         reason = "we only care about the amount of items we can render at most"
     )]
     #[expect(
+        clippy::cast_precision_loss,
+        reason = "as we do not need to be precise"
+    )]
+    #[expect(
         clippy::cast_sign_loss,
         reason = "normalized, so width nor height will be negative"
     )]
     pub fn view(&self) -> Element<Message> {
-        dbg!(self.selection.map(|s| s.status));
         let mut icons = vec![];
-        for _ in 0..28 {
+        for _ in 0..100 {
             icons.push(icon!(Fullscreen));
         }
         // how many elements can we fit on the bottom
@@ -211,56 +217,115 @@ impl App {
             text(format!("{:?}", self.selection.map(|s| s.status))),
         ]
         // additional UI elements such as buttons
-        .push_maybe(self.selection.filter(|sel| sel.is_idle()).map(|sel| {
-            const PX_PER_ICON: f32 = ICON_PADDING + ICON_SIZE;
+        .push_maybe(self.selection./* filter(|sel| sel.is_idle()). */map(|sel| {
+            const PX_PER_ICON: f32 = ICON_PADDING + ICON_BUTTON_SIZE;
+            let sel = sel.norm();
 
             let icons_len = icons.len();
 
             let mut icons_iter = icons.into_iter();
 
-            let sel = sel.norm();
             let how_many_icons_can_render_horizontally = (sel.rect.width / PX_PER_ICON) as usize;
             let how_many_icons_can_render_vertically = (sel.rect.height / PX_PER_ICON) as usize;
 
-            let bottom_amount = how_many_icons_can_render_horizontally.min(icons_len);
+            macro_rules! foo {
+                ($amount:ident, $Row_or_Col:ident, $space_available:expr, $left_or_top:ident) => {{
+                    // we do this thing because we need to know exactly
+                    // how many elems we got. size_hint may be unreliable
+                    let mut elems = Vec::with_capacity($amount);
+                    for _ in 0..$amount {
+                        if let Some(icon) = icons_iter.by_ref().next() {
+                            elems.push(icon);
+                        }
+                    }
+                    // if there is just 0 element it will take away the icon padding so it can be negative
+                    // ensure it is positive
+                    let space_used = (elems.len() as f32)
+                        .mul_add(PX_PER_ICON, -ICON_PADDING)
+                        .max(0.0);
 
-            let bottom = iter::once(Space::with_width(sel.rect.x - PX_PER_ICON).into())
-                .chain(icons_iter.by_ref().take(bottom_amount))
-                .collect::<Row<_>>();
+                    $Row_or_Col::from_vec(elems)
+                        .spacing(ICON_PADDING)
+                        .padding(Padding::default().$left_or_top(($space_available - space_used) / 2.0))
+                }};
+            }
+
+            let bottom_amount = how_many_icons_can_render_horizontally.min(icons_len);
+            let bottom = row![
+                Space::with_width(sel.rect.x).height(Length::Fixed(PX_PER_ICON)),
+                foo!(bottom_amount, Row, sel.rect.width, left)
+            ];
 
             let right_amount = how_many_icons_can_render_vertically.min(icons_len - bottom_amount);
+            let right = foo!(right_amount, Column, sel.rect.height, top);
 
-            let right = icons_iter
-                .by_ref()
-                .take(right_amount)
-                .collect::<Column<_>>();
+            // let right = icons_iter
+            //     .by_ref()
+            //     .take(right_amount)
+            //     .collect::<Column<_>>()
+            //     .width(PX_PER_ICON);
 
             let top_amount = how_many_icons_can_render_horizontally
                 .min(icons_len - (bottom_amount + right_amount));
+            let top = row![
+                Space::with_width(sel.rect.x)
+                    .height(Length::Fixed(PX_PER_ICON)),
+                foo!(top_amount, Row, sel.rect.width, left)
+            ];
 
-            let top = iter::once(Space::with_width(sel.rect.x - PX_PER_ICON).into())
-                .chain(icons_iter.by_ref().take(top_amount))
-                .collect::<Row<_>>();
+            // let top = iter::once(
+            //     Space::with_width(sel.rect.x)
+            //         .height(Length::Fixed(PX_PER_ICON))
+            //         .into(),
+            // )
+            // .chain(icons_iter.by_ref().take(top_amount))
+            // .collect::<Row<_>>();
 
             let left_amount = how_many_icons_can_render_vertically
                 .min(icons_len - (bottom_amount + right_amount + top_amount));
 
-            let left = icons_iter.by_ref().take(left_amount).collect::<Column<_>>();
+            let left = foo!(left_amount, Column, sel.rect.height, top);
 
-            let intermost = row![
-                Space::with_width(sel.rect.x - PX_PER_ICON),
-                left,
-                Space::with_width(sel.rect.width),
-                right
-            ]
-            .height(sel.rect.height);
+            // let left = icons_iter
+            //     .by_ref()
+            //     .take(left_amount)
+            //     .collect::<Column<_>>()
+            //     .width(PX_PER_ICON);
 
-            column![
-                Space::with_height(Length::Fixed(sel.rect.y - PX_PER_ICON)),
-                top,
-                intermost,
-                bottom,
-            ]
+            let red_bg = iced::widget::container::Style {
+                background: Some(iced::color!(0xff_00_00).into()),
+                ..Default::default()
+            };
+            let green_bg = iced::widget::container::Style {
+                background: Some(iced::color!(0x00_ff_00).into()),
+                ..Default::default()
+            };
+            let blue_bg = iced::widget::container::Style {
+                background: Some(iced::color!(0x00_00_ff).into()),
+                ..Default::default()
+            };
+
+            let space_top_length = sel.rect.y - PX_PER_ICON;
+            let space_left_length = sel.rect.x - PX_PER_ICON;
+            let space_inside_length = sel.rect.width;
+
+            let space_top = Container::new(
+                Space::with_height(Length::Fixed(space_top_length)).width(Length::Fill),
+            )
+            .height(space_top_length)
+            .style(move |_| blue_bg);
+            let space_left =
+                Container::new(Space::with_width(space_left_length).height(Length::Fill))
+                    .width(space_left_length)
+                    .style(move |_| red_bg);
+            let space_inside =
+                Container::new(Space::with_width(space_inside_length).height(Length::Fill))
+                    .width(space_inside_length)
+                    .style(move |_| green_bg);
+
+            let intermost = row![space_left, left, space_inside, right].height(sel.rect.height);
+
+            column![space_top, top, intermost, bottom]
         }))
         .into()
     }
@@ -300,12 +365,12 @@ impl App {
                     // no region is selected, select the initial region
                     self.create_selection_at(cursor_position);
                 }
-            },
+            }
             Message::LeftMouseUp => {
                 if let Some(selection) = self.selection.as_mut() {
                     selection.status = SelectionStatus::Idle;
                 }
-            },
+            }
             Message::MovingSelection {
                 current_cursor_pos,
                 initial_cursor_pos,
@@ -316,10 +381,10 @@ impl App {
                     Some(current_selection.with_pos(|_| {
                         initial_rect_pos + (current_cursor_pos - initial_cursor_pos)
                     }));
-            },
+            }
             Message::ExtendNewSelection(new_mouse_position) => {
                 self.update_selection(new_mouse_position);
-            },
+            }
             Message::CopyToClipboard => {
                 let Some(selection) = self.selection.map(Selection::norm) else {
                     self.error("There is no selection to copy");
@@ -356,13 +421,13 @@ impl App {
                         let _ = notify.show();
 
                         return Self::exit();
-                    },
+                    }
                     // TODO: show error to the user in a custom widget
                     Err(err) => {
                         self.error(format!("Could not copy the image: {err}"));
-                    },
+                    }
                 }
-            },
+            }
             Message::SaveScreenshot => {
                 let Some(selection) = self.selection.as_ref().map(|sel| Selection::norm(*sel))
                 else {
@@ -377,7 +442,7 @@ impl App {
                 let _ = SAVED_IMAGE.set(cropped_image);
 
                 return Self::exit();
-            },
+            }
             Message::InitialResize {
                 current_cursor_pos,
                 initial_cursor_pos,
@@ -410,9 +475,9 @@ impl App {
                     },
                     SideOrCorner::Corner(corner) => {
                         corner.resize_rect(initial_rect, current_cursor_pos, initial_cursor_pos)
-                    },
+                    }
                 }
-            },
+            }
             Message::ResizingToCursor {
                 cursor_pos,
                 selection,
@@ -429,7 +494,7 @@ impl App {
                     initial_cursor_pos: cursor_pos,
                     resize_side: SideOrCorner::Corner(corners),
                 };
-            },
+            }
             // TODO: animate this
             Message::FullSelection => {
                 let (width, height, _) = self.screenshot.raw();
@@ -445,7 +510,7 @@ impl App {
                         },
                     ));
                 }
-            },
+            }
         }
 
         ().into()
@@ -577,7 +642,7 @@ impl canvas::Program<Message> for App {
             Mouse(mouse::Event::ButtonPressed(mouse::Button::Left)) => {
                 state.left_click();
                 Message::LeftMouseDown(cursor)
-            },
+            }
             Mouse(mouse::Event::ButtonPressed(mouse::Button::Right)) => {
                 state.right_click();
                 if let Some(cursor) = cursor.position() {
@@ -592,11 +657,11 @@ impl canvas::Program<Message> for App {
                 } else {
                     return None;
                 }
-            },
+            }
             Mouse(mouse::Event::ButtonReleased(mouse::Button::Right)) => {
                 state.right_release();
                 return None;
-            },
+            }
             Mouse(mouse::Event::ButtonReleased(mouse::Button::Left)) => {
                 state.left_release();
                 if self.config.instant && self.selections_created == 1 {
@@ -604,7 +669,7 @@ impl canvas::Program<Message> for App {
                 } else {
                     Message::LeftMouseUp
                 }
-            },
+            }
             Mouse(mouse::Event::CursorMoved { position })
                 if state.is_left_clicked()
                     && self
@@ -626,7 +691,7 @@ impl canvas::Program<Message> for App {
                     initial_cursor_pos,
                     initial_rect,
                 }
-            },
+            }
             Mouse(mouse::Event::CursorMoved { position })
                 if state.is_right_clicked()
                     && state.is_left_released()
@@ -649,7 +714,7 @@ impl canvas::Program<Message> for App {
                     initial_cursor_pos,
                     initial_rect,
                 }
-            },
+            }
             Mouse(mouse::Event::CursorMoved { position })
                 if state.is_left_clicked()
                     && state.is_right_released()
@@ -672,7 +737,7 @@ impl canvas::Program<Message> for App {
                     current_selection: self.selection.expect("has `.is_some()` guard"),
                     initial_rect_pos,
                 }
-            },
+            }
             Mouse(mouse::Event::CursorMoved { position })
                 if state.is_left_clicked()
                     && state.is_right_released()
@@ -681,7 +746,7 @@ impl canvas::Program<Message> for App {
                         .is_some_and(|sel| sel.is_idle() || sel.is_create()) =>
             {
                 Message::ExtendNewSelection(*position)
-            },
+            }
             Mouse(mouse::Event::ButtonPressed(mouse::Button::Middle)) => Message::FullSelection,
             _ => return None,
         };

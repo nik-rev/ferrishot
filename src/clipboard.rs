@@ -150,12 +150,12 @@ pub fn run_clipboard_daemon() -> Result<(), arboard::Error> {
                     height,
                     bytes,
                 })?;
-        },
+        }
         "text" => {
             let text = args.next().expect("text");
             assert_eq!(args.next(), None, "unexpected extra args");
             arboard::Clipboard::new()?.set().wait().text(text)?;
-        },
+        }
         _ => panic!("invalid copy type, expected `image` or `text`"),
     }
     Ok(())
