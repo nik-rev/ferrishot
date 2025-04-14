@@ -12,7 +12,7 @@ pub fn tooltip<'a, Message>(
     widget::Tooltip::new(content, tooltip, position)
         .style(|_| widget::container::Style {
             text_color: Some(Color::WHITE),
-            background: Some(Background::Color(iced::color!(0x00_00_00, 0.3))),
+            background: Some(Background::Color(iced::color!(0x00_00_00, 0.8))),
             border: Border::default(),
             shadow: Shadow::default(),
         })

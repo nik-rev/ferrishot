@@ -12,7 +12,7 @@ pub enum Message {
     /// The left mouse button is down
     LeftMouseDown(Cursor),
     /// The left mouse button is up
-    LeftMouseUp,
+    EnterIdle,
     /// Copy the screenshot to the clipboard
     CopyToClipboard,
     /// Save the screenshot as an image

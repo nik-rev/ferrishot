@@ -245,7 +245,7 @@ impl App {
                     self.create_selection_at(cursor_position);
                 }
             }
-            Message::LeftMouseUp => {
+            Message::EnterIdle => {
                 if let Some(selection) = self.selection.as_mut() {
                     selection.status = SelectionStatus::Idle;
                 }
@@ -539,14 +539,14 @@ impl canvas::Program<Message> for App {
             }
             Mouse(mouse::Event::ButtonReleased(mouse::Button::Right)) => {
                 state.right_release();
-                return None;
+                Message::EnterIdle
             }
             Mouse(mouse::Event::ButtonReleased(mouse::Button::Left)) => {
                 state.left_release();
                 if self.config.instant && self.selections_created == 1 {
                     Message::CopyToClipboard
                 } else {
-                    Message::LeftMouseUp
+                    Message::EnterIdle
                 }
             }
             Mouse(mouse::Event::CursorMoved { position })
