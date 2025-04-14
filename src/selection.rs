@@ -1,4 +1,6 @@
 //! A `Selection` is the structure representing a selected area in the background image
+use std::iter;
+
 use delegate::delegate;
 use iced::widget::{Column, Row, Space, row, tooltip};
 use iced::{Element, Length, Padding};
@@ -394,39 +396,56 @@ impl Selection {
             "all icons have been rendered"
         );
 
-        let bottom_icons = Row::from_vec(bottom_icons)
-            .spacing(SPACE_BETWEEN_ICONS)
-            .height(PX_PER_ICON)
-            .padding(Padding::default().left(bottom_padding));
         let right_icons = Column::from_vec(right_icons)
             .spacing(SPACE_BETWEEN_ICONS)
             .width(PX_PER_ICON)
             .padding(Padding::default().top(right_padding));
-        let top_icons = Row::from_vec(top_icons)
-            .spacing(SPACE_BETWEEN_ICONS)
-            .height(PX_PER_ICON)
-            .padding(Padding::default().left(top_padding));
         let left_icons = Column::from_vec(left_icons)
             .spacing(SPACE_BETWEEN_ICONS)
             .width(PX_PER_ICON)
             .padding(Padding::default().top(left_padding));
 
-        let extra_bottom_icons = Row::from_vec(extra_bottom_icons)
-            .spacing(SPACE_BETWEEN_ICONS)
-            .height(PX_PER_ICON)
-            .padding(Padding::default().left(extra_bottom_padding));
-        let extra_top_icons = Row::from_vec(extra_top_icons)
-            .spacing(SPACE_BETWEEN_ICONS)
-            .height(PX_PER_ICON)
-            .padding(Padding::default().left(extra_top_padding));
-        let extra_extra_bottom_icons = Row::from_vec(extra_extra_bottom_icons)
-            .spacing(SPACE_BETWEEN_ICONS)
-            .height(PX_PER_ICON)
-            .padding(Padding::default().left(extra_extra_bottom_padding));
-        let extra_extra_top_icons = Row::from_vec(extra_extra_top_icons)
-            .spacing(SPACE_BETWEEN_ICONS)
-            .height(PX_PER_ICON)
-            .padding(Padding::default().left(extra_extra_top_padding));
+        let mut top_icons_count = 0;
+        let top_icons: Column<_> = vec![
+            (extra_extra_top_icons, extra_extra_top_padding),
+            (extra_top_icons, extra_top_padding),
+            (top_icons, top_padding),
+        ]
+        .into_iter()
+        .filter_map(|(icons, padding)| {
+            (!icons.is_empty()).then(|| {
+                top_icons_count += 1;
+                row![
+                    Space::with_width(sel.rect.x),
+                    Row::from_vec(icons)
+                        .spacing(SPACE_BETWEEN_ICONS)
+                        .height(PX_PER_ICON)
+                        .padding(Padding::default().left(padding))
+                ]
+                .into()
+            })
+        })
+        .collect();
+
+        let bottom_icons: Column<_> = vec![
+            (bottom_icons, bottom_padding),
+            (extra_bottom_icons, extra_bottom_padding),
+            (extra_extra_bottom_icons, extra_extra_bottom_padding),
+        ]
+        .into_iter()
+        .filter_map(|(icons, padding)| {
+            (!icons.is_empty()).then(|| {
+                row![
+                    Space::with_width(sel.rect.x),
+                    Row::from_vec(icons)
+                        .spacing(SPACE_BETWEEN_ICONS)
+                        .height(PX_PER_ICON)
+                        .padding(Padding::default().left(padding))
+                ]
+                .into()
+            })
+        })
+        .collect();
 
         // include the frame so the icons do not touch the frame
         let selection_height = FRAME_WIDTH.mul_add(2.0, sel.rect.height);
@@ -438,36 +457,11 @@ impl Selection {
         iced::widget::column![
             // just whitespace necessary to align the icons to the selection
             Space::with_height(Length::Fixed(
-                sel.rect.y
-                    - PX_PER_ICON
-                    - height_added / 2.0
-                    - {
-                        if extra_top_icons_len == 0 {
-                            0f32
-                        } else {
-                            PX_PER_ICON
-                        }
-                    }
-                    - {
-                        if extra_extra_top_icons_len == 0 {
-                            0f32
-                        } else {
-                            PX_PER_ICON
-                        }
-                    }
+                (top_icons_count as f32).mul_add(-PX_PER_ICON, sel.rect.y - height_added / 2.0)
             ))
             .width(Length::Fill),
             // top icon row
-            Column::new()
-                .push_maybe(
-                    (extra_extra_top_icons_len != 0)
-                        .then(|| { row![Space::with_width(sel.rect.x), extra_extra_top_icons] })
-                )
-                .push_maybe(
-                    (extra_top_icons_len != 0)
-                        .then(|| { row![Space::with_width(sel.rect.x), extra_top_icons] })
-                )
-                .push(row![Space::with_width(sel.rect.x), top_icons]),
+            top_icons,
             // right icon row + left icon row
             row![
                 Space::with_width(sel.rect.x - PX_PER_ICON).height(Length::Fill),
@@ -478,16 +472,7 @@ impl Selection {
             .padding(Padding::default().top(height_added / 2.0))
             .height(selection_height + height_added),
             // bottom icon row
-            Column::new()
-                .push(row![Space::with_width(sel.rect.x), bottom_icons])
-                .push_maybe(
-                    (extra_bottom_icons_len != 0)
-                        .then(|| { row![Space::with_width(sel.rect.x), extra_bottom_icons] })
-                )
-                .push_maybe(
-                    (extra_extra_bottom_icons_len != 0)
-                        .then(|| { row![Space::with_width(sel.rect.x), extra_extra_bottom_icons] })
-                ),
+            bottom_icons,
         ]
         .into()
     }
