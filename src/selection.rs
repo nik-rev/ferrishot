@@ -159,7 +159,7 @@ impl Selection {
         self,
         icons: Vec<(Element<'a, Message>, &'static str)>,
     ) -> Element<'a, Message> {
-        fn add_elements_until_min<'a, const MIN_ELEMENTS: usize>(
+        fn add_icons_until_there_is_at_least_n_of_them<'a, const MIN_ELEMENTS: usize>(
             mut icons: Vec<Element<'a, Message>>,
             mut iter: impl Iterator<Item = (Element<'a, Message>, &'static str)>,
             padding: &mut f32,
@@ -263,7 +263,7 @@ impl Selection {
 
         // for the 4 sides, combined they will fit at LEAST 8 icons (3 top 3 bottom 1 right 1 left)
 
-        let bottom_icons = add_elements_until_min::<MIN_TOP_BOTTOM_ICONS>(
+        let bottom_icons = add_icons_until_there_is_at_least_n_of_them::<MIN_TOP_BOTTOM_ICONS>(
             bottom_icons,
             &mut icons_iter,
             &mut bottom_padding,
@@ -271,7 +271,7 @@ impl Selection {
             tooltip::Position::Bottom,
         );
 
-        let top_icons = add_elements_until_min::<MIN_TOP_BOTTOM_ICONS>(
+        let top_icons = add_icons_until_there_is_at_least_n_of_them::<MIN_TOP_BOTTOM_ICONS>(
             top_icons,
             &mut icons_iter,
             &mut top_padding,
@@ -279,7 +279,7 @@ impl Selection {
             tooltip::Position::Top,
         );
 
-        let left_icons = add_elements_until_min::<MIN_SIDE_ICONS>(
+        let left_icons = add_icons_until_there_is_at_least_n_of_them::<MIN_SIDE_ICONS>(
             left_icons,
             &mut icons_iter,
             &mut left_padding,
@@ -287,7 +287,7 @@ impl Selection {
             tooltip::Position::Left,
         );
 
-        let right_icons = add_elements_until_min::<MIN_SIDE_ICONS>(
+        let right_icons = add_icons_until_there_is_at_least_n_of_them::<MIN_SIDE_ICONS>(
             right_icons,
             &mut icons_iter,
             &mut right_padding,
@@ -313,7 +313,7 @@ impl Selection {
             icons_len,
         );
 
-        let extra_bottom_icons = add_elements_until_min::<MIN_TOP_BOTTOM_ICONS>(
+        let extra_bottom_icons = add_icons_until_there_is_at_least_n_of_them::<MIN_TOP_BOTTOM_ICONS>(
             extra_bottom_icons,
             &mut icons_iter,
             &mut extra_bottom_padding,
@@ -321,7 +321,7 @@ impl Selection {
             tooltip::Position::Bottom,
         );
 
-        let extra_top_icons = add_elements_until_min::<MIN_TOP_BOTTOM_ICONS>(
+        let extra_top_icons = add_icons_until_there_is_at_least_n_of_them::<MIN_TOP_BOTTOM_ICONS>(
             extra_top_icons,
             &mut icons_iter,
             &mut extra_top_padding,
@@ -345,21 +345,23 @@ impl Selection {
             icons_len,
         );
 
-        let extra_extra_top_icons = add_elements_until_min::<MIN_TOP_BOTTOM_ICONS>(
-            extra_extra_top_icons,
-            &mut icons_iter,
-            &mut extra_extra_top_padding,
-            &mut total_icons_positioned,
-            tooltip::Position::Top,
-        );
+        let extra_extra_top_icons =
+            add_icons_until_there_is_at_least_n_of_them::<MIN_TOP_BOTTOM_ICONS>(
+                extra_extra_top_icons,
+                &mut icons_iter,
+                &mut extra_extra_top_padding,
+                &mut total_icons_positioned,
+                tooltip::Position::Top,
+            );
 
-        let extra_extra_bottom_icons = add_elements_until_min::<MIN_TOP_BOTTOM_ICONS>(
-            extra_extra_bottom_icons,
-            &mut icons_iter,
-            &mut extra_extra_bottom_padding,
-            &mut total_icons_positioned,
-            tooltip::Position::Bottom,
-        );
+        let extra_extra_bottom_icons =
+            add_icons_until_there_is_at_least_n_of_them::<MIN_TOP_BOTTOM_ICONS>(
+                extra_extra_bottom_icons,
+                &mut icons_iter,
+                &mut extra_extra_bottom_padding,
+                &mut total_icons_positioned,
+                tooltip::Position::Bottom,
+            );
 
         debug_assert!(
             icons_iter.as_slice().is_empty(),
@@ -375,6 +377,8 @@ impl Selection {
             .width(PX_PER_ICON)
             .padding(Padding::default().top(left_padding));
 
+        // there is no way to get amount of children
+        // from a Row. that would be prety useful
         let mut top_icon_rows_count = 0;
         let top_icons: Column<_> = vec![
             (extra_extra_top_icons, extra_extra_top_padding),
