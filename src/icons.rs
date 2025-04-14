@@ -15,7 +15,7 @@ macro_rules! icon {
 }
 
 /// Apply styles to the button
-pub fn button<'a>(icon: crate::icons::Icon) -> iced::Element<'a, crate::message::Message> {
+pub fn button<'a, Message>(icon: crate::icons::Icon) -> iced::widget::Button<'a, Message> {
     widget::button(
         widget::Svg::new(icon.svg())
             .style(|_, _| widget::svg::Style {
@@ -32,7 +32,6 @@ pub fn button<'a>(icon: crate::icons::Icon) -> iced::Element<'a, crate::message:
             .rounded(iced::border::Radius::new(iced::Pixels::from(f32::INFINITY)));
         style
     })
-    .into()
 }
 
 /// Generates handles for macros and automatically includes all the icons
