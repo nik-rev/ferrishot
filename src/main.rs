@@ -4,7 +4,7 @@ use ferrishot::App;
 use iced::Font;
 
 fn main() {
-    ferrishot::initialize_logging();
+    env_logger::builder().init();
 
     // On linux, a daemon is required to provide clipboard access even when
     // the process dies.
