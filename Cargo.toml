@@ -36,7 +36,6 @@ rfd = "0.15.3"
 etcetera = "0.10.0"
 chrono = "0.4.40"
 tempfile = "3.19.1"
-num-traits = "0.2.19"
 
 [lints.rust]
 missing_docs = "warn"
