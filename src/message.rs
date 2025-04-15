@@ -10,16 +10,22 @@ use crate::{
 /// Represents an action happening in the application
 #[derive(Debug, Clone)]
 pub enum Message {
-    /// do nothing
-    None,
+    /// Do nothing
+    NoOp,
     /// Change the height of the selection, bottom right does not move
     ResizeVertically {
+        /// Change height of the selection to this
         new_height: u32,
+        /// A key to obtain `&mut Selection` from `Option<Selection>` with a guarantee that it will
+        /// always be there (to bypass the limitation that we cannot pass `&mut Selection` in a `Message`)
         sel_is_some: SelectionIsSome,
     },
     /// Change the width of the selection, bottom right does not move
     ResizeHorizontally {
+        /// Change width of the selection to this
         new_width: u32,
+        /// A key to obtain `&mut Selection` from `Option<Selection>` with a guarantee that it will
+        /// always be there (to bypass the limitation that we cannot pass `&mut Selection` in a `Message`)
         sel_is_some: SelectionIsSome,
     },
     /// Exits the application

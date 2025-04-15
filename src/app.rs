@@ -236,7 +236,7 @@ impl App {
                 sel.rect.width = new_width as f32;
                 sel.rect.x -= x_diff;
             }
-            Message::None => (),
+            Message::NoOp => (),
             Message::Exit => return Self::exit(),
             Message::LeftMouseDown(cursor) => {
                 if let Some((cursor, side, rect)) = cursor.position().and_then(|cursor_pos| {
