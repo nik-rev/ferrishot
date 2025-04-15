@@ -5,14 +5,14 @@ use std::time::Instant;
 
 use crate::config::CONFIG;
 use crate::constants::ERROR_TIMEOUT;
+use crate::icon;
 use crate::message::Message;
 use crate::screenshot::RgbaHandle;
 use crate::theme::THEME;
-use crate::{Explainer, icon};
 use iced::keyboard::{Key, Modifiers};
 use iced::mouse::{Cursor, Interaction};
 use iced::widget::canvas::Path;
-use iced::widget::{self, Action, Space, canvas, column, row, stack};
+use iced::widget::{self, Action, canvas, stack};
 use iced::{Length, Point, Rectangle, Renderer, Size, Task, Theme, mouse};
 
 use crate::background_image::BackgroundImage;
@@ -190,11 +190,6 @@ impl App {
             (icon!(Close).on_press(Message::Exit).into(), "Exit (Esc)"),
         ];
 
-        #[expect(
-            clippy::cast_possible_truncation,
-            clippy::cast_sign_loss,
-            reason = "images can only have integer width value"
-        )]
         stack![
             // the taken screenshot in the background
             BackgroundImage::new(self.screenshot.clone().into()),
@@ -208,34 +203,8 @@ impl App {
                 .map(|sel| sel.render_icons(icons)),
         )
         .push_maybe(self.selection.map(|sel| {
-            use crate::widgets::size_indicator;
             let (image_width, image_height, _) = self.screenshot.raw();
-            let sel = sel.norm().rect;
-
-            let horizontal_space = Space::with_width(sel.bottom_right().x);
-            let vertical_space = Space::with_height(sel.bottom_right().y);
-
-            let width_input = size_indicator(
-                "width: ",
-                sel.width as u32,
-                image_width,
-                Message::ResizeHorizontally,
-            );
-
-            let height_input = size_indicator(
-                "height: ",
-                sel.height as u32,
-                image_height,
-                Message::ResizeVertically,
-            );
-
-            column![
-                vertical_space,
-                row![
-                    horizontal_space,
-                    column![width_input, height_input].explain()
-                ]
-            ]
+            crate::widgets::size_indicator(image_height, image_width, sel.norm().rect)
         }))
         .into()
     }

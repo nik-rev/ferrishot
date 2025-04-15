@@ -144,9 +144,9 @@ theme! {
     /// Color of text
     fg = color!(0x_ff_ff_ff),
     /// Color of text for the "width" and "height" size indicators
-    size_indicator_fg = color!(0x_69_69_69),
-    /// Background color of the size indicators
-    size_indicator_bg = iced::Color::TRANSPARENT,
+    size_indicator_fg = color!(0x_ff_ff_ff),
+    /// Color of background text for the "width" and "height" size indicators
+    size_indicator_bg = color!(0x_00_00_00, 0.5),
     /// Accent color, used for stuff like color of the frame + background
     /// of buttons
     accent = ACCENT_COLOR,

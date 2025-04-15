@@ -1,6 +1,7 @@
 //! The ferrishot app
 
 use ferrishot::App;
+use iced::Font;
 
 fn main() {
     ferrishot::initialize_logging();
@@ -29,6 +30,7 @@ fn main() {
         })
         .subscription(|_state| iced::keyboard::on_key_press(App::handle_key_press))
         .title("ferrishot")
+        .default_font(Font::MONOSPACE)
         .run()
         .expect("Failed to start ferrishot");
 
