@@ -117,7 +117,6 @@ impl Selection {
             /// Position of the bottom left corner
             pub fn bottom_left(self) -> Point;
         }
-        #[allow(dead_code)]
         #[expr(self.rect = $; self)]
         to self.rect {
             /// Update the size of the rect
@@ -151,10 +150,6 @@ impl Selection {
     #[expect(
         clippy::cast_possible_truncation,
         reason = "we only care about the amount of items we can render at most"
-    )]
-    #[expect(
-        clippy::cast_precision_loss,
-        reason = "as we do not need to be precise"
     )]
     #[expect(
         clippy::cast_sign_loss,

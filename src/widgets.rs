@@ -3,39 +3,40 @@ use iced::{Background, Border, Element, Length, Shadow, widget};
 
 use crate::{
     constants::{ICON_BUTTON_SIZE, ICON_SIZE},
-    iced_aw::NumberInput,
     theme::THEME,
 };
 
+use crate::message::Message;
+
 /// Renders a tiny numeric input which shows a dimension of the rect and allow resizing it
-#[expect(
-    clippy::cast_precision_loss,
-    reason = "as we do not need to be precise"
-)]
-pub fn dimension_indicator<'a, Message, F>(
+pub fn size_indicator<'a>(
     value: u32,
-    bounds: impl std::ops::RangeBounds<u32>,
-    on_change: F,
-) -> NumberInput<'a, u32, Message>
-where
-    F: Fn(u32) -> Message + Clone + 'static,
-    Message: Clone + 'a,
-{
-    crate::iced_aw::NumberInput::new(&value, bounds, on_change)
-        .style(|_, _| crate::iced_aw::number_input::Style {
-            button_background: Some(Background::Color(THEME.bg)),
-            icon_color: THEME.accent,
+    max: u32,
+    on_change: impl Fn(u32) -> Message + 'a,
+) -> widget::TextInput<'a, Message> {
+    let content = value.to_string();
+    iced::widget::text_input(Default::default(), content.as_str())
+        .on_input(move |s| {
+            s.parse::<u32>()
+                .ok()
+                .filter(|x| *x <= max)
+                .map_or(Message::None, &on_change)
         })
-        .input_style(|_, _| widget::text_input::Style {
+        .width(Length::Fixed((16 * content.len()) as f32))
+        .style(|_, _| widget::text_input::Style {
             background: Background::Color(THEME.size_indicator_bg),
-            border: Border::default(),
-            icon: THEME.accent,
-            placeholder: THEME.fg,
             value: THEME.size_indicator_fg,
             selection: THEME.text_selection_bg,
+            // ---
+            border: iced::Border {
+                color: THEME.transparent,
+                width: 0.0,
+                radius: 0.0.into(),
+            },
+            icon: THEME.transparent,
+            placeholder: THEME.transparent,
         })
-        .ignore_buttons(true)
-        .width(15.0 * value.to_string().len() as f32)
+        .padding(0.0)
 }
 
 /// Create a tooltip for an icon

@@ -45,10 +45,15 @@ missing_docs = "warn"
 pedantic = { priority = -1, level = "warn" }
 nursery = { priority = -1, level = "warn" }
 
+cast_precision_loss = "allow"
+too_many_lines = "allow"
+
+allow_attributes_without_reason = "warn"
+ignore_without_reason = "warn"
+allow_attributes = "warn"
 unwrap_used = "warn"
 missing_assert_message = "warn"
 missing_docs_in_private_items = "warn"
-too_many_lines = "allow"
 
 # The profile that 'dist' will build with
 [profile.dist]

@@ -133,6 +133,8 @@ macro_rules! theme {
 const ACCENT_COLOR: iced::Color = color!(0x_ab_61_37);
 
 theme! {
+    /// Transparent: No color
+    transparent = color!(0x_00_00_00, 0.0),
     /// First shadow to draw (stronger, but smaller)
     drop_shadow = color!(0x00_00_00, 0.5),
     /// Color of the background outside of the selection

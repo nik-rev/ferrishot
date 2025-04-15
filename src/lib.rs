@@ -1,12 +1,22 @@
 //! The ferrishot app
 
-// TODO: once iced v14 releases,
-// and this crate updates to use this version,
-// we don't need to vendor it anymore
-mod iced_aw;
+use iced::Element;
 
-mod theme;
-use iced_aw::style;
+/// An extension trait to show a red border around an element and all children
+pub trait Explainer<'a, M> {
+    /// Shows red border around an element and all of its children
+    fn explain(self) -> Element<'a, M>;
+}
+
+impl<'a, M: 'a, E> Explainer<'a, M> for E
+where
+    E: Into<Element<'a, M>>,
+{
+    fn explain(self) -> Element<'a, M> {
+        self.into().explain(iced::Color::from_rgb8(255, 0, 0))
+    }
+}
+
 mod app;
 mod background_image;
 mod clipboard;
@@ -20,6 +30,7 @@ mod mouse;
 mod rectangle;
 mod screenshot;
 mod selection;
+mod theme;
 mod widgets;
 
 #[cfg(target_os = "linux")]

@@ -4,7 +4,6 @@ use iced::{Point, Rectangle, Size};
 use crate::corners::Corners;
 
 /// Extension methods for `iced::Point`
-#[allow(dead_code)]
 #[easy_ext::ext(PointExt)]
 pub impl Point<f32> {
     /// Update the x coordinate of the point
@@ -21,7 +20,6 @@ pub impl Point<f32> {
 }
 
 /// Extension methods for `iced::Rectangle`
-#[allow(dead_code)]
 #[easy_ext::ext(RectangleExt)]
 pub impl Rectangle<f32> {
     /// make sure that the top-left corner is ALWAYS in the top left
@@ -63,11 +61,6 @@ pub impl Rectangle<f32> {
     /// Position of the top left corner
     fn pos(self) -> Point {
         self.position()
-    }
-
-    /// Size of the rectangle
-    fn size(&self) -> Size {
-        Size::new(self.width, self.height)
     }
 
     /// Position of the top left corner

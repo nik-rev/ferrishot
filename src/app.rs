@@ -5,15 +5,15 @@ use std::time::Instant;
 
 use crate::config::CONFIG;
 use crate::constants::ERROR_TIMEOUT;
-use crate::icon;
 use crate::message::Message;
 use crate::screenshot::RgbaHandle;
 use crate::theme::THEME;
+use crate::{Explainer, icon};
 use iced::keyboard::{Key, Modifiers};
 use iced::mouse::{Cursor, Interaction};
 use iced::widget::canvas::Path;
 use iced::widget::{self, Action, Space, canvas, column, row, stack};
-use iced::{Element, Length, Point, Rectangle, Renderer, Size, Task, Theme, mouse};
+use iced::{Length, Point, Rectangle, Renderer, Size, Task, Theme, mouse};
 
 use crate::background_image::BackgroundImage;
 use crate::corners::{Side, SideOrCorner};
@@ -122,7 +122,7 @@ impl App {
     }
 
     /// Retrieve all valid errors
-    #[expect(dead_code)]
+    #[expect(dead_code, reason = "will be useful later")]
     fn errors(&self) -> Vec<String> {
         let now = Instant::now();
         self.errors
@@ -173,7 +173,7 @@ impl App {
     }
 
     /// Renders the app
-    pub fn view(&self) -> Element<Message> {
+    pub fn view(&self) -> iced::Element<Message> {
         let icons = vec![
             (
                 icon!(Fullscreen).on_press(Message::FullSelection).into(),
@@ -208,29 +208,33 @@ impl App {
                 .map(|sel| sel.render_icons(icons)),
         )
         .push_maybe(self.selection.map(|sel| {
-            let rect = sel.norm().rect;
-            let (width, height, _) = self.screenshot.raw();
-            let x = crate::widgets::dimension_indicator(
-                rect.width as u32,
-                0..width,
-                Message::ResizeHorizontally,
-            );
-            let y = crate::widgets::dimension_indicator(
-                rect.height as u32,
-                0..height,
-                Message::ResizeVertically,
-            );
+            use crate::widgets::size_indicator;
+            use widget::text;
+            let (image_width, image_height, _) = self.screenshot.raw();
+            let sel = sel.norm().rect;
 
-            let space_y = Space::with_height(rect.bottom_right().y);
-            let space_x = Space::with_width(rect.bottom_right().x);
+            let horizontal_space = Space::with_width(sel.bottom_right().x);
+            let vertical_space = Space::with_height(sel.bottom_right().y);
+
+            let width_input =
+                size_indicator(sel.width as u32, image_width, Message::ResizeHorizontally);
+            let width_label = text("width: ").color(THEME.size_indicator_fg);
+            let width_label_px = text("px").color(THEME.size_indicator_fg);
+
+            let height_input =
+                size_indicator(sel.height as u32, image_height, Message::ResizeVertically);
+            let height_label = text("height: ").color(THEME.size_indicator_fg);
+            let height_label_px = text("px").color(THEME.size_indicator_fg);
 
             column![
-                space_y,
+                vertical_space,
                 row![
-                    space_x,
-                    row![x, widget::text("px")],
-                    widget::text("x"),
-                    row![y, widget::text("px")]
+                    horizontal_space,
+                    column![
+                        row![width_label, width_input, width_label_px],
+                        row![height_label, height_input, height_label_px]
+                    ]
+                    .explain()
                 ]
             ]
         }))
@@ -245,12 +249,10 @@ impl App {
     #[expect(clippy::needless_pass_by_value, reason = "trait function")]
     pub fn update(&mut self, message: Message) -> Task<Message> {
         match message {
-            #[expect(clippy::cast_precision_loss, reason = "dont care about precision")]
             Message::ResizeVertically(new_height) => {
                 self.selection.as_mut().expect
                     ("this message is sent when the inputs update. they can only render if the selection is not None").rect.height = new_height as f32;
             }
-            #[expect(clippy::cast_precision_loss, reason = "dont care about precision")]
             Message::ResizeHorizontally(new_width) => {
                 self.selection.as_mut().expect("this message is sent when the inputs update. they can only render if the selection is not None").rect.width = new_width as f32;
             }
@@ -412,13 +414,8 @@ impl App {
                     resize_side: SideOrCorner::Corner(corners),
                 };
             }
-            // TODO: animate this
             Message::FullSelection => {
                 let (width, height, _) = self.screenshot.raw();
-                #[expect(
-                    clippy::cast_precision_loss,
-                    reason = "we cannot do anything about this; pixels in image are integers"
-                )]
                 {
                     self.selection = Some(Selection::new(Point { x: 0.0, y: 0.0 }).with_size(
                         |_| Size {
