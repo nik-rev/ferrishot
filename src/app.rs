@@ -209,32 +209,31 @@ impl App {
         )
         .push_maybe(self.selection.map(|sel| {
             use crate::widgets::size_indicator;
-            use widget::text;
             let (image_width, image_height, _) = self.screenshot.raw();
             let sel = sel.norm().rect;
 
             let horizontal_space = Space::with_width(sel.bottom_right().x);
             let vertical_space = Space::with_height(sel.bottom_right().y);
 
-            let width_input =
-                size_indicator(sel.width as u32, image_width, Message::ResizeHorizontally);
-            let width_label = text("width: ").color(THEME.size_indicator_fg);
-            let width_label_px = text("px").color(THEME.size_indicator_fg);
+            let width_input = size_indicator(
+                "width: ",
+                sel.width as u32,
+                image_width,
+                Message::ResizeHorizontally,
+            );
 
-            let height_input =
-                size_indicator(sel.height as u32, image_height, Message::ResizeVertically);
-            let height_label = text("height: ").color(THEME.size_indicator_fg);
-            let height_label_px = text("px").color(THEME.size_indicator_fg);
+            let height_input = size_indicator(
+                "height: ",
+                sel.height as u32,
+                image_height,
+                Message::ResizeVertically,
+            );
 
             column![
                 vertical_space,
                 row![
                     horizontal_space,
-                    column![
-                        row![width_label, width_input, width_label_px],
-                        row![height_label, height_input, height_label_px]
-                    ]
-                    .explain()
+                    column![width_input, height_input].explain()
                 ]
             ]
         }))

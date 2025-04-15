@@ -10,12 +10,15 @@ use crate::message::Message;
 
 /// Renders a tiny numeric input which shows a dimension of the rect and allow resizing it
 pub fn size_indicator<'a>(
+    label: &'static str,
     value: u32,
     max: u32,
     on_change: impl Fn(u32) -> Message + 'a,
-) -> widget::TextInput<'a, Message> {
+) -> widget::Row<'a, Message> {
+    let label = widget::text(label).color(THEME.size_indicator_fg);
+
     let content = value.to_string();
-    iced::widget::text_input(Default::default(), content.as_str())
+    let input = iced::widget::text_input(Default::default(), content.as_str())
         .on_input(move |s| {
             s.parse::<u32>()
                 .ok()
@@ -36,7 +39,11 @@ pub fn size_indicator<'a>(
             icon: THEME.transparent,
             placeholder: THEME.transparent,
         })
-        .padding(0.0)
+        .padding(0.0);
+
+    let label_px = widget::text("px").color(THEME.size_indicator_fg);
+
+    widget::row![label, input, label_px]
 }
 
 /// Create a tooltip for an icon
