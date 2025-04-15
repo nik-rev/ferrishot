@@ -177,7 +177,7 @@ impl Selection {
             pub const fn is_idle(self) -> bool;
             /// The selection is being resized
             pub const fn is_resized(self) -> bool;
-            /// The selection is being resized
+            /// The selection is being created
             pub const fn is_create(self) -> bool;
         }
     }

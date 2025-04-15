@@ -40,14 +40,16 @@ impl Corner {
     ) -> Rectangle {
         let dy = current_cursor_pos.y - initial_cursor_pos.y;
         let dx = current_cursor_pos.x - initial_cursor_pos.x;
+
         match self {
             Self::TopLeft => initial_rect
-                .with_pos(|_| current_cursor_pos)
+                .with_y(|y| y + dy)
+                .with_x(|x| x + dx)
                 .with_width(|w| w - dx)
                 .with_height(|h| h - dy),
             Self::TopRight => initial_rect
-                .with_width(|w| w + dx)
                 .with_y(|y| y + dy)
+                .with_width(|w| w + dx)
                 .with_height(|h| h - dy),
             Self::BottomLeft => initial_rect
                 .with_x(|x| x + dx)

@@ -558,9 +558,7 @@ impl canvas::Program<Message> for App {
                 }
             }
             Mouse(mouse::Event::CursorMoved { position })
-                if self
-                    .selection
-                    .is_some_and(super::selection::Selection::is_resized) =>
+                if self.selection.is_some_and(Selection::is_resized) =>
             {
                 // FIXME: this will not be necessary when we have `let_chains`
                 let (selection, sel_is_some) =
@@ -587,9 +585,7 @@ impl canvas::Program<Message> for App {
             Mouse(mouse::Event::CursorMoved { position })
                 if state.is_left_clicked()
                     && state.is_right_released()
-                    && self
-                        .selection
-                        .is_some_and(super::selection::Selection::is_dragged) =>
+                    && self.selection.is_some_and(Selection::is_dragged) =>
             {
                 // FIXME: this will not be necessary when we have `let_chains`
                 let current_selection = self.selection.expect("has `.is_some_and()` guard");
