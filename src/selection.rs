@@ -4,12 +4,13 @@ use iced::widget::{Column, Row, Space, row, tooltip};
 use iced::{Element, Length, Padding};
 use iced::{Point, Rectangle, Size};
 
-use crate::constants::{DROP_SHADOW_COLOR, SPACE_BETWEEN_ICONS};
+use crate::constants::SPACE_BETWEEN_ICONS;
 use crate::constants::{FRAME_WIDTH, ICON_BUTTON_SIZE};
 use crate::corners::Corners;
 use crate::corners::SideOrCorner;
 use crate::message::Message;
 use crate::rectangle::RectangleExt;
+use crate::theme::THEME;
 
 /// The selected area of the desktop which will be captured
 #[derive(Debug, Default, Copy, Clone)]
@@ -77,7 +78,7 @@ impl Selection {
             self.pos(),
             self.size(),
             iced::widget::canvas::Stroke::default()
-                .with_color(DROP_SHADOW_COLOR)
+                .with_color(THEME.drop_shadow)
                 .with_width(FRAME_WIDTH * 2.0),
         );
         frame.stroke_rectangle(

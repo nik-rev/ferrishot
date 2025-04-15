@@ -4,18 +4,16 @@ use std::borrow::Cow;
 use std::time::Instant;
 
 use crate::config::CONFIG;
-use crate::constants::{ERROR_TIMEOUT, NON_SELECTED_REGION_COLOR};
+use crate::constants::ERROR_TIMEOUT;
+use crate::icon;
 use crate::message::Message;
 use crate::screenshot::RgbaHandle;
-use crate::{foreground_for, icon};
+use crate::theme::THEME;
 use iced::keyboard::{Key, Modifiers};
 use iced::mouse::{Cursor, Interaction};
-use iced::theme::palette::{self, EXTENDED_DARK, Pair};
 use iced::widget::canvas::Path;
 use iced::widget::{self, Action, Space, canvas, column, row, stack};
-use iced::{
-    Color, Element, Length, Point, Rectangle, Renderer, Size, Task, Theme, color, mouse, theme,
-};
+use iced::{Element, Length, Point, Rectangle, Renderer, Size, Task, Theme, mouse};
 
 use crate::background_image::BackgroundImage;
 use crate::corners::{Side, SideOrCorner};
@@ -109,44 +107,6 @@ impl Default for App {
 }
 
 impl App {
-    /// Name of the application
-    pub const NAME: &str = "ferrishot";
-
-    /// Styles and theme for the app
-    pub fn theme(&self) -> Theme {
-        Theme::custom_with_fn(
-            Self::NAME.to_string(),
-            theme::Palette {
-                primary: CONFIG.accent_color.0,
-                ..theme::Palette::DARK
-            },
-            |p| palette::Extended {
-                background: palette::Background {
-                    base: Pair {
-                        color: p.background,
-                        text: p.text,
-                    },
-                    weak: Pair {
-                        text: color!(0x69_69_69),
-                        color: Color::TRANSPARENT,
-                    },
-                    ..EXTENDED_DARK.background
-                },
-                primary: palette::Primary {
-                    base: Pair {
-                        color: p.primary,
-                        text: foreground_for(p.primary),
-                    },
-                    weak: Pair {
-                        color: p.primary.scale_alpha(0.3),
-                        ..EXTENDED_DARK.primary.weak
-                    },
-                    ..EXTENDED_DARK.primary
-                },
-                ..*EXTENDED_DARK
-            },
-        )
-    }
     /// Close the app
     ///
     /// This is like `iced::exit`, but it does not cause a segfault in special
@@ -178,7 +138,7 @@ impl App {
     /// Renders the black tint on regions that are not selected
     fn render_shade(&self, frame: &mut canvas::Frame, bounds: Rectangle) {
         let Some(selection) = self.selection.map(Selection::norm) else {
-            frame.fill_rectangle(bounds.position(), bounds.size(), NON_SELECTED_REGION_COLOR);
+            frame.fill_rectangle(bounds.position(), bounds.size(), THEME.non_selected_region);
             return;
         };
 
@@ -196,7 +156,7 @@ impl App {
             p.move_to(selection.top_left());
         });
 
-        frame.fill(&outside, NON_SELECTED_REGION_COLOR);
+        frame.fill(&outside, THEME.non_selected_region);
     }
 
     /// Receives keybindings
@@ -542,10 +502,8 @@ impl canvas::Program<Message> for App {
         self.render_shade(&mut frame, bounds);
 
         if let Some(selection) = self.selection.map(Selection::norm) {
-            selection.render_border(&mut frame, CONFIG.accent_color.0);
-            selection
-                .corners()
-                .render_circles(&mut frame, CONFIG.accent_color.0);
+            selection.render_border(&mut frame, THEME.accent);
+            selection.corners().render_circles(&mut frame, THEME.accent);
         }
 
         vec![frame.into_geometry()]

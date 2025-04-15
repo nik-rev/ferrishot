@@ -29,7 +29,6 @@ fn main() {
         })
         .subscription(|_state| iced::keyboard::on_key_press(App::handle_key_press))
         .title("ferrishot")
-        .theme(App::theme)
         .run()
         .expect("Failed to start ferrishot");
 

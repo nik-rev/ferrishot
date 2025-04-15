@@ -20,7 +20,6 @@ mod mouse;
 mod rectangle;
 mod screenshot;
 mod selection;
-mod stdx;
 mod widgets;
 
 #[cfg(target_os = "linux")]
@@ -30,4 +29,3 @@ pub use app::App;
 pub use app::SAVED_IMAGE;
 pub use config::CONFIG;
 pub use logging::initialize_logging;
-pub use stdx::foreground_for;
