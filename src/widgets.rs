@@ -32,10 +32,15 @@ pub fn size_indicator<'a>(
             // `Length::Shrink` makes `width = 0` for some reason
             .width(Length::Fixed((12 * content.len()) as f32))
             .on_input(move |s| {
-                s.parse::<u32>()
-                    .ok()
-                    .filter(|x| *x <= max)
-                    .map_or(Message::NoOp, &on_change)
+                // if we get "" it means user e.g. just deleted everything
+                if s.is_empty() {
+                    on_change(0)
+                } else {
+                    s.parse::<u32>()
+                        .ok()
+                        .filter(|x| *x <= max)
+                        .map_or(Message::NoOp, &on_change)
+                }
             })
             .style(|_, _| widget::text_input::Style {
                 value: THEME.size_indicator_fg,

@@ -211,10 +211,6 @@ impl App {
     }
 
     /// Modifies the app's state
-    ///
-    /// # Panics
-    ///
-    /// Will panic if `self.selection` is `None` when sending the `Message::InitialResize`
     #[expect(clippy::needless_pass_by_value, reason = "trait function")]
     pub fn update(&mut self, message: Message) -> Task<Message> {
         match message {
@@ -223,18 +219,18 @@ impl App {
                 sel_is_some,
             } => {
                 let sel = self.selection.unlock(sel_is_some);
-                let y_diff = new_height as f32 - sel.rect.height;
+                let dy = new_height as f32 - sel.rect.height;
                 sel.rect.height = new_height as f32;
-                sel.rect.y -= y_diff;
+                sel.rect.y -= dy;
             }
             Message::ResizeHorizontally {
                 new_width,
                 sel_is_some,
             } => {
                 let sel = self.selection.unlock(sel_is_some);
-                let x_diff = new_width as f32 - sel.rect.width;
+                let dx = new_width as f32 - sel.rect.width;
                 sel.rect.width = new_width as f32;
-                sel.rect.x -= x_diff;
+                sel.rect.x -= dx;
             }
             Message::NoOp => (),
             Message::Exit => return Self::exit(),
