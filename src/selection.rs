@@ -51,6 +51,42 @@ pub enum SelectionStatus {
     Idle,
 }
 
+/// Methods for guarantee that selection exists
+///
+/// We have this because very often in the app we want to pass the knowledge that our `Selection`
+/// exists through a `Message`, however
+pub mod selection_lock {
+    use super::Selection;
+
+    /// The existance of this struct guarantees that an `Option<Selection>` is always `Some`.
+    ///
+    /// # Important
+    ///
+    /// This struct should *never* be created manually. It should only ever be obtained from the
+    /// `Option<&mut Selection>::get` method.
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+    pub struct SelectionIsSome {
+        /// Private field makes this type impossible to construct outside of the module it is defined in
+        _private: (),
+    }
+
+    /// Methods for extracting value from an optional selection,
+    /// with a guarantee that it can never be None.
+    #[easy_ext::ext(OptionalSelectionExt)]
+    pub impl Option<Selection> {
+        /// Attempt to get the inner selection. if successful, return a key that allows opening
+        /// this option again with a guarantee for existance.
+        fn get(self) -> Option<(Selection, SelectionIsSome)> {
+            self.map(|x| (x, SelectionIsSome { _private: () }))
+        }
+        /// Extract the selection, with a guarantee that it is always there
+        fn unlock(&mut self, _key: SelectionIsSome) -> &mut Selection {
+            self.as_mut()
+                .expect("Cannot be None if the key is provided")
+        }
+    }
+}
+
 impl Selection {
     /// Processes an image
     pub fn process_image(&self, width: u32, height: u32, pixels: &[u8]) -> image::DynamicImage {

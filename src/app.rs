@@ -8,6 +8,7 @@ use crate::constants::ERROR_TIMEOUT;
 use crate::icon;
 use crate::message::Message;
 use crate::screenshot::RgbaHandle;
+use crate::selection::selection_lock::OptionalSelectionExt;
 use crate::theme::THEME;
 use iced::keyboard::{Key, Modifiers};
 use iced::mouse::{Cursor, Interaction};
@@ -202,9 +203,9 @@ impl App {
                 .filter(|sel| sel.is_idle())
                 .map(|sel| sel.render_icons(icons)),
         )
-        .push_maybe(self.selection.map(|sel| {
+        .push_maybe(self.selection.get().map(|(sel, key)| {
             let (image_width, image_height, _) = self.screenshot.raw();
-            crate::widgets::size_indicator(image_height, image_width, sel.norm().rect)
+            crate::widgets::size_indicator(image_height, image_width, sel.norm().rect, key)
         }))
         .into()
     }
@@ -217,12 +218,17 @@ impl App {
     #[expect(clippy::needless_pass_by_value, reason = "trait function")]
     pub fn update(&mut self, message: Message) -> Task<Message> {
         match message {
-            Message::ResizeVertically(new_height) => {
-                self.selection.as_mut().expect
-                    ("this message is sent when the inputs update. they can only render if the selection is not None").rect.height = new_height as f32;
+            Message::ResizeVertically(new_height, selection_key) => {
+                let sel = self.selection.unlock(selection_key);
+                let y_diff = new_height as f32 - sel.rect.height;
+                sel.rect.height = new_height as f32;
+                sel.rect.y -= y_diff;
             }
-            Message::ResizeHorizontally(new_width) => {
-                self.selection.as_mut().expect("this message is sent when the inputs update. they can only render if the selection is not None").rect.width = new_width as f32;
+            Message::ResizeHorizontally(new_width, selection_key) => {
+                let sel = self.selection.unlock(selection_key);
+                let x_diff = new_width as f32 - sel.rect.width;
+                sel.rect.width = new_width as f32;
+                sel.rect.x -= x_diff;
             }
             Message::None => (),
             Message::Exit => return Self::exit(),

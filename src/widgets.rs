@@ -7,6 +7,7 @@ use iced::{
 use crate::{
     constants::{ICON_BUTTON_SIZE, ICON_SIZE},
     rectangle::RectangleExt as _,
+    selection::selection_lock::SelectionIsSome,
     theme::THEME,
 };
 
@@ -17,6 +18,7 @@ pub fn size_indicator<'a>(
     image_height: u32,
     image_width: u32,
     rect: Rectangle,
+    selection_is_some: SelectionIsSome,
 ) -> Element<'a, Message> {
     fn dimension_indicator<'a>(
         value: u32,
@@ -65,8 +67,12 @@ pub fn size_indicator<'a>(
     let horizontal_space = Space::with_width(x_offset);
     let vertical_space = Space::with_height(y_offset);
 
-    let width = dimension_indicator(rect.width as u32, image_width, Message::ResizeHorizontally);
-    let height = dimension_indicator(rect.height as u32, image_height, Message::ResizeVertically);
+    let width = dimension_indicator(rect.width as u32, image_width, move |new_width| {
+        Message::ResizeHorizontally(new_width, selection_is_some)
+    });
+    let height = dimension_indicator(rect.height as u32, image_height, move |new_height| {
+        Message::ResizeVertically(new_height, selection_is_some)
+    });
     let x = iced::widget::text("x ").color(THEME.fg);
     let space = iced::widget::text(" ");
     let c = widget::container(row![space, width, x, height]).style(|_| widget::container::Style {

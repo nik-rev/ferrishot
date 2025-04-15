@@ -2,17 +2,20 @@
 
 use iced::{Point, Rectangle, mouse::Cursor};
 
-use crate::{corners::SideOrCorner, selection::Selection};
+use crate::{
+    corners::SideOrCorner,
+    selection::{Selection, selection_lock::SelectionIsSome},
+};
 
 /// Represents an action happening in the application
 #[derive(Debug, Clone)]
 pub enum Message {
     /// do nothing
     None,
-    /// Change the height of the selection
-    ResizeVertically(u32),
-    /// Change the width of the selection
-    ResizeHorizontally(u32),
+    /// Change the height of the selection, bottom right does not move
+    ResizeVertically(u32, SelectionIsSome),
+    /// Change the width of the selection, bottom right does not move
+    ResizeHorizontally(u32, SelectionIsSome),
     /// Exits the application
     Exit,
     /// The left mouse button is down
