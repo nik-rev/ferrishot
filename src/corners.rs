@@ -118,6 +118,7 @@ impl Corners {
             (self.bottom_left, Corner::BottomLeft),
             (self.bottom_right, Corner::BottomRight),
         ];
+
         corners
             .into_iter()
             .min_by(|(point_a, _), (point_b, _)| {
@@ -125,7 +126,7 @@ impl Corners {
                     .distance(*point_a)
                     .total_cmp(&point.distance(*point_b))
             })
-            .expect("There to be at least 1 element")
+            .expect("`corners` has 4 elements. It would only be a None if it had `0` elements")
     }
 
     /// Render the circles for each side

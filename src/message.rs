@@ -13,9 +13,15 @@ pub enum Message {
     /// do nothing
     None,
     /// Change the height of the selection, bottom right does not move
-    ResizeVertically(u32, SelectionIsSome),
+    ResizeVertically {
+        new_height: u32,
+        sel_is_some: SelectionIsSome,
+    },
     /// Change the width of the selection, bottom right does not move
-    ResizeHorizontally(u32, SelectionIsSome),
+    ResizeHorizontally {
+        new_width: u32,
+        sel_is_some: SelectionIsSome,
+    },
     /// Exits the application
     Exit,
     /// The left mouse button is down
@@ -36,6 +42,9 @@ pub enum Message {
         resize_side: SideOrCorner,
         /// Selection rectangle as it looked like when we just started resizing
         initial_rect: Rectangle,
+        /// A key to obtain `&mut Selection` from `Option<Selection>` with a guarantee that it will
+        /// always be there (to bypass the limitation that we cannot pass `&mut Selection` in a `Message`)
+        sel_is_some: SelectionIsSome,
     },
     /// When we have not yet released the left mouse button
     /// and are dragging the selection to extend it
@@ -60,6 +69,9 @@ pub enum Message {
         cursor_pos: Point,
         /// Current selection
         selection: Selection,
+        /// A key to obtain `&mut Selection` from `Option<Selection>` with a guarantee that it will
+        /// always be there (to bypass the limitation that we cannot pass `&mut Selection` in a `Message`)
+        sel_is_some: SelectionIsSome,
     },
     /// Set the selection to the entire screen
     FullSelection,

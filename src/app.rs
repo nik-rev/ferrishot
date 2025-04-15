@@ -218,14 +218,20 @@ impl App {
     #[expect(clippy::needless_pass_by_value, reason = "trait function")]
     pub fn update(&mut self, message: Message) -> Task<Message> {
         match message {
-            Message::ResizeVertically(new_height, selection_key) => {
-                let sel = self.selection.unlock(selection_key);
+            Message::ResizeVertically {
+                new_height,
+                sel_is_some,
+            } => {
+                let sel = self.selection.unlock(sel_is_some);
                 let y_diff = new_height as f32 - sel.rect.height;
                 sel.rect.height = new_height as f32;
                 sel.rect.y -= y_diff;
             }
-            Message::ResizeHorizontally(new_width, selection_key) => {
-                let sel = self.selection.unlock(selection_key);
+            Message::ResizeHorizontally {
+                new_width,
+                sel_is_some,
+            } => {
+                let sel = self.selection.unlock(sel_is_some);
                 let x_diff = new_width as f32 - sel.rect.width;
                 sel.rect.width = new_width as f32;
                 sel.rect.x -= x_diff;
@@ -341,11 +347,9 @@ impl App {
                 initial_cursor_pos,
                 resize_side,
                 initial_rect,
+                sel_is_some,
             } => {
-                let selected_region = self
-                    .selection
-                    .as_mut()
-                    .expect("is inside `.is_some_and` guard");
+                let selected_region = self.selection.unlock(sel_is_some);
 
                 let dy = current_cursor_pos.y - initial_cursor_pos.y;
                 let dx = current_cursor_pos.x - initial_cursor_pos.x;
@@ -374,12 +378,10 @@ impl App {
             Message::ResizingToCursor {
                 cursor_pos,
                 selection,
+                sel_is_some,
             } => {
                 let (corner_point, corners) = selection.corners().nearest_corner(cursor_pos);
-                let sel = self
-                    .selection
-                    .as_mut()
-                    .expect("is inside of `.is_some_and()` guard");
+                let sel = self.selection.unlock(sel_is_some);
 
                 sel.rect = corners.resize_rect(selection.rect, cursor_pos, corner_point);
                 sel.status = SelectionStatus::Resized {
@@ -534,10 +536,11 @@ impl canvas::Program<Message> for App {
             Mouse(mouse::Event::ButtonPressed(mouse::Button::Right)) => {
                 state.right_click();
                 if let Some(cursor) = cursor.position() {
-                    if let Some(selection) = self.selection {
+                    if let Some((selection, sel_is_some)) = self.selection.get() {
                         Message::ResizingToCursor {
                             cursor_pos: cursor,
                             selection: selection.norm(),
+                            sel_is_some,
                         }
                     } else {
                         return None;
@@ -559,48 +562,30 @@ impl canvas::Program<Message> for App {
                 }
             }
             Mouse(mouse::Event::CursorMoved { position })
-                if state.is_left_clicked()
-                    && self
-                        .selection
-                        .is_some_and(super::selection::Selection::is_resized) =>
+                if self
+                    .selection
+                    .is_some_and(super::selection::Selection::is_resized) =>
             {
+                // FIXME: this will not be necessary when we have `let_chains`
+                let (selection, sel_is_some) =
+                    self.selection.get().expect("has `.is_some_and()` guard");
+
                 // FIXME: this will not be necessary when we have `let_chains`
                 let SelectionStatus::Resized {
                     resize_side,
                     initial_rect,
                     initial_cursor_pos,
-                } = self.selection.expect("has `.is_some()` guard").status
+                } = selection.status
                 else {
-                    unreachable!();
+                    unreachable!("has `.is_some_and(is_resized)` guard");
                 };
+
                 Message::InitialResize {
                     current_cursor_pos: *position,
                     resize_side,
                     initial_cursor_pos,
                     initial_rect,
-                }
-            }
-            Mouse(mouse::Event::CursorMoved { position })
-                if state.is_right_clicked()
-                    && state.is_left_released()
-                    && self
-                        .selection
-                        .is_some_and(super::selection::Selection::is_resized) =>
-            {
-                // FIXME: this will not be necessary when we have `let_chains`
-                let SelectionStatus::Resized {
-                    resize_side,
-                    initial_rect,
-                    initial_cursor_pos,
-                } = self.selection.expect("has `.is_some()` guard").status
-                else {
-                    unreachable!();
-                };
-                Message::InitialResize {
-                    current_cursor_pos: *position,
-                    resize_side,
-                    initial_cursor_pos,
-                    initial_rect,
+                    sel_is_some,
                 }
             }
             Mouse(mouse::Event::CursorMoved { position })
@@ -611,10 +596,13 @@ impl canvas::Program<Message> for App {
                         .is_some_and(super::selection::Selection::is_dragged) =>
             {
                 // FIXME: this will not be necessary when we have `let_chains`
+                let current_selection = self.selection.expect("has `.is_some_and()` guard");
+
+                // FIXME: this will not be necessary when we have `let_chains`
                 let SelectionStatus::Dragged {
                     initial_rect_pos,
                     initial_cursor_pos,
-                } = self.selection.expect("has `.is_some()` guard").status
+                } = current_selection.status
                 else {
                     unreachable!();
                 };
@@ -622,7 +610,7 @@ impl canvas::Program<Message> for App {
                 Message::MovingSelection {
                     current_cursor_pos: *position,
                     initial_cursor_pos,
-                    current_selection: self.selection.expect("has `.is_some()` guard"),
+                    current_selection,
                     initial_rect_pos,
                 }
             }
