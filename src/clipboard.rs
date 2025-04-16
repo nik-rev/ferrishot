@@ -5,14 +5,14 @@
 #[cfg(target_os = "linux")]
 pub const CLIPBOARD_DAEMON_ID: &str = "__ferrishot_clipboard_daemon";
 
-use std::fs;
-use std::{fs::File, io::Write, process};
+use std::{fs::File, io::Write};
 
 /// Set the text content of the clipboard
 #[expect(dead_code, reason = "will be used later")]
 pub fn set_text(text: &str) -> Result<(), Box<dyn std::error::Error>> {
     #[cfg(target_os = "linux")]
     {
+        use std::process;
         process::Command::new(std::env::current_exe()?)
             .arg(CLIPBOARD_DAEMON_ID)
             .arg("text")
@@ -55,6 +55,7 @@ pub fn set_image(
 
     #[cfg(target_os = "linux")]
     {
+        use std::process;
         process::Command::new(std::env::current_exe()?)
             .arg(CLIPBOARD_DAEMON_ID)
             .arg("image")
@@ -104,6 +105,7 @@ pub fn set_image(
 #[cfg(target_os = "linux")]
 pub fn run_clipboard_daemon() -> Result<(), arboard::Error> {
     use arboard::SetExtLinux as _;
+    use std::fs;
 
     log::info!(
         "Spawned clipboard daemon with arguments: {:?}",
