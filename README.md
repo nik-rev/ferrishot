@@ -11,6 +11,10 @@
   </p>
 </div>
 
+## Showcase
+
+<https://github.com/user-attachments/assets/ebbbfe85-b81e-4f26-9453-545dd1b2ce38>
+
 ## Features
 
 Run by writing `ferrishot` on the command line.
@@ -27,10 +31,6 @@ Run by writing `ferrishot` on the command line.
 - `Esc` exits
 
 This project is under heavy development, and we have a lot of plans. A list of planned features can be found in [`TODO.md`](./TODO.md).
-
-## Showcase
-
-<https://github.com/user-attachments/assets/ebbbfe85-b81e-4f26-9453-545dd1b2ce38>
 
 ## Platform Support
 
