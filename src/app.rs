@@ -3,7 +3,6 @@
 use std::borrow::Cow;
 use std::time::Instant;
 
-use crate::Explainer;
 use crate::message::Message;
 use crate::screenshot::RgbaHandle;
 use crate::selection::selection_lock::OptionalSelectionExt;
@@ -130,43 +129,29 @@ impl App {
                     weight: iced::font::Weight::Bold,
                     ..Font::default()
                 };
-                // text("Ctrl + S")
-                //     .size(FONT_SIZE)
-                //     .font(bold)
-                //     .shaping(Shaping::Advanced),
-                // text("Enter")
-                //     .size(FONT_SIZE)
-                //     .font(bold)
-                //     .shaping(Shaping::Advanced),
-                // text("Esc")
-                //     .size(FONT_SIZE)
-                //     .font(bold)
-                //     .shaping(Shaping::Advanced),
 
-                macro_rules! keys {
-                    ($key:literal, $action:literal) => {{
+                let keys = |key: &'static str, action: &'static str| {
+                    row![
                         row![
-                            row![
-                                Space::with_width(Length::Fill),
-                                text($key)
-                                    .size(FONT_SIZE)
-                                    .font(bold)
-                                    .shaping(Shaping::Advanced)
-                                    .align_y(Vertical::Bottom)
-                            ]
-                            .width(60.0),
-                            Space::with_width(Length::Fixed(20.0)),
-                            text($action).size(FONT_SIZE).align_y(Vertical::Bottom),
+                            Space::with_width(Length::Fill),
+                            text(key)
+                                .size(FONT_SIZE)
+                                .font(bold)
+                                .shaping(Shaping::Advanced)
+                                .align_y(Vertical::Bottom)
                         ]
-                    }};
-                }
+                        .width(60.0),
+                        Space::with_width(Length::Fixed(20.0)),
+                        text(action).size(FONT_SIZE).align_y(Vertical::Bottom),
+                    ]
+                };
 
                 let stuff = iced::widget::container(
                     column![
-                        keys!("Mouse", "Select screenshot area"),
-                        keys!("Ctrl + S", "Save screenshot to a file"),
-                        keys!("Enter", "Copy screenshot to clipboard"),
-                        keys!("Esc", "Exit"),
+                        keys("Mouse", "Select screenshot area"),
+                        keys("Ctrl + S", "Save screenshot to a file"),
+                        keys("Enter", "Copy screenshot to clipboard"),
+                        keys("Esc", "Exit"),
                     ]
                     .spacing(4.0)
                     .height(HEIGHT)
