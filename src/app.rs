@@ -204,8 +204,10 @@ impl App {
             } => {
                 let sel = self.selection.unlock(sel_is_some);
                 let dy = new_height as f32 - sel.rect.height;
-                sel.rect.height = new_height as f32;
-                sel.rect.y -= dy;
+                *sel = sel
+                    .norm()
+                    .with_height(|_| new_height as f32)
+                    .with_y(|y| y - dy);
             }
             Message::ResizeHorizontally {
                 new_width,
@@ -213,8 +215,10 @@ impl App {
             } => {
                 let sel = self.selection.unlock(sel_is_some);
                 let dx = new_width as f32 - sel.rect.width;
-                sel.rect.width = new_width as f32;
-                sel.rect.x -= dx;
+                *sel = sel
+                    .norm()
+                    .with_width(|_| new_width as f32)
+                    .with_x(|x| x - dx);
             }
             Message::NoOp => (),
             Message::Exit => return Self::exit(),
