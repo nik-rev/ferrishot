@@ -8,7 +8,7 @@
   - `Esc`: Exit
 - Added an indicator for the width and height of selection in the bottom right corner. This indicator can be edited to set the selection to a concrete size!
 - Holding `Shift` while resizing or moving the selection will now do it 10 times slower, to allow being very accurate.
-- Improved security as per review: <https://www.reddit.com/r/rust/comments/1jxwd86/comment/mmvfzhy/?utm_source=share&utm_medium=web3x&utm_name=web3xcss&utm_term=1&utm_content=share_button>
+- Improved security on linux as per review from a reddit user: <https://www.reddit.com/r/rust/comments/1jxwd86/comment/mmvfzhy/?utm_source=share&utm_medium=web3x&utm_name=web3xcss&utm_term=1&utm_content=share_button>
 
 # v0.1.0 - 12 April 2025
 

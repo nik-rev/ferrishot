@@ -7,48 +7,37 @@
       <br />
       ferrishot
     </h1>
-    <h4>Screenshot app written in Rust</h4>
+    <h4>Screenshot app written in Rust, inspired by <a href="https://github.com/flameshot-org/flameshot">flameshot<a />.</h4>
   </p>
 </div>
-
-Currently, this project is under heavy development. The goal is to reach feature parity with [flameshot](https://github.com/flameshot-org/flameshot) before the 1.0 release and then go beyond
 
 ## Features
 
 Run by writing `ferrishot` on the command line.
 
-- Select a region on the screen by left clicking and drag
-- Resize region by dragging on any of the sides
+- Select a region on the screen by left clicking and dragging
+- Resize the region by dragging on any of the sides or corners and dragging
 - Move the region around by dragging in the center
-- `Esc` closes the app
-- `Enter` or `Ctrl c` copy region to clipboard
-- `Ctrl s` save region as an image to path
+- `Enter` copies screenshot region to clipboard
+- `Ctrl s` saves screenshot region as a file
+- `F11` selects the entire monitor
 - Instantly copy region to clipboard with `--instant` flag
+- Holding `Shift` while resizing or dragging will resize or move the selection 10 times slower
+- Size indicator allows setting an absolute width and height for the screenshot
+- `Esc` exits
+
+This project is under heavy development, and we have a lot of plans. A list of planned features can be found in [`TODO.md`](./TODO.md).
 
 ## Showcase
 
 <https://github.com/user-attachments/assets/a7a69202-597b-4f25-816f-f84ce85c6313>
 
-## Road map
+## Platform Support
 
-- Height & width text indicator for region
-- Ability to specify the selection absolutely (i.e., without mouse)
-- Take screenshot in 3, 5, 10 seconds
-- Draw shapes on the screen
-  - Text
-  - Line
-  - Circle
-  - Arrows
-  - Square
-  - Highlight
-  - Numbered circles
-  - Pen
-- Change thickness of tools
-- Pixelate region of the screen
-- Undo and Redo actions for drawing
-- CLI Application
-- Config file
-- Snap to edges / borders of visible objects on the screen
+- [x] Windows
+- [x] MacOS
+- [x] Linux (X11)
+- [x] Linux (Wayland)
 
 ## Installation
 
@@ -83,7 +72,7 @@ inputs.ferrishot.packages.${pkgs.system}.default
 
 ### Cargo
 
-See [`CONTRIBUTING.md`](./CONTRIBUTING.md) for details on which dependencies you will need.
+If you use Linux, see [`CONTRIBUTING.md`](./CONTRIBUTING.md) for details on which dependencies you will need.
 
 ```sh
 cargo install ferrishot
