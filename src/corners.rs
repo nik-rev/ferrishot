@@ -51,15 +51,7 @@ impl Corner {
     ///
     /// The resized rectangle. The corner opposite to `self` is guaranteed to
     /// remain in-place.
-    pub fn resize_rect(
-        self,
-        initial_rect: Rectangle,
-        current_cursor_pos: Point,
-        initial_cursor_pos: Point,
-    ) -> Rectangle {
-        let dy = current_cursor_pos.y - initial_cursor_pos.y;
-        let dx = current_cursor_pos.x - initial_cursor_pos.x;
-
+    pub fn resize_rect(self, initial_rect: Rectangle, dy: f32, dx: f32) -> Rectangle {
         match self {
             Self::TopLeft => initial_rect
                 .with_y(|y| y + dy)

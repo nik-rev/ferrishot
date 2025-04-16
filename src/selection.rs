@@ -144,7 +144,7 @@ impl Selection {
         to self.rect {
             /// The height and width of the selection
             pub fn size(self) -> Size;
-            /// Get the position
+            /// Top left corner of the selection
             pub fn pos(self) -> Point;
             /// Top-left, top-right, bottom-left and bottom-right points
             pub fn corners(self) -> Corners;

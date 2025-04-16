@@ -3,7 +3,7 @@
 use std::borrow::Cow;
 use std::time::Instant;
 
-use crate::message::Message;
+use crate::message::{Message, Speed};
 use crate::screenshot::RgbaHandle;
 use crate::selection::selection_lock::OptionalSelectionExt;
 use crate::theme::THEME;
@@ -211,10 +211,12 @@ impl App {
                 initial_cursor_pos,
                 current_selection,
                 initial_rect_pos,
+                speed,
             } => {
                 let (image_width, image_height, _) = self.screenshot.raw();
-                let mut new_selection = current_selection
-                    .with_pos(|_| initial_rect_pos + (current_cursor_pos - initial_cursor_pos));
+                let mut new_selection = current_selection.with_pos(|_| {
+                    initial_rect_pos + ((current_cursor_pos - initial_cursor_pos) * speed.speed())
+                });
 
                 let old_x = new_selection.rect.x as u32;
                 let old_y = new_selection.rect.y as u32;
@@ -236,6 +238,17 @@ impl App {
                 if new_selection.rect.y as u32 != old_y || new_selection.rect.x as u32 != old_x {
                     new_selection.status = SelectionStatus::Move {
                         initial_rect_pos: new_selection.pos(),
+                        initial_cursor_pos: current_cursor_pos,
+                    }
+                }
+
+                if speed
+                    == (Speed::Slow {
+                        has_speed_changed: true,
+                    })
+                {
+                    new_selection.status = SelectionStatus::Move {
+                        initial_rect_pos: current_selection.pos(),
                         initial_cursor_pos: current_cursor_pos,
                     }
                 }
@@ -310,21 +323,10 @@ impl App {
                 speed,
             } => {
                 let selected_region = self.selection.unlock(sel_is_some);
+                let resize_speed = speed.speed();
 
-                println!("IN resize:");
-                dbg!(selected_region.rect.width, initial_rect.width);
-
-                let dy = (current_cursor_pos.y - initial_cursor_pos.y) * speed;
-                let dx = (current_cursor_pos.x - initial_cursor_pos.x) * speed;
-
-                // To give a perspective on this math, imagine that our cursor is at the top left corner
-                // and travelling diagonally down, from point (700, 700) -> (800, 800).
-                //
-                // In this case, the - `(current {x,y} [800 - 700] - previous {x,y} [700, 700])` will
-                // both have positive `dx` and `dy` [100].
-                //
-                // Now imagine how the selection transforms with this, and think about it just for 1 case.
-                // It will then be true for all cases
+                let dy = (current_cursor_pos.y - initial_cursor_pos.y) * resize_speed;
+                let dx = (current_cursor_pos.x - initial_cursor_pos.x) * resize_speed;
 
                 selected_region.rect = match resize_side {
                     SideOrCorner::Side(side) => match side {
@@ -333,13 +335,20 @@ impl App {
                         Side::Bottom => initial_rect.with_height(|h| h + dy),
                         Side::Left => initial_rect.with_width(|w| w - dx).with_x(|x| x + dx),
                     },
-                    SideOrCorner::Corner(corner) => {
-                        corner.resize_rect(initial_rect, current_cursor_pos, initial_cursor_pos)
-                    }
+                    SideOrCorner::Corner(corner) => corner.resize_rect(initial_rect, dy, dx),
                 };
 
-                dbg!(selected_region.rect.width);
-                println!("OUT resize:");
+                if speed
+                    == (Speed::Slow {
+                        has_speed_changed: true,
+                    })
+                {
+                    selected_region.status = SelectionStatus::Resize {
+                        initial_rect: selected_region.rect,
+                        initial_cursor_pos: current_cursor_pos,
+                        resize_side,
+                    }
+                }
             }
             Message::ResizeToCursor {
                 cursor_pos,
@@ -349,7 +358,12 @@ impl App {
                 let (corner_point, corners) = selection.corners().nearest_corner(cursor_pos);
                 let sel = self.selection.unlock(sel_is_some);
 
-                sel.rect = corners.resize_rect(selection.rect, cursor_pos, corner_point);
+                sel.rect = corners.resize_rect(
+                    selection.rect,
+                    cursor_pos.y - corner_point.y,
+                    cursor_pos.x - corner_point.x,
+                );
+
                 sel.status = SelectionStatus::Resize {
                     initial_rect: sel.rect,
                     initial_cursor_pos: cursor_pos,

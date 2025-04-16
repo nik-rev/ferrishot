@@ -1,6 +1,6 @@
 //! The canvas handles drawing the selection frame
 use iced::{
-    Point, Rectangle, Renderer, Theme,
+    Rectangle, Renderer, Theme,
     mouse::{self, Interaction},
     widget::{self, Action, canvas},
 };
@@ -19,7 +19,7 @@ pub struct MouseState {
 use crate::{
     App, CONFIG,
     corners::SideOrCorner,
-    message::Message,
+    message::{Message, Speed},
     selection::{Selection, SelectionStatus, selection_lock::OptionalSelectionExt as _},
     theme::THEME,
 };
@@ -121,10 +121,19 @@ impl canvas::Program<Message> for App {
             Mouse(mouse::Event::ButtonReleased(mouse::Button::Left)) => {
                 state.is_left_down = false;
                 if CONFIG.instant && self.selections_created == 1 {
+                    // we have created 1 selections in total, (the current one),
+                    // in which case we want to copy it to the clipboard as the
+                    // --instant flag was provided
                     Message::CopyToClipboard
                 } else {
                     Message::EnterIdle
                 }
+            }
+            Keyboard(keyboard::Event::KeyReleased { key, .. })
+                if *key == keyboard::Key::Named(keyboard::key::Named::Shift) =>
+            {
+                state.is_shift_down = false;
+                Message::NoOp
             }
             Keyboard(keyboard::Event::KeyPressed { key, .. })
                 if *key == keyboard::Key::Named(keyboard::key::Named::Shift) =>
@@ -140,12 +149,26 @@ impl canvas::Program<Message> for App {
                         .map_or(Message::NoOp, |current_cursor_pos| {
                             if let SelectionStatus::Resize { resize_side, .. } = selection.status {
                                 Message::Resize {
-                                    current_cursor_pos,
                                     resize_side,
+                                    // start resizing from this point on
+                                    current_cursor_pos,
                                     initial_cursor_pos: current_cursor_pos,
+                                    // the current selection becomes the new starting point
                                     initial_rect: selection.rect,
                                     sel_is_some,
-                                    speed: 0.1,
+                                    speed: Speed::Slow {
+                                        has_speed_changed: true,
+                                    },
+                                }
+                            } else if let SelectionStatus::Move { .. } = selection.status {
+                                Message::MoveSelection {
+                                    current_cursor_pos,
+                                    initial_cursor_pos: current_cursor_pos,
+                                    current_selection: selection,
+                                    initial_rect_pos: selection.pos(),
+                                    speed: Speed::Slow {
+                                        has_speed_changed: true,
+                                    },
                                 }
                             } else {
                                 Message::NoOp
@@ -154,12 +177,6 @@ impl canvas::Program<Message> for App {
                 } else {
                     Message::NoOp
                 }
-            }
-            Keyboard(keyboard::Event::KeyReleased { key, .. })
-                if *key == keyboard::Key::Named(keyboard::key::Named::Shift) =>
-            {
-                state.is_shift_down = false;
-                Message::NoOp
             }
             Mouse(mouse::Event::CursorMoved { position })
                 if self.selection.is_some_and(Selection::is_resize) =>
@@ -178,18 +195,19 @@ impl canvas::Program<Message> for App {
                     unreachable!("has `.is_some_and(is_resized)` guard");
                 };
 
-                println!("IN SEND: ");
-                dbg!(initial_rect.width);
-
-                let speed = if state.is_shift_down { 0.1 } else { 1.0 };
-
                 Message::Resize {
                     current_cursor_pos: *position,
                     resize_side,
                     initial_cursor_pos,
                     initial_rect,
                     sel_is_some,
-                    speed,
+                    speed: if state.is_shift_down {
+                        Speed::Slow {
+                            has_speed_changed: false,
+                        }
+                    } else {
+                        Speed::Regular
+                    },
                 }
             }
             Mouse(mouse::Event::CursorMoved { position })
@@ -212,6 +230,13 @@ impl canvas::Program<Message> for App {
                     initial_cursor_pos,
                     current_selection,
                     initial_rect_pos,
+                    speed: if state.is_shift_down {
+                        Speed::Slow {
+                            has_speed_changed: false,
+                        }
+                    } else {
+                        Speed::Regular
+                    },
                 }
             }
             Mouse(mouse::Event::CursorMoved { position })

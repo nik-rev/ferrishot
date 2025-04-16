@@ -7,6 +7,28 @@ use crate::{
     selection::{Selection, selection_lock::SelectionIsSome},
 };
 
+/// How fast the selection resizes
+#[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Debug)]
+pub enum Speed {
+    /// Resize follows the cursor. Cursor moves 1px -> the selection resizes by 1px
+    Regular,
+    /// Resize is slower than the cursor. Cursor moves 1px -> the selection resizes by less than that
+    Slow {
+        /// The speed was previously different, so the selection status must be updated to sync
+        has_speed_changed: bool,
+    },
+}
+
+impl Speed {
+    /// For a given px of cursor movement, how many px does the selection resize by?
+    pub const fn speed(self) -> f32 {
+        match self {
+            Self::Regular => 1.0,
+            Self::Slow { .. } => 0.1,
+        }
+    }
+}
+
 /// Represents an action happening in the application
 #[derive(Debug, Clone)]
 pub enum Message {
@@ -36,9 +58,7 @@ pub enum Message {
         /// always be there (to bypass the limitation that we cannot pass `&mut Selection` in a `Message`)
         sel_is_some: SelectionIsSome,
         /// Multiplier for how fast we are resizing.
-        ///
-        /// Example: 2x = 2 pixels resize per 1 pixel moved of cursor
-        speed: f32,
+        speed: Speed,
     },
     /// Change the height of the selection, bottom right does not move
     ResizeVertically {
@@ -71,6 +91,8 @@ pub enum Message {
         current_selection: Selection,
         /// Top-left corner of the selection before we started moving it
         initial_rect_pos: Point,
+        /// How fast the selection should move
+        speed: Speed,
     },
     /// Holding right-click, the selection will move the
     /// nearest corner to the cursor
