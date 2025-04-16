@@ -1,7 +1,7 @@
 //! Widgets with custom styles
 use iced::{
     Background, Border, Element, Length, Rectangle, Shadow,
-    widget::{self, Space, column, row},
+    widget::{self, Space, column, row, text::Shaping},
 };
 
 use crate::{
@@ -85,7 +85,7 @@ pub fn size_indicator<'a>(
     });
     let x = iced::widget::text("✕ ")
         .color(THEME.fg)
-        .shaping(widget::text::Shaping::Advanced);
+        .shaping(Shaping::Advanced);
     let space = iced::widget::text(" ");
     let c = widget::container(row![space, width, x, height]).style(|_| widget::container::Style {
         text_color: None,

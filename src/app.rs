@@ -3,15 +3,18 @@
 use std::borrow::Cow;
 use std::time::Instant;
 
+use crate::Explainer;
 use crate::message::Message;
 use crate::screenshot::RgbaHandle;
 use crate::selection::selection_lock::OptionalSelectionExt;
 use crate::theme::THEME;
+use iced::alignment::Vertical;
 use iced::keyboard::{Key, Modifiers};
 use iced::mouse::Cursor;
 use iced::widget::canvas::Path;
+use iced::widget::text::Shaping;
 use iced::widget::{Space, Stack, canvas, column, row};
-use iced::{Length, Point, Rectangle, Size, Task};
+use iced::{Background, Color, Font, Length, Point, Rectangle, Size, Task};
 
 use crate::background_image::BackgroundImage;
 use crate::corners::{Side, SideOrCorner};
@@ -113,17 +116,75 @@ impl App {
             .push(canvas(self).width(Length::Fill).height(Length::Fill))
             // information popup, when there is no selection
             .push_maybe(self.selection.is_none().then(|| {
-                const WIDTH: u32 = 600;
-                const HEIGHT: u32 = 400;
+                use iced::widget::text;
+                const WIDTH: u32 = 340;
+                const HEIGHT: u32 = 100;
+
+                const FONT_SIZE: f32 = 13.0;
 
                 let (width, height, _) = self.screenshot.raw();
                 let vertical_space = Space::with_height(height / 2 - HEIGHT / 2);
                 let horizontal_space = Space::with_width(width / 2 - WIDTH / 2);
 
-                // use iced::widget::text;
-                // text("lol").shaping(shaping)
+                let bold = Font {
+                    weight: iced::font::Weight::Bold,
+                    ..Font::default()
+                };
+                // text("Ctrl + S")
+                //     .size(FONT_SIZE)
+                //     .font(bold)
+                //     .shaping(Shaping::Advanced),
+                // text("Enter")
+                //     .size(FONT_SIZE)
+                //     .font(bold)
+                //     .shaping(Shaping::Advanced),
+                // text("Esc")
+                //     .size(FONT_SIZE)
+                //     .font(bold)
+                //     .shaping(Shaping::Advanced),
 
-                column![vertical_space, row![horizontal_space]]
+                macro_rules! keys {
+                    ($key:literal, $action:literal) => {{
+                        row![
+                            row![
+                                Space::with_width(Length::Fill),
+                                text($key)
+                                    .size(FONT_SIZE)
+                                    .font(bold)
+                                    .shaping(Shaping::Advanced)
+                                    .align_y(Vertical::Bottom)
+                            ]
+                            .width(60.0),
+                            Space::with_width(Length::Fixed(20.0)),
+                            text($action).size(FONT_SIZE).align_y(Vertical::Bottom),
+                        ]
+                    }};
+                }
+
+                let stuff = iced::widget::container(
+                    column![
+                        keys!("Mouse", "Select screenshot area"),
+                        keys!("Ctrl + S", "Save screenshot to a file"),
+                        keys!("Enter", "Copy screenshot to clipboard"),
+                        keys!("Esc", "Exit"),
+                    ]
+                    .spacing(4.0)
+                    .height(HEIGHT)
+                    .width(WIDTH)
+                    .padding(10.0),
+                )
+                .style(|_| iced::widget::container::Style {
+                    text_color: Some(THEME.fg_on_accent_bg),
+                    background: Some(Background::Color(THEME.accent.scale_alpha(0.95))),
+                    border: iced::Border::default(),
+                    shadow: iced::Shadow {
+                        color: Color::WHITE,
+                        offset: iced::Vector::default(),
+                        blur_radius: 6.0,
+                    },
+                });
+
+                column![vertical_space, row![horizontal_space, stuff]]
             }))
             // icons
             .push_maybe(
