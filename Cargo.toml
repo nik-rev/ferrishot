@@ -18,6 +18,8 @@ iced = { package = "ferrishot_iced", version = "0.14.1", features = [
   "image",
   "web-colors",
   "advanced",
+  "svg",
+  "wgpu",
 ] }
 image = "0.25.6"
 thiserror = "2.0.12"
@@ -33,6 +35,7 @@ rfd = "0.15.3"
 
 etcetera = "0.10.0"
 chrono = "0.4.40"
+tempfile = "3.19.1"
 
 [lints.rust]
 missing_docs = "warn"
@@ -41,12 +44,23 @@ missing_docs = "warn"
 pedantic = { priority = -1, level = "warn" }
 nursery = { priority = -1, level = "warn" }
 
+too_many_lines = "allow"
+# casts from floats -> int are common in the code, and in
+# most cases we don't care about precision as we are
+# dealing with pixels which cannot be float.
+cast_sign_loss = "allow"
+cast_possible_truncation = "allow"
+cast_precision_loss = "allow"
+
+allow_attributes_without_reason = "warn"
+ignore_without_reason = "warn"
+allow_attributes = "warn"
 unwrap_used = "warn"
 missing_assert_message = "warn"
 missing_docs_in_private_items = "warn"
-too_many_lines = "allow"
 
 # The profile that 'dist' will build with
 [profile.dist]
 inherits = "release"
-lto = "thin"
+codegen-units = 1
+lto = true

@@ -3,16 +3,18 @@
 use std::borrow::Cow;
 use std::time::Instant;
 
-use crate::SHADE_COLOR;
-use crate::config::Config;
+use crate::config::CONFIG;
+use crate::constants::ERROR_TIMEOUT;
+use crate::icon;
 use crate::message::Message;
 use crate::screenshot::RgbaHandle;
-use clap::Parser as _;
+use crate::selection::selection_lock::OptionalSelectionExt;
+use crate::theme::THEME;
 use iced::keyboard::{Key, Modifiers};
 use iced::mouse::{Cursor, Interaction};
 use iced::widget::canvas::Path;
 use iced::widget::{self, Action, canvas, stack};
-use iced::{Element, Length, Point, Rectangle, Renderer, Size, Task, Theme, mouse};
+use iced::{Length, Point, Rectangle, Renderer, Size, Task, Theme, mouse};
 
 use crate::background_image::BackgroundImage;
 use crate::corners::{Side, SideOrCorner};
@@ -87,8 +89,6 @@ pub struct App {
     screenshot: RgbaHandle,
     /// Area of the screen that is selected for capture
     selection: Option<Selection>,
-    /// Configuration of the app
-    config: Config,
     /// Errors to display to the user
     errors: Vec<ErrorMessage>,
 }
@@ -97,12 +97,10 @@ impl Default for App {
     fn default() -> Self {
         let screenshot =
             crate::screenshot::screenshot().expect("Failed to take a screenshot of the desktop");
-        let config = Config::parse();
 
         Self {
             screenshot,
             selection: None,
-            config,
             selections_created: 0,
             errors: vec![],
         }
@@ -125,7 +123,7 @@ impl App {
     }
 
     /// Retrieve all valid errors
-    #[expect(dead_code)]
+    #[expect(dead_code, reason = "will be useful later")]
     fn errors(&self) -> Vec<String> {
         let now = Instant::now();
         self.errors
@@ -133,7 +131,7 @@ impl App {
             .rev()
             .map_while(|err| {
                 let time_passed = now - err.timestamp;
-                (time_passed <= crate::ERROR_TIMEOUT).then_some(err.message.to_string())
+                (time_passed <= ERROR_TIMEOUT).then_some(err.message.to_string())
             })
             .collect()
     }
@@ -141,7 +139,7 @@ impl App {
     /// Renders the black tint on regions that are not selected
     fn render_shade(&self, frame: &mut canvas::Frame, bounds: Rectangle) {
         let Some(selection) = self.selection.map(Selection::norm) else {
-            frame.fill_rectangle(bounds.position(), bounds.size(), SHADE_COLOR);
+            frame.fill_rectangle(bounds.position(), bounds.size(), THEME.non_selected_region);
             return;
         };
 
@@ -159,7 +157,7 @@ impl App {
             p.move_to(selection.top_left());
         });
 
-        frame.fill(&outside, SHADE_COLOR);
+        frame.fill(&outside, THEME.non_selected_region);
     }
 
     /// Receives keybindings
@@ -170,27 +168,72 @@ impl App {
             (Key::Character(ch), Modifiers::CTRL) if ch == "c" => Some(Message::CopyToClipboard),
             (Key::Named(iced::keyboard::key::Named::Enter), _) => Some(Message::CopyToClipboard),
             (Key::Character(ch), Modifiers::CTRL) if ch == "s" => Some(Message::SaveScreenshot),
+            (Key::Named(iced::keyboard::key::Named::F11), _) => Some(Message::FullSelection),
             _ => None,
         }
     }
 
     /// Renders the app
-    pub fn view(&self) -> Element<Message> {
+    pub fn view(&self) -> iced::Element<Message> {
+        let icons = vec![
+            (
+                icon!(Fullscreen).on_press(Message::FullSelection).into(),
+                "Select entire monitor (F11)",
+            ),
+            (
+                icon!(Clipboard).on_press(Message::CopyToClipboard).into(),
+                "Copy to Clipboard (Enter)",
+            ),
+            (
+                icon!(Save).on_press(Message::SaveScreenshot).into(),
+                "Save Screenshot (Ctrl + S)",
+            ),
+            (icon!(Close).on_press(Message::Exit).into(), "Exit (Esc)"),
+        ];
+
         stack![
+            // the taken screenshot in the background
             BackgroundImage::new(self.screenshot.clone().into()),
+            // the border around the selection
             canvas(self).width(Length::Fill).height(Length::Fill),
         ]
+        .push_maybe(
+            // icons around the selection
+            self.selection.filter(|sel| sel.is_idle()).map(|sel| {
+                let (width, height, _) = self.screenshot.raw();
+                sel.render_icons(icons, width as f32, height as f32)
+            }),
+        )
+        .push_maybe(self.selection.get().map(|(sel, key)| {
+            let (image_width, image_height, _) = self.screenshot.raw();
+            crate::widgets::size_indicator(image_height, image_width, sel.norm().rect, key)
+        }))
         .into()
     }
 
     /// Modifies the app's state
-    ///
-    /// # Panics
-    ///
-    /// Will panic if `self.selection` is `None` when sending the `Message::InitialResize`
     #[expect(clippy::needless_pass_by_value, reason = "trait function")]
     pub fn update(&mut self, message: Message) -> Task<Message> {
         match message {
+            Message::ResizeVertically {
+                new_height,
+                sel_is_some,
+            } => {
+                let sel = self.selection.unlock(sel_is_some);
+                let dy = new_height as f32 - sel.rect.height;
+                sel.rect.height = new_height as f32;
+                sel.rect.y -= dy;
+            }
+            Message::ResizeHorizontally {
+                new_width,
+                sel_is_some,
+            } => {
+                let sel = self.selection.unlock(sel_is_some);
+                let dx = new_width as f32 - sel.rect.width;
+                sel.rect.width = new_width as f32;
+                sel.rect.x -= dx;
+            }
+            Message::NoOp => (),
             Message::Exit => return Self::exit(),
             Message::LeftMouseDown(cursor) => {
                 if let Some((cursor, side, rect)) = cursor.position().and_then(|cursor_pos| {
@@ -216,19 +259,14 @@ impl App {
                     selected_region.status = dragged;
                 } else if let Some(cursor_position) = cursor.position() {
                     // no region is selected, select the initial region
-                    self.create_selection_at(
-                        cursor_position,
-                        self.selection
-                            .map(|region| region.status)
-                            .unwrap_or_default(),
-                    );
+                    self.create_selection_at(cursor_position);
                 }
-            },
-            Message::LeftMouseUp => {
+            }
+            Message::EnterIdle => {
                 if let Some(selection) = self.selection.as_mut() {
                     selection.status = SelectionStatus::Idle;
                 }
-            },
+            }
             Message::MovingSelection {
                 current_cursor_pos,
                 initial_cursor_pos,
@@ -239,10 +277,10 @@ impl App {
                     Some(current_selection.with_pos(|_| {
                         initial_rect_pos + (current_cursor_pos - initial_cursor_pos)
                     }));
-            },
+            }
             Message::ExtendNewSelection(new_mouse_position) => {
                 self.update_selection(new_mouse_position);
-            },
+            }
             Message::CopyToClipboard => {
                 let Some(selection) = self.selection.map(Selection::norm) else {
                     self.error("There is no selection to copy");
@@ -279,13 +317,13 @@ impl App {
                         let _ = notify.show();
 
                         return Self::exit();
-                    },
+                    }
                     // TODO: show error to the user in a custom widget
                     Err(err) => {
                         self.error(format!("Could not copy the image: {err}"));
-                    },
+                    }
                 }
-            },
+            }
             Message::SaveScreenshot => {
                 let Some(selection) = self.selection.as_ref().map(|sel| Selection::norm(*sel))
                 else {
@@ -300,17 +338,15 @@ impl App {
                 let _ = SAVED_IMAGE.set(cropped_image);
 
                 return Self::exit();
-            },
+            }
             Message::InitialResize {
                 current_cursor_pos,
                 initial_cursor_pos,
                 resize_side,
                 initial_rect,
+                sel_is_some,
             } => {
-                let selected_region = self
-                    .selection
-                    .as_mut()
-                    .expect("is inside `.is_some_and` guard");
+                let selected_region = self.selection.unlock(sel_is_some);
 
                 let dy = current_cursor_pos.y - initial_cursor_pos.y;
                 let dx = current_cursor_pos.x - initial_cursor_pos.x;
@@ -333,18 +369,16 @@ impl App {
                     },
                     SideOrCorner::Corner(corner) => {
                         corner.resize_rect(initial_rect, current_cursor_pos, initial_cursor_pos)
-                    },
+                    }
                 }
-            },
+            }
             Message::ResizingToCursor {
                 cursor_pos,
                 selection,
+                sel_is_some,
             } => {
                 let (corner_point, corners) = selection.corners().nearest_corner(cursor_pos);
-                let sel = self
-                    .selection
-                    .as_mut()
-                    .expect("is inside of `.is_some_and()` guard");
+                let sel = self.selection.unlock(sel_is_some);
 
                 sel.rect = corners.resize_rect(selection.rect, cursor_pos, corner_point);
                 sel.status = SelectionStatus::Resized {
@@ -352,13 +386,9 @@ impl App {
                     initial_cursor_pos: cursor_pos,
                     resize_side: SideOrCorner::Corner(corners),
                 };
-            },
+            }
             Message::FullSelection => {
                 let (width, height, _) = self.screenshot.raw();
-                #[expect(
-                    clippy::cast_precision_loss,
-                    reason = "we cannot do anything about this; pixels in image are integers"
-                )]
                 {
                     self.selection = Some(Selection::new(Point { x: 0.0, y: 0.0 }).with_size(
                         |_| Size {
@@ -367,7 +397,7 @@ impl App {
                         },
                     ));
                 }
-            },
+            }
         }
 
         ().into()
@@ -393,15 +423,11 @@ impl App {
     }
 
     /// Create an empty selection at the current position
-    pub fn create_selection_at(
-        &mut self,
-        create_selection_at: Point,
-        moving_selection: SelectionStatus,
-    ) {
+    pub fn create_selection_at(&mut self, create_selection_at: Point) {
         let mut selection = Selection::new(create_selection_at);
-        selection.status = moving_selection;
+        selection.status = SelectionStatus::Create;
         self.selections_created += 1;
-        self.selection = Some(Selection::new(create_selection_at));
+        self.selection = Some(selection);
     }
 
     /// Computes a new selection based on the current position
@@ -423,7 +449,7 @@ impl App {
             let width = other.x - selected_region.rect.x;
             let height = other.y - selected_region.rect.y;
 
-            Selection::default()
+            selected_region
                 .with_pos(|_| selected_region.pos())
                 .with_size(|_| Size { width, height })
         });
@@ -446,8 +472,8 @@ impl canvas::Program<Message> for App {
         self.render_shade(&mut frame, bounds);
 
         if let Some(selection) = self.selection.map(Selection::norm) {
-            selection.render_border(&mut frame);
-            selection.corners().render_circles(&mut frame);
+            selection.render_border(&mut frame, THEME.accent);
+            selection.corners().render_circles(&mut frame, THEME.accent);
         }
 
         vec![frame.into_geometry()]
@@ -503,14 +529,15 @@ impl canvas::Program<Message> for App {
             Mouse(mouse::Event::ButtonPressed(mouse::Button::Left)) => {
                 state.left_click();
                 Message::LeftMouseDown(cursor)
-            },
+            }
             Mouse(mouse::Event::ButtonPressed(mouse::Button::Right)) => {
                 state.right_click();
                 if let Some(cursor) = cursor.position() {
-                    if let Some(selection) = self.selection {
+                    if let Some((selection, sel_is_some)) = self.selection.get() {
                         Message::ResizingToCursor {
                             cursor_pos: cursor,
                             selection: selection.norm(),
+                            sel_is_some,
                         }
                     } else {
                         return None;
@@ -518,76 +545,57 @@ impl canvas::Program<Message> for App {
                 } else {
                     return None;
                 }
-            },
+            }
             Mouse(mouse::Event::ButtonReleased(mouse::Button::Right)) => {
                 state.right_release();
-                return None;
-            },
+                Message::EnterIdle
+            }
             Mouse(mouse::Event::ButtonReleased(mouse::Button::Left)) => {
                 state.left_release();
-                if self.config.instant && self.selections_created == 1 {
+                if CONFIG.instant && self.selections_created == 1 {
                     Message::CopyToClipboard
                 } else {
-                    Message::LeftMouseUp
+                    Message::EnterIdle
                 }
-            },
+            }
             Mouse(mouse::Event::CursorMoved { position })
-                if state.is_left_clicked()
-                    && self
-                        .selection
-                        .is_some_and(super::selection::Selection::is_resized) =>
+                if self.selection.is_some_and(Selection::is_resized) =>
             {
+                // FIXME: this will not be necessary when we have `let_chains`
+                let (selection, sel_is_some) =
+                    self.selection.get().expect("has `.is_some_and()` guard");
+
                 // FIXME: this will not be necessary when we have `let_chains`
                 let SelectionStatus::Resized {
                     resize_side,
                     initial_rect,
                     initial_cursor_pos,
-                } = self.selection.expect("has `.is_some()` guard").status
+                } = selection.status
                 else {
-                    unreachable!();
+                    unreachable!("has `.is_some_and(is_resized)` guard");
                 };
+
                 Message::InitialResize {
                     current_cursor_pos: *position,
                     resize_side,
                     initial_cursor_pos,
                     initial_rect,
+                    sel_is_some,
                 }
-            },
-            Mouse(mouse::Event::CursorMoved { position })
-                if state.is_right_clicked()
-                    && state.is_left_released()
-                    && self
-                        .selection
-                        .is_some_and(super::selection::Selection::is_resized) =>
-            {
-                // FIXME: this will not be necessary when we have `let_chains`
-                let SelectionStatus::Resized {
-                    resize_side,
-                    initial_rect,
-                    initial_cursor_pos,
-                } = self.selection.expect("has `.is_some()` guard").status
-                else {
-                    unreachable!();
-                };
-                Message::InitialResize {
-                    current_cursor_pos: *position,
-                    resize_side,
-                    initial_cursor_pos,
-                    initial_rect,
-                }
-            },
+            }
             Mouse(mouse::Event::CursorMoved { position })
                 if state.is_left_clicked()
                     && state.is_right_released()
-                    && self
-                        .selection
-                        .is_some_and(super::selection::Selection::is_dragged) =>
+                    && self.selection.is_some_and(Selection::is_dragged) =>
             {
+                // FIXME: this will not be necessary when we have `let_chains`
+                let current_selection = self.selection.expect("has `.is_some_and()` guard");
+
                 // FIXME: this will not be necessary when we have `let_chains`
                 let SelectionStatus::Dragged {
                     initial_rect_pos,
                     initial_cursor_pos,
-                } = self.selection.expect("has `.is_some()` guard").status
+                } = current_selection.status
                 else {
                     unreachable!();
                 };
@@ -595,19 +603,19 @@ impl canvas::Program<Message> for App {
                 Message::MovingSelection {
                     current_cursor_pos: *position,
                     initial_cursor_pos,
-                    current_selection: self.selection.expect("has `.is_some()` guard"),
+                    current_selection,
                     initial_rect_pos,
                 }
-            },
+            }
             Mouse(mouse::Event::CursorMoved { position })
                 if state.is_left_clicked()
                     && state.is_right_released()
                     && self
                         .selection
-                        .is_some_and(super::selection::Selection::is_idle) =>
+                        .is_some_and(|sel| sel.is_idle() || sel.is_create()) =>
             {
                 Message::ExtendNewSelection(*position)
-            },
+            }
             Mouse(mouse::Event::ButtonPressed(mouse::Button::Middle)) => Message::FullSelection,
             _ => return None,
         };

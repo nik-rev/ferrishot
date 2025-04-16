@@ -1,34 +1,40 @@
 //! The ferrishot app
 
+use iced::Element;
+
+/// An extension trait to show a red border around an element and all children
+pub trait Explainer<'a, M> {
+    /// Shows red border around an element and all of its children
+    fn explain(self) -> Element<'a, M>;
+}
+
+impl<'a, M: 'a, E> Explainer<'a, M> for E
+where
+    E: Into<Element<'a, M>>,
+{
+    fn explain(self) -> Element<'a, M> {
+        self.into().explain(iced::Color::from_rgb8(255, 0, 0))
+    }
+}
+
 mod app;
 mod background_image;
 mod clipboard;
 mod config;
+mod constants;
 mod corners;
-mod logging;
+mod icons;
 mod message;
 mod mouse;
 mod rectangle;
 mod screenshot;
 mod selection;
-
-/// When there is an error, display it for this amount of time
-const ERROR_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(5);
-/// Radius of the 4 corners of the selection
-const CORNER_RADIUS: f32 = 6.0;
-/// Color of the selection stroke and corners
-const SELECTION_COLOR: iced::Color = iced::Color::WHITE;
-/// The area around each side which allows that side to be hovered over and
-/// resized
-const INTERACTION_AREA: f32 = 30.0;
-/// The size of the border of the square
-const STROKE_SIZE: f32 = 2.0;
-/// The color of the background for non-selected regions
-const SHADE_COLOR: iced::Color = iced::color!(0x00_00_00, 0.15);
+mod theme;
+mod widgets;
 
 #[cfg(target_os = "linux")]
 pub use clipboard::{CLIPBOARD_DAEMON_ID, run_clipboard_daemon};
 
 pub use app::App;
 pub use app::SAVED_IMAGE;
-pub use logging::initialize_logging;
+pub use config::CONFIG;
