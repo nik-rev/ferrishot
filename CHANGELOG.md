@@ -2,11 +2,13 @@
 
 - Right-click will snap the closest corner to the current cursor position
 - There are now buttons available for these actions:
-  - Copy to Clipboard (Enter)
-  - Select entire monitor (F11)
-  - Save Screenshot (Ctrl + S)
-  - Exit (Esc)
+  - `Enter`: Copy to Clipboard
+  - `F11`: Select entire monitor
+  - `Ctrl + S`: Save Screenshot
+  - `Esc`: Exit
 - Added an indicator for the width and height of selection in the bottom right corner. This indicator can be edited to set the selection to a concrete size!
+- Holding `Shift` while resizing or moving the selection will now do it 10 times slower, to allow being very accurate.
+- Improved security as per review: <https://www.reddit.com/r/rust/comments/1jxwd86/comment/mmvfzhy/?utm_source=share&utm_medium=web3x&utm_name=web3xcss&utm_term=1&utm_content=share_button>
 
 # v0.1.0 - 12 April 2025
 
