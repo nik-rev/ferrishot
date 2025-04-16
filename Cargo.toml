@@ -59,7 +59,6 @@ cast_possible_truncation = "allow"
 cast_precision_loss = "allow"
 
 allow_attributes_without_reason = "warn"
-ignore_without_reason = "warn"
 allow_attributes = "warn"
 unwrap_used = "warn"
 missing_assert_message = "warn"
