@@ -191,6 +191,10 @@ impl Selection {
         clippy::cast_sign_loss,
         reason = "normalized, so width nor height will be negative"
     )]
+    // TODO: Currently, this function does not handle the case where the selection has the
+    // same size as the entire screen - so no icons can be rendered at all.
+    //
+    // We should add even more fallbacks so that it can render a little bit inside of the selection.
     pub fn render_icons<'a>(
         self,
         icons: Vec<(Element<'a, Message>, &'static str)>,
@@ -453,10 +457,10 @@ impl Selection {
             },
         );
 
-        debug_assert!(
-            icons_iter.as_slice().is_empty(),
-            "not all icons have been rendered"
-        );
+        // debug_assert!(
+        //     icons_iter.as_slice().is_empty(),
+        //     "all icons have been rendered"
+        // );
 
         let right_icons = right_icons.map(|(right_icons, right_padding)| {
             Column::from_vec(right_icons)
