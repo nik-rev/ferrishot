@@ -138,7 +138,7 @@ theme! {
     /// First shadow to draw (stronger, but smaller)
     drop_shadow = color!(0x00_00_00, 0.5),
     /// Color of the background outside of the selection
-    non_selected_region = color!(0x00_00_00, 0.4),
+    non_selected_region = color!(0x00_00_00, 0.5),
     /// Color of the background
     bg = color!(0x_00_00_00),
     /// Color of text

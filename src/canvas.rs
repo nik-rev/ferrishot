@@ -59,6 +59,8 @@ impl canvas::Program<Message> for App {
                 // corner = we should have horizontal resize cursor.
                 (if let SelectionStatus::Resize { resize_side, .. } = sel.status {
                     Some(resize_side.mouse_icon())
+                } else if sel.status.is_move() {
+                    Some(Interaction::Grabbing)
                 } else {
                     None
                 })
@@ -71,9 +73,7 @@ impl canvas::Program<Message> for App {
                 })
             })
             .unwrap_or_else(|| {
-                if self.selection.is_some_and(Selection::is_move) {
-                    Interaction::Grabbing
-                } else if self.cursor_in_selection(cursor).is_some() {
+                if self.cursor_in_selection(cursor).is_some() {
                     Interaction::Grab
                 } else {
                     Interaction::Crosshair
@@ -152,7 +152,7 @@ impl canvas::Program<Message> for App {
                 if self.selection.is_some_and(Selection::is_move) =>
             {
                 // FIXME: this will not be necessary when we have `let_chains`
-                let current_selection = self.selection.expect("has `.is_some_and()` guard");
+                let current_selection = self.selection.expect("has `.is_some_and()` guard").norm();
 
                 // FIXME: this will not be necessary when we have `let_chains`
                 let SelectionStatus::Move {

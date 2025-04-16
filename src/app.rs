@@ -183,12 +183,11 @@ impl App {
         .style(|_| iced::widget::container::Style {
             text_color: Some(THEME.fg_on_accent_bg),
             background: Some(Background::Color(THEME.accent.scale_alpha(0.95))),
-            border: iced::Border::default(),
-            shadow: iced::Shadow {
-                color: Color::WHITE,
-                offset: iced::Vector::default(),
-                blur_radius: 6.0,
-            },
+            border: iced::Border::default()
+                .color(Color::WHITE)
+                .rounded(6.0)
+                .width(1.5),
+            shadow: iced::Shadow::default(),
         });
 
         column![vertical_space, row![horizontal_space, stuff]].into()
@@ -240,7 +239,7 @@ impl App {
                 } else if let Some((cursor, selected_region)) = self.cursor_in_selection_mut(cursor)
                 {
                     let dragged = SelectionStatus::Move {
-                        initial_rect_pos: selected_region.pos(),
+                        initial_rect_pos: selected_region.norm().pos(),
                         initial_cursor_pos: cursor,
                     };
                     selected_region.status = dragged;
@@ -260,10 +259,35 @@ impl App {
                 current_selection,
                 initial_rect_pos,
             } => {
-                self.selection =
-                    Some(current_selection.with_pos(|_| {
-                        initial_rect_pos + (current_cursor_pos - initial_cursor_pos)
-                    }));
+                let (image_width, image_height, _) = self.screenshot.raw();
+                let mut new_selection = current_selection
+                    .with_pos(|_| initial_rect_pos + (current_cursor_pos - initial_cursor_pos));
+
+                let old_x = new_selection.rect.x as u32;
+                let old_y = new_selection.rect.y as u32;
+
+                // if any of these actually get changed we are going to set the new selection status.
+
+                new_selection.rect.x = new_selection
+                    .rect
+                    .x
+                    .min(image_width as f32 - new_selection.rect.width)
+                    .max(0.0);
+
+                new_selection.rect.y = new_selection
+                    .rect
+                    .y
+                    .min(image_height as f32 - new_selection.rect.height)
+                    .max(0.0);
+
+                if new_selection.rect.y as u32 != old_y || new_selection.rect.x as u32 != old_x {
+                    new_selection.status = SelectionStatus::Move {
+                        initial_rect_pos: new_selection.pos(),
+                        initial_cursor_pos: current_cursor_pos,
+                    }
+                }
+
+                self.selection = Some(new_selection);
             }
             Message::ExtendNewSelection(new_mouse_position) => {
                 self.update_selection(new_mouse_position);
