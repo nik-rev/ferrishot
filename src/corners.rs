@@ -1,10 +1,7 @@
 //! `Corners` represents the 4 vertices of a `iced::Rectangle`
 use iced::{Point, Rectangle, mouse};
 
-use crate::{
-    constants::{FRAME_CIRCLE_RADIUS, FRAME_INTERACTION_AREA},
-    rectangle::RectangleExt as _,
-};
+use crate::rectangle::RectangleExt as _;
 
 /// Corner of a rectangle
 #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
@@ -137,6 +134,9 @@ impl Corners {
         frame: &mut iced::widget::canvas::Frame,
         accent_color: iced::Color,
     ) {
+        /// Radius of each of the 4 corner circles in the frame drawn around the selection
+        const FRAME_CIRCLE_RADIUS: f32 = 6.0;
+
         for circle in [
             self.top_left,
             self.top_right,
@@ -151,6 +151,9 @@ impl Corners {
 
     /// Return the interaction side for a point, if exists
     pub fn side_at(&self, point: Point) -> Option<SideOrCorner> {
+        /// Shadow to apply to elements
+        /// The area around each side of the frame which allows that side to be hovered over and resized
+        pub const FRAME_INTERACTION_AREA: f32 = 30.0;
         let top = Rectangle {
             x: self.top_left.x,
             y: self.top_left.y - FRAME_INTERACTION_AREA / 2.,

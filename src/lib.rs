@@ -19,13 +19,12 @@ where
 
 mod app;
 mod background_image;
+mod canvas;
 mod clipboard;
 mod config;
-mod constants;
 mod corners;
 mod icons;
 mod message;
-mod mouse;
 mod rectangle;
 mod screenshot;
 mod selection;

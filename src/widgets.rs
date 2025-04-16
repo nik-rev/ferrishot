@@ -5,9 +5,8 @@ use iced::{
 };
 
 use crate::{
-    constants::{ICON_BUTTON_SIZE, ICON_SIZE},
     rectangle::RectangleExt as _,
-    selection::selection_lock::SelectionIsSome,
+    selection::{ICON_BUTTON_SIZE, selection_lock::SelectionIsSome},
     theme::THEME,
 };
 
@@ -114,6 +113,9 @@ pub fn icon_tooltip<'a, Message>(
 
 /// Styled icon as a button
 pub fn icon<'a, Message>(icon: crate::icons::Icon) -> widget::Button<'a, Message> {
+    /// Width and height for icons *inside* of buttons
+    const ICON_SIZE: f32 = 32.0;
+
     widget::button(
         widget::Svg::new(icon.svg())
             .style(|_, _| widget::svg::Style {
