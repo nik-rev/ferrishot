@@ -550,9 +550,7 @@ impl App {
             let width = other.x - selected_region.rect.x;
             let height = other.y - selected_region.rect.y;
 
-            selected_region
-                .with_pos(|_| selected_region.pos())
-                .with_size(|_| Size { width, height })
+            selected_region.with_size(|_| Size { width, height })
         });
     }
 

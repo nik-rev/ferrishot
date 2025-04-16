@@ -4,7 +4,7 @@ use iced::{Point, Rectangle, mouse::Cursor};
 
 use crate::{
     corners::SideOrCorner,
-    selection::{Selection, selection_lock::SelectionIsSome},
+    selection::{Selection, Speed, selection_lock::SelectionIsSome},
 };
 
 /// Represents an action happening in the application
