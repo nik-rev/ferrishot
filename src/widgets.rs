@@ -83,7 +83,9 @@ pub fn size_indicator<'a>(
             sel_is_some,
         }
     });
-    let x = iced::widget::text("x ").color(THEME.fg);
+    let x = iced::widget::text("✕ ")
+        .color(THEME.fg)
+        .shaping(widget::text::Shaping::Advanced);
     let space = iced::widget::text(" ");
     let c = widget::container(row![space, width, x, height]).style(|_| widget::container::Style {
         text_color: None,

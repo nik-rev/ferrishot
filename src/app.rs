@@ -10,7 +10,7 @@ use crate::theme::THEME;
 use iced::keyboard::{Key, Modifiers};
 use iced::mouse::Cursor;
 use iced::widget::canvas::Path;
-use iced::widget::{Stack, canvas};
+use iced::widget::{Space, Stack, canvas, column, row};
 use iced::{Length, Point, Rectangle, Size, Task};
 
 use crate::background_image::BackgroundImage;
@@ -112,7 +112,19 @@ impl App {
             // border around the selection
             .push(canvas(self).width(Length::Fill).height(Length::Fill))
             // information popup, when there is no selection
-            // .push_maybe(self.selection.is_none().then(|| stack![]))
+            .push_maybe(self.selection.is_none().then(|| {
+                const WIDTH: u32 = 600;
+                const HEIGHT: u32 = 400;
+
+                let (width, height, _) = self.screenshot.raw();
+                let vertical_space = Space::with_height(height / 2 - HEIGHT / 2);
+                let horizontal_space = Space::with_width(width / 2 - WIDTH / 2);
+
+                // use iced::widget::text;
+                // text("lol").shaping(shaping)
+
+                column![vertical_space, row![horizontal_space]]
+            }))
             // icons
             .push_maybe(
                 // icons around the selection
