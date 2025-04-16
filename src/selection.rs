@@ -274,7 +274,7 @@ impl Selection {
 
         let icons = vec![
             (
-                icon!(Fullscreen).on_press(Message::FullSelection).into(),
+                icon!(Fullscreen).on_press(Message::SelectFullScreen).into(),
                 "Select entire monitor (F11)",
             ),
             (

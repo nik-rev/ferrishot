@@ -206,7 +206,7 @@ impl App {
                     selection.status = SelectionStatus::Idle;
                 }
             }
-            Message::MovingSelection {
+            Message::MoveSelection {
                 current_cursor_pos,
                 initial_cursor_pos,
                 current_selection,
@@ -248,7 +248,7 @@ impl App {
             Message::CopyToClipboard => {
                 let Some(selection) = self.selection.map(Selection::norm) else {
                     self.error("There is no selection to copy");
-                    return ().into();
+                    return Task::none();
                 };
 
                 let (width, height, pixels) = self.screenshot.raw();
@@ -291,7 +291,7 @@ impl App {
                 let Some(selection) = self.selection.as_ref().map(|sel| Selection::norm(*sel))
                 else {
                     self.error("Selection does not exist. There is nothing to copy!");
-                    return ().into();
+                    return Task::none();
                 };
 
                 let (width, height, pixels) = self.screenshot.raw();
@@ -301,17 +301,21 @@ impl App {
 
                 return Self::exit();
             }
-            Message::InitialResize {
+            Message::Resize {
                 current_cursor_pos,
                 initial_cursor_pos,
                 resize_side,
                 initial_rect,
                 sel_is_some,
+                speed,
             } => {
                 let selected_region = self.selection.unlock(sel_is_some);
 
-                let dy = current_cursor_pos.y - initial_cursor_pos.y;
-                let dx = current_cursor_pos.x - initial_cursor_pos.x;
+                println!("IN resize:");
+                dbg!(selected_region.rect.width, initial_rect.width);
+
+                let dy = (current_cursor_pos.y - initial_cursor_pos.y) * speed;
+                let dx = (current_cursor_pos.x - initial_cursor_pos.x) * speed;
 
                 // To give a perspective on this math, imagine that our cursor is at the top left corner
                 // and travelling diagonally down, from point (700, 700) -> (800, 800).
@@ -332,9 +336,12 @@ impl App {
                     SideOrCorner::Corner(corner) => {
                         corner.resize_rect(initial_rect, current_cursor_pos, initial_cursor_pos)
                     }
-                }
+                };
+
+                dbg!(selected_region.rect.width);
+                println!("OUT resize:");
             }
-            Message::ResizingToCursor {
+            Message::ResizeToCursor {
                 cursor_pos,
                 selection,
                 sel_is_some,
@@ -349,7 +356,7 @@ impl App {
                     resize_side: SideOrCorner::Corner(corners),
                 };
             }
-            Message::FullSelection => {
+            Message::SelectFullScreen => {
                 let (width, height, _) = self.screenshot.raw();
                 {
                     self.selection = Some(Selection::new(Point { x: 0.0, y: 0.0 }).with_size(
@@ -362,7 +369,7 @@ impl App {
             }
         }
 
-        ().into()
+        Task::none()
     }
 
     /// Renders the black tint on regions that are not selected
@@ -490,7 +497,7 @@ impl App {
             (Key::Character(ch), Modifiers::CTRL) if ch == "c" => Some(Message::CopyToClipboard),
             (Key::Named(iced::keyboard::key::Named::Enter), _) => Some(Message::CopyToClipboard),
             (Key::Character(ch), Modifiers::CTRL) if ch == "s" => Some(Message::SaveScreenshot),
-            (Key::Named(iced::keyboard::key::Named::F11), _) => Some(Message::FullSelection),
+            (Key::Named(iced::keyboard::key::Named::F11), _) => Some(Message::SelectFullScreen),
             _ => None,
         }
     }
