@@ -202,6 +202,13 @@ impl App {
                 sel_is_some,
             } => {
                 let sel = self.selection.unlock(sel_is_some);
+
+                // what is the minimum value for `new_height` that would make
+                // this overflow vertically?
+                // We want to make sure the selection cannot get bigger than that.
+                let new_height =
+                    new_height.min((sel.norm().rect.y + sel.norm().rect.height) as u32);
+
                 let dy = new_height as f32 - sel.norm().rect.height;
                 *sel = sel
                     .norm()
@@ -213,6 +220,12 @@ impl App {
                 sel_is_some,
             } => {
                 let sel = self.selection.unlock(sel_is_some);
+
+                // what is the minimum value for `new_width` that would make
+                // this overflow vertically?
+                // We want to make sure the selection cannot get bigger than that.
+                let new_width = new_width.min((sel.norm().rect.x + sel.norm().rect.width) as u32);
+
                 let dx = new_width as f32 - sel.norm().rect.width;
                 *sel = sel
                     .norm()
