@@ -202,7 +202,7 @@ impl App {
                 sel_is_some,
             } => {
                 let sel = self.selection.unlock(sel_is_some);
-                let dy = new_height as f32 - sel.rect.height;
+                let dy = new_height as f32 - sel.norm().rect.height;
                 *sel = sel
                     .norm()
                     .with_height(|_| new_height as f32)
@@ -213,7 +213,7 @@ impl App {
                 sel_is_some,
             } => {
                 let sel = self.selection.unlock(sel_is_some);
-                let dx = new_width as f32 - sel.rect.width;
+                let dx = new_width as f32 - sel.norm().rect.width;
                 *sel = sel
                     .norm()
                     .with_width(|_| new_width as f32)
