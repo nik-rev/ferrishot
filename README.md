@@ -30,7 +30,7 @@ This project is under heavy development, and we have a lot of plans. A list of p
 
 ## Showcase
 
-<https://github.com/user-attachments/assets/a7a69202-597b-4f25-816f-f84ce85c6313>
+<https://github.com/user-attachments/assets/ebbbfe85-b81e-4f26-9453-545dd1b2ce38>
 
 ## Platform Support
 
