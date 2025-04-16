@@ -21,7 +21,6 @@ pub fn size_indicator<'a>(
 ) -> Element<'a, Message> {
     fn dimension_indicator<'a>(
         value: u32,
-        max: u32,
         on_change: impl Fn(u32) -> Message + 'a,
     ) -> widget::TextInput<'a, Message> {
         let content = value.to_string();
@@ -35,10 +34,7 @@ pub fn size_indicator<'a>(
                 if s.is_empty() {
                     on_change(0)
                 } else {
-                    s.parse::<u32>()
-                        .ok()
-                        .filter(|x| *x <= max)
-                        .map_or(Message::NoOp, &on_change)
+                    s.parse::<u32>().ok().map_or(Message::NoOp, &on_change)
                 }
             })
             .style(|_, _| widget::text_input::Style {
@@ -71,13 +67,13 @@ pub fn size_indicator<'a>(
     let horizontal_space = Space::with_width(x_offset);
     let vertical_space = Space::with_height(y_offset);
 
-    let width = dimension_indicator(rect.width as u32, image_width, move |new_width| {
+    let width = dimension_indicator(rect.width as u32, move |new_width| {
         Message::ResizeHorizontally {
             new_width,
             sel_is_some,
         }
     });
-    let height = dimension_indicator(rect.height as u32, image_height, move |new_height| {
+    let height = dimension_indicator(rect.height as u32, move |new_height| {
         Message::ResizeVertically {
             new_height,
             sel_is_some,

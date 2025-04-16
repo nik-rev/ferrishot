@@ -1,6 +1,6 @@
 //! The canvas handles drawing the selection frame
 use iced::{
-    Rectangle, Renderer, Theme,
+    Point, Rectangle, Renderer, Theme,
     mouse::{self, Interaction},
     widget::{self, Action, canvas},
 };
@@ -12,6 +12,8 @@ pub struct MouseState {
     is_left_down: bool,
     /// Left mouse click is currently being held down
     is_right_down: bool,
+    /// Shift key is currently being held down
+    is_shift_down: bool,
 }
 
 use crate::{
@@ -54,25 +56,26 @@ impl canvas::Program<Message> for App {
         self.selection
             // mouse button for resizing the selection
             .and_then(|sel| {
-                // when we started dragging a side, even if we go outside of the bounds of that side (which
-                // happens often when we are dragging the mouse fast), we don't want the cursor to change
-                cursor
-                    .position()
-                    .and_then(|cursor| sel.corners().side_at(cursor).map(SideOrCorner::mouse_icon))
-                    // for example, if we start dragging top right corner, and move mouse to the
-                    // top left corner, we want the cursor to switch appropriately
-                    .or_else(|| {
-                        if let SelectionStatus::Resize { resize_side, .. } = sel.status {
-                            Some(resize_side.mouse_icon())
-                        } else {
-                            None
-                        }
+                // if we are already resizing, then this cursor takes priority
+                // e.g. we are resizing horizontally but we are on the top left
+                // corner = we should have horizontal resize cursor.
+                (if let SelectionStatus::Resize { resize_side, .. } = sel.status {
+                    Some(resize_side.mouse_icon())
+                } else if sel.status.is_move() {
+                    Some(Interaction::Grabbing)
+                } else {
+                    None
+                })
+                .or_else(|| {
+                    // when we started dragging a side, even if we go outside of the bounds of that side (which
+                    // happens often when we are dragging the mouse fast), we don't want the cursor to change
+                    cursor.position().and_then(|cursor| {
+                        sel.corners().side_at(cursor).map(SideOrCorner::mouse_icon)
                     })
+                })
             })
             .unwrap_or_else(|| {
-                if self.selection.is_some_and(Selection::is_move) {
-                    Interaction::Grabbing
-                } else if self.cursor_in_selection(cursor).is_some() {
+                if self.cursor_in_selection(cursor).is_some() {
                     Interaction::Grab
                 } else {
                     Interaction::Crosshair
@@ -87,7 +90,8 @@ impl canvas::Program<Message> for App {
         _bounds: Rectangle,
         cursor: iced::advanced::mouse::Cursor,
     ) -> Option<widget::Action<Message>> {
-        use iced::Event::Mouse;
+        use iced::Event::{Keyboard, Mouse};
+        use iced::keyboard;
 
         let message = match event {
             Mouse(mouse::Event::ButtonPressed(mouse::Button::Left)) => {
@@ -98,7 +102,7 @@ impl canvas::Program<Message> for App {
                 state.is_right_down = true;
                 if let Some(cursor) = cursor.position() {
                     if let Some((selection, sel_is_some)) = self.selection.get() {
-                        Message::ResizingToCursor {
+                        Message::ResizeToCursor {
                             cursor_pos: cursor,
                             selection: selection.norm(),
                             sel_is_some,
@@ -122,6 +126,41 @@ impl canvas::Program<Message> for App {
                     Message::EnterIdle
                 }
             }
+            Keyboard(keyboard::Event::KeyPressed { key, .. })
+                if *key == keyboard::Key::Named(keyboard::key::Named::Shift) =>
+            {
+                state.is_shift_down = true;
+
+                // If we are already resizing a side, and we press shift, we
+                // want to act as if we just started resizing from this point again
+                // so we do not get a surprising jump
+                if let Some((selection, sel_is_some)) = self.selection.get() {
+                    cursor
+                        .position()
+                        .map_or(Message::NoOp, |current_cursor_pos| {
+                            if let SelectionStatus::Resize { resize_side, .. } = selection.status {
+                                Message::Resize {
+                                    current_cursor_pos,
+                                    resize_side,
+                                    initial_cursor_pos: current_cursor_pos,
+                                    initial_rect: selection.rect,
+                                    sel_is_some,
+                                    speed: 0.1,
+                                }
+                            } else {
+                                Message::NoOp
+                            }
+                        })
+                } else {
+                    Message::NoOp
+                }
+            }
+            Keyboard(keyboard::Event::KeyReleased { key, .. })
+                if *key == keyboard::Key::Named(keyboard::key::Named::Shift) =>
+            {
+                state.is_shift_down = false;
+                Message::NoOp
+            }
             Mouse(mouse::Event::CursorMoved { position })
                 if self.selection.is_some_and(Selection::is_resize) =>
             {
@@ -139,19 +178,25 @@ impl canvas::Program<Message> for App {
                     unreachable!("has `.is_some_and(is_resized)` guard");
                 };
 
-                Message::InitialResize {
+                println!("IN SEND: ");
+                dbg!(initial_rect.width);
+
+                let speed = if state.is_shift_down { 0.1 } else { 1.0 };
+
+                Message::Resize {
                     current_cursor_pos: *position,
                     resize_side,
                     initial_cursor_pos,
                     initial_rect,
                     sel_is_some,
+                    speed,
                 }
             }
             Mouse(mouse::Event::CursorMoved { position })
                 if self.selection.is_some_and(Selection::is_move) =>
             {
                 // FIXME: this will not be necessary when we have `let_chains`
-                let current_selection = self.selection.expect("has `.is_some_and()` guard");
+                let current_selection = self.selection.expect("has `.is_some_and()` guard").norm();
 
                 // FIXME: this will not be necessary when we have `let_chains`
                 let SelectionStatus::Move {
@@ -162,7 +207,7 @@ impl canvas::Program<Message> for App {
                     unreachable!();
                 };
 
-                Message::MovingSelection {
+                Message::MoveSelection {
                     current_cursor_pos: *position,
                     initial_cursor_pos,
                     current_selection,
@@ -174,7 +219,7 @@ impl canvas::Program<Message> for App {
             {
                 Message::ExtendNewSelection(*position)
             }
-            Mouse(mouse::Event::ButtonPressed(mouse::Button::Middle)) => Message::FullSelection,
+            Mouse(mouse::Event::ButtonPressed(mouse::Button::Middle)) => Message::SelectFullScreen,
             _ => return None,
         };
 

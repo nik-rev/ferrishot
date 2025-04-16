@@ -48,7 +48,7 @@ fn main() {
             ),
             ..Default::default()
         })
-        .subscription(|_state| iced::keyboard::on_key_press(App::handle_key_press))
+        .subscription(|_| iced::keyboard::on_key_press(App::handle_key_press))
         .title("ferrishot")
         .default_font(Font::MONOSPACE)
         .run()

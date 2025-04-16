@@ -12,7 +12,7 @@ use iced::keyboard::{Key, Modifiers};
 use iced::mouse::Cursor;
 use iced::widget::canvas::Path;
 use iced::widget::text::Shaping;
-use iced::widget::{canvas, column, row, Space, Stack};
+use iced::widget::{self, Column, Space, Stack, canvas, column, container, row};
 use iced::{Background, Color, Element, Font, Length, Point, Rectangle, Size, Task};
 
 use crate::background_image::BackgroundImage;
@@ -119,20 +119,281 @@ impl App {
                     .is_none()
                     .then(|| self.render_welcome_message()),
             )
-            // icons
-            .push_maybe(
-                // icons around the selection
-                self.selection.filter(|sel| sel.is_idle()).map(|sel| {
-                    let (image_width, image_height, _) = self.screenshot.raw();
-                    sel.render_icons(image_width as f32, image_height as f32)
-                }),
-            )
+            .push(self.render_errors())
+            // icons around the selection
+            .push_maybe(self.selection.filter(|sel| sel.is_idle()).map(|sel| {
+                let (image_width, image_height, _) = self.screenshot.raw();
+                sel.render_icons(image_width as f32, image_height as f32)
+            }))
             // size indicator
             .push_maybe(self.selection.get().map(|(sel, key)| {
                 let (image_width, image_height, _) = self.screenshot.raw();
                 crate::widgets::size_indicator(image_height, image_width, sel.norm().rect, key)
             }))
             .into()
+    }
+
+    /// Modifies the app's state
+    #[expect(clippy::needless_pass_by_value, reason = "trait function")]
+    pub fn update(&mut self, message: Message) -> Task<Message> {
+        match message {
+            Message::ResizeVertically {
+                new_height,
+                sel_is_some,
+            } => {
+                let sel = self.selection.unlock(sel_is_some);
+
+                // what is the minimum value for `new_height` that would make
+                // this overflow vertically?
+                // We want to make sure the selection cannot get bigger than that.
+                let new_height =
+                    new_height.min((sel.norm().rect.y + sel.norm().rect.height) as u32);
+
+                let dy = new_height as f32 - sel.norm().rect.height;
+                *sel = sel
+                    .norm()
+                    .with_height(|_| new_height as f32)
+                    .with_y(|y| y - dy);
+            }
+            Message::ResizeHorizontally {
+                new_width,
+                sel_is_some,
+            } => {
+                let sel = self.selection.unlock(sel_is_some);
+
+                // what is the minimum value for `new_width` that would make
+                // this overflow vertically?
+                // We want to make sure the selection cannot get bigger than that.
+                let new_width = new_width.min((sel.norm().rect.x + sel.norm().rect.width) as u32);
+
+                let dx = new_width as f32 - sel.norm().rect.width;
+                *sel = sel
+                    .norm()
+                    .with_width(|_| new_width as f32)
+                    .with_x(|x| x - dx);
+            }
+            Message::NoOp => (),
+            Message::Exit => return Self::exit(),
+            Message::LeftMouseDown(cursor) => {
+                if let Some((cursor, side, rect)) = cursor.position().and_then(|cursor_pos| {
+                    self.selection.as_mut().and_then(|selected_region| {
+                        selected_region
+                            .corners()
+                            .side_at(cursor_pos)
+                            .map(|l| (cursor_pos, l, selected_region))
+                    })
+                }) {
+                    let resized = SelectionStatus::Resize {
+                        initial_rect: rect.norm().rect,
+                        initial_cursor_pos: cursor,
+                        resize_side: side,
+                    };
+                    rect.status = resized;
+                } else if let Some((cursor, selected_region)) = self.cursor_in_selection_mut(cursor)
+                {
+                    let dragged = SelectionStatus::Move {
+                        initial_rect_pos: selected_region.norm().pos(),
+                        initial_cursor_pos: cursor,
+                    };
+                    selected_region.status = dragged;
+                } else if let Some(cursor_position) = cursor.position() {
+                    // no region is selected, select the initial region
+                    self.create_selection_at(cursor_position);
+                }
+            }
+            Message::EnterIdle => {
+                if let Some(selection) = self.selection.as_mut() {
+                    selection.status = SelectionStatus::Idle;
+                }
+            }
+            Message::MoveSelection {
+                current_cursor_pos,
+                initial_cursor_pos,
+                current_selection,
+                initial_rect_pos,
+            } => {
+                let (image_width, image_height, _) = self.screenshot.raw();
+                let mut new_selection = current_selection
+                    .with_pos(|_| initial_rect_pos + (current_cursor_pos - initial_cursor_pos));
+
+                let old_x = new_selection.rect.x as u32;
+                let old_y = new_selection.rect.y as u32;
+
+                // if any of these actually get changed we are going to set the new selection status.
+
+                new_selection.rect.x = new_selection
+                    .rect
+                    .x
+                    .min(image_width as f32 - new_selection.rect.width)
+                    .max(0.0);
+
+                new_selection.rect.y = new_selection
+                    .rect
+                    .y
+                    .min(image_height as f32 - new_selection.rect.height)
+                    .max(0.0);
+
+                if new_selection.rect.y as u32 != old_y || new_selection.rect.x as u32 != old_x {
+                    new_selection.status = SelectionStatus::Move {
+                        initial_rect_pos: new_selection.pos(),
+                        initial_cursor_pos: current_cursor_pos,
+                    }
+                }
+
+                self.selection = Some(new_selection);
+            }
+            Message::ExtendNewSelection(new_mouse_position) => {
+                self.update_selection(new_mouse_position);
+            }
+            Message::CopyToClipboard => {
+                let Some(selection) = self.selection.map(Selection::norm) else {
+                    self.error("There is no selection to copy");
+                    return Task::none();
+                };
+
+                let (width, height, pixels) = self.screenshot.raw();
+
+                let cropped_image = selection.process_image(width, height, pixels);
+
+                let image_data = arboard::ImageData {
+                    width: cropped_image.width() as usize,
+                    height: cropped_image.height() as usize,
+                    bytes: std::borrow::Cow::Borrowed(cropped_image.as_bytes()),
+                };
+
+                #[cfg_attr(
+                    target_os = "macos",
+                    expect(unused_variables, reason = "it is used on other platforms")
+                )]
+                match crate::clipboard::set_image(image_data) {
+                    Ok(img_path) => {
+                        // send desktop notification if possible, this is
+                        // just a decoration though so it's ok if we fail to do this
+                        let mut notify = notify_rust::Notification::new();
+
+                        notify
+                            .summary(&format!("Copied image to clipboard {width}px * {height}px"));
+
+                        // images are not supported on macos
+                        #[cfg(not(target_os = "macos"))]
+                        notify.image_path(&img_path.to_string_lossy());
+
+                        let _ = notify.show();
+
+                        return Self::exit();
+                    }
+                    Err(err) => {
+                        self.error(format!("Could not copy the image: {err}"));
+                    }
+                }
+            }
+            Message::SaveScreenshot => {
+                let Some(selection) = self.selection.as_ref().map(|sel| Selection::norm(*sel))
+                else {
+                    self.error("Selection does not exist. There is nothing to copy!");
+                    return Task::none();
+                };
+
+                let (width, height, pixels) = self.screenshot.raw();
+                let cropped_image = selection.process_image(width, height, pixels);
+
+                let _ = SAVED_IMAGE.set(cropped_image);
+
+                return Self::exit();
+            }
+            Message::Resize {
+                current_cursor_pos,
+                initial_cursor_pos,
+                resize_side,
+                initial_rect,
+                sel_is_some,
+                speed,
+            } => {
+                let selected_region = self.selection.unlock(sel_is_some);
+
+                println!("IN resize:");
+                dbg!(selected_region.rect.width, initial_rect.width);
+
+                let dy = (current_cursor_pos.y - initial_cursor_pos.y) * speed;
+                let dx = (current_cursor_pos.x - initial_cursor_pos.x) * speed;
+
+                // To give a perspective on this math, imagine that our cursor is at the top left corner
+                // and travelling diagonally down, from point (700, 700) -> (800, 800).
+                //
+                // In this case, the - `(current {x,y} [800 - 700] - previous {x,y} [700, 700])` will
+                // both have positive `dx` and `dy` [100].
+                //
+                // Now imagine how the selection transforms with this, and think about it just for 1 case.
+                // It will then be true for all cases
+
+                selected_region.rect = match resize_side {
+                    SideOrCorner::Side(side) => match side {
+                        Side::Top => initial_rect.with_height(|h| h - dy).with_y(|y| y + dy),
+                        Side::Right => initial_rect.with_width(|w| w + dx),
+                        Side::Bottom => initial_rect.with_height(|h| h + dy),
+                        Side::Left => initial_rect.with_width(|w| w - dx).with_x(|x| x + dx),
+                    },
+                    SideOrCorner::Corner(corner) => {
+                        corner.resize_rect(initial_rect, current_cursor_pos, initial_cursor_pos)
+                    }
+                };
+
+                dbg!(selected_region.rect.width);
+                println!("OUT resize:");
+            }
+            Message::ResizeToCursor {
+                cursor_pos,
+                selection,
+                sel_is_some,
+            } => {
+                let (corner_point, corners) = selection.corners().nearest_corner(cursor_pos);
+                let sel = self.selection.unlock(sel_is_some);
+
+                sel.rect = corners.resize_rect(selection.rect, cursor_pos, corner_point);
+                sel.status = SelectionStatus::Resize {
+                    initial_rect: sel.rect,
+                    initial_cursor_pos: cursor_pos,
+                    resize_side: SideOrCorner::Corner(corners),
+                };
+            }
+            Message::SelectFullScreen => {
+                let (width, height, _) = self.screenshot.raw();
+                {
+                    self.selection = Some(Selection::new(Point { x: 0.0, y: 0.0 }).with_size(
+                        |_| Size {
+                            width: width as f32,
+                            height: height as f32,
+                        },
+                    ));
+                }
+            }
+        }
+
+        Task::none()
+    }
+
+    /// Renders the black tint on regions that are not selected
+    pub fn render_shade(&self, frame: &mut canvas::Frame, bounds: Rectangle) {
+        let Some(selection) = self.selection.map(Selection::norm) else {
+            frame.fill_rectangle(bounds.position(), bounds.size(), THEME.non_selected_region);
+            return;
+        };
+
+        // represents the area outside of the selection
+        let outside = Path::new(|p| {
+            p.move_to(bounds.top_left());
+            p.line_to(bounds.top_right());
+            p.line_to(bounds.bottom_right());
+            p.line_to(bounds.bottom_left());
+            p.move_to(bounds.top_left());
+            p.move_to(selection.top_left());
+            p.line_to(selection.bottom_left());
+            p.line_to(selection.bottom_right());
+            p.line_to(selection.top_right());
+            p.move_to(selection.top_left());
+        });
+
+        frame.fill(&outside, THEME.non_selected_region);
     }
 
     /// Renders the welcome message that the user sees when they first launch the program
@@ -183,233 +444,49 @@ impl App {
         .style(|_| iced::widget::container::Style {
             text_color: Some(THEME.fg_on_accent_bg),
             background: Some(Background::Color(THEME.accent.scale_alpha(0.95))),
-            border: iced::Border::default(),
-            shadow: iced::Shadow {
-                color: Color::WHITE,
-                offset: iced::Vector::default(),
-                blur_radius: 6.0,
-            },
+            border: iced::Border::default()
+                .color(Color::WHITE)
+                .rounded(6.0)
+                .width(1.5),
+            shadow: iced::Shadow::default(),
         });
 
         column![vertical_space, row![horizontal_space, stuff]].into()
     }
 
-    /// Modifies the app's state
-    #[expect(clippy::needless_pass_by_value, reason = "trait function")]
-    pub fn update(&mut self, message: Message) -> Task<Message> {
-        match message {
-            Message::ResizeVertically {
-                new_height,
-                sel_is_some,
-            } => {
-                let sel = self.selection.unlock(sel_is_some);
-                let dy = new_height as f32 - sel.rect.height;
-                *sel = sel
-                    .norm()
-                    .with_height(|_| new_height as f32)
-                    .with_y(|y| y - dy);
-            }
-            Message::ResizeHorizontally {
-                new_width,
-                sel_is_some,
-            } => {
-                let sel = self.selection.unlock(sel_is_some);
-                let dx = new_width as f32 - sel.rect.width;
-                *sel = sel
-                    .norm()
-                    .with_width(|_| new_width as f32)
-                    .with_x(|x| x - dx);
-            }
-            Message::NoOp => (),
-            Message::Exit => return Self::exit(),
-            Message::LeftMouseDown(cursor) => {
-                if let Some((cursor, side, rect)) = cursor.position().and_then(|cursor_pos| {
-                    self.selection.as_mut().and_then(|selected_region| {
-                        selected_region
-                            .corners()
-                            .side_at(cursor_pos)
-                            .map(|l| (cursor_pos, l, selected_region))
-                    })
-                }) {
-                    let resized = SelectionStatus::Resize {
-                        initial_rect: rect.norm().rect,
-                        initial_cursor_pos: cursor,
-                        resize_side: side,
-                    };
-                    rect.status = resized;
-                } else if let Some((cursor, selected_region)) = self.cursor_in_selection_mut(cursor)
-                {
-                    let dragged = SelectionStatus::Move {
-                        initial_rect_pos: selected_region.pos(),
-                        initial_cursor_pos: cursor,
-                    };
-                    selected_region.status = dragged;
-                } else if let Some(cursor_position) = cursor.position() {
-                    // no region is selected, select the initial region
-                    self.create_selection_at(cursor_position);
-                }
-            }
-            Message::EnterIdle => {
-                if let Some(selection) = self.selection.as_mut() {
-                    selection.status = SelectionStatus::Idle;
-                }
-            }
-            Message::MovingSelection {
-                current_cursor_pos,
-                initial_cursor_pos,
-                current_selection,
-                initial_rect_pos,
-            } => {
-                self.selection =
-                    Some(current_selection.with_pos(|_| {
-                        initial_rect_pos + (current_cursor_pos - initial_cursor_pos)
-                    }));
-            }
-            Message::ExtendNewSelection(new_mouse_position) => {
-                self.update_selection(new_mouse_position);
-            }
-            Message::CopyToClipboard => {
-                let Some(selection) = self.selection.map(Selection::norm) else {
-                    self.error("There is no selection to copy");
-                    return ().into();
-                };
+    /// Shows up to 3 of the most recent errors in the UI
+    fn render_errors(&self) -> iced::Element<Message> {
+        const ERROR_WIDTH: u32 = 300;
 
-                let (width, height, pixels) = self.screenshot.raw();
-
-                let cropped_image = selection.process_image(width, height, pixels);
-
-                let image_data = arboard::ImageData {
-                    width: cropped_image.width() as usize,
-                    height: cropped_image.height() as usize,
-                    bytes: std::borrow::Cow::Borrowed(cropped_image.as_bytes()),
-                };
-
-                #[cfg_attr(
-                    target_os = "macos",
-                    expect(unused_variables, reason = "it is used on other platforms")
-                )]
-                match crate::clipboard::set_image(image_data) {
-                    Ok(img_path) => {
-                        // send desktop notification if possible, this is
-                        // just a decoration though so it's ok if we fail to do this
-                        let mut notify = notify_rust::Notification::new();
-
-                        notify
-                            .summary(&format!("Copied image to clipboard {width}px * {height}px"));
-
-                        // images are not supported on macos
-                        #[cfg(not(target_os = "macos"))]
-                        notify.image_path(&img_path.to_string_lossy());
-
-                        let _ = notify.show();
-
-                        return Self::exit();
-                    }
-                    Err(err) => {
-                        self.error(format!("Could not copy the image: {err}"));
-                    }
-                }
-            }
-            Message::SaveScreenshot => {
-                let Some(selection) = self.selection.as_ref().map(|sel| Selection::norm(*sel))
-                else {
-                    self.error("Selection does not exist. There is nothing to copy!");
-                    return ().into();
-                };
-
-                let (width, height, pixels) = self.screenshot.raw();
-                let cropped_image = selection.process_image(width, height, pixels);
-
-                let _ = SAVED_IMAGE.set(cropped_image);
-
-                return Self::exit();
-            }
-            Message::InitialResize {
-                current_cursor_pos,
-                initial_cursor_pos,
-                resize_side,
-                initial_rect,
-                sel_is_some,
-            } => {
-                let selected_region = self.selection.unlock(sel_is_some);
-
-                let dy = current_cursor_pos.y - initial_cursor_pos.y;
-                let dx = current_cursor_pos.x - initial_cursor_pos.x;
-
-                // To give a perspective on this math, imagine that our cursor is at the top left corner
-                // and travelling diagonally down, from point (700, 700) -> (800, 800).
-                //
-                // In this case, the - `(current {x,y} [800 - 700] - previous {x,y} [700, 700])` will
-                // both have positive `dx` and `dy` [100].
-                //
-                // Now imagine how the selection transforms with this, and think about it just for 1 case.
-                // It will then be true for all cases
-
-                selected_region.rect = match resize_side {
-                    SideOrCorner::Side(side) => match side {
-                        Side::Top => initial_rect.with_height(|h| h - dy).with_y(|y| y + dy),
-                        Side::Right => initial_rect.with_width(|w| w + dx),
-                        Side::Bottom => initial_rect.with_height(|h| h + dy),
-                        Side::Left => initial_rect.with_width(|w| w - dx).with_x(|x| x + dx),
-                    },
-                    SideOrCorner::Corner(corner) => {
-                        corner.resize_rect(initial_rect, current_cursor_pos, initial_cursor_pos)
-                    }
-                }
-            }
-            Message::ResizingToCursor {
-                cursor_pos,
-                selection,
-                sel_is_some,
-            } => {
-                let (corner_point, corners) = selection.corners().nearest_corner(cursor_pos);
-                let sel = self.selection.unlock(sel_is_some);
-
-                sel.rect = corners.resize_rect(selection.rect, cursor_pos, corner_point);
-                sel.status = SelectionStatus::Resize {
-                    initial_rect: sel.rect,
-                    initial_cursor_pos: cursor_pos,
-                    resize_side: SideOrCorner::Corner(corners),
-                };
-            }
-            Message::FullSelection => {
-                let (width, height, _) = self.screenshot.raw();
-                {
-                    self.selection = Some(Selection::new(Point { x: 0.0, y: 0.0 }).with_size(
-                        |_| Size {
-                            width: width as f32,
-                            height: height as f32,
+        let errors = self
+            .errors()
+            .into_iter()
+            // don't display more than the most recent 3 errors
+            .take(3)
+            .map(|error| {
+                container(widget::text!("Error: {error}"))
+                    .height(80)
+                    .width(ERROR_WIDTH)
+                    .style(|_| container::Style {
+                        text_color: Some(THEME.fg),
+                        background: Some(Background::Color(THEME.error_bg)),
+                        border: iced::Border {
+                            color: THEME.drop_shadow,
+                            width: 4.0,
+                            radius: 2.0.into(),
                         },
-                    ));
-                }
-            }
-        }
+                        shadow: iced::Shadow::default(),
+                    })
+                    .padding(10.0)
+                    .into()
+            })
+            .collect::<Column<_>>()
+            .width(ERROR_WIDTH)
+            .spacing(30);
 
-        ().into()
-    }
+        let (image_width, _, _) = self.screenshot.raw();
 
-    /// Renders the black tint on regions that are not selected
-    pub fn render_shade(&self, frame: &mut canvas::Frame, bounds: Rectangle) {
-        let Some(selection) = self.selection.map(Selection::norm) else {
-            frame.fill_rectangle(bounds.position(), bounds.size(), THEME.non_selected_region);
-            return;
-        };
-
-        // represents the area outside of the selection
-        let outside = Path::new(|p| {
-            p.move_to(bounds.top_left());
-            p.line_to(bounds.top_right());
-            p.line_to(bounds.bottom_right());
-            p.line_to(bounds.bottom_left());
-            p.move_to(bounds.top_left());
-            p.move_to(selection.top_left());
-            p.line_to(selection.bottom_left());
-            p.line_to(selection.bottom_right());
-            p.line_to(selection.top_right());
-            p.move_to(selection.top_left());
-        });
-
-        frame.fill(&outside, THEME.non_selected_region);
+        row![Space::with_width(image_width - ERROR_WIDTH), errors].into()
     }
 
     /// Receives keybindings
@@ -420,7 +497,7 @@ impl App {
             (Key::Character(ch), Modifiers::CTRL) if ch == "c" => Some(Message::CopyToClipboard),
             (Key::Named(iced::keyboard::key::Named::Enter), _) => Some(Message::CopyToClipboard),
             (Key::Character(ch), Modifiers::CTRL) if ch == "s" => Some(Message::SaveScreenshot),
-            (Key::Named(iced::keyboard::key::Named::F11), _) => Some(Message::FullSelection),
+            (Key::Named(iced::keyboard::key::Named::F11), _) => Some(Message::SelectFullScreen),
             _ => None,
         }
     }
@@ -491,8 +568,7 @@ impl App {
         self.errors.push(ErrorMessage::new(error));
     }
 
-    /// Retrieve all valid errors
-    #[expect(dead_code, reason = "will be useful later")]
+    /// Retrieve errors that have not yet expired
     fn errors(&self) -> Vec<String> {
         /// When there is an error, display it for this amount of time
         const ERROR_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(5);
@@ -503,6 +579,7 @@ impl App {
             .rev()
             .map_while(|err| {
                 let time_passed = now - err.timestamp;
+                log::error!("{:#?}, {:#?}", now, err.timestamp);
                 (time_passed <= ERROR_TIMEOUT).then_some(err.message.to_string())
             })
             .collect()
