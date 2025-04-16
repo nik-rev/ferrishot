@@ -413,8 +413,8 @@ impl App {
     /// Renders the welcome message that the user sees when they first launch the program
     fn render_welcome_message<'a>(&self) -> Element<'a, Message> {
         use iced::widget::text;
-        const WIDTH: u32 = 340;
-        const HEIGHT: u32 = 100;
+        const WIDTH: u32 = 380;
+        const HEIGHT: u32 = 160;
 
         const FONT_SIZE: f32 = 13.0;
 
@@ -437,7 +437,7 @@ impl App {
                         .shaping(Shaping::Advanced)
                         .align_y(Vertical::Bottom)
                 ]
-                .width(60.0),
+                .width(100.0),
                 Space::with_width(Length::Fixed(20.0)),
                 text(action).size(FONT_SIZE).align_y(Vertical::Bottom),
             ]
@@ -448,9 +448,11 @@ impl App {
                 keys("Mouse", "Select screenshot area"),
                 keys("Ctrl + S", "Save screenshot to a file"),
                 keys("Enter", "Copy screenshot to clipboard"),
+                keys("Right Click", "Snap closest corner to mouse"),
+                keys("Shift + Mouse", "Slowly resize / move area"),
                 keys("Esc", "Exit"),
             ]
-            .spacing(4.0)
+            .spacing(8.0)
             .height(HEIGHT)
             .width(WIDTH)
             .padding(10.0),
