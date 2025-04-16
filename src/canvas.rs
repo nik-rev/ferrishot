@@ -54,20 +54,21 @@ impl canvas::Program<Message> for App {
         self.selection
             // mouse button for resizing the selection
             .and_then(|sel| {
-                // when we started dragging a side, even if we go outside of the bounds of that side (which
-                // happens often when we are dragging the mouse fast), we don't want the cursor to change
-                cursor
-                    .position()
-                    .and_then(|cursor| sel.corners().side_at(cursor).map(SideOrCorner::mouse_icon))
-                    // for example, if we start dragging top right corner, and move mouse to the
-                    // top left corner, we want the cursor to switch appropriately
-                    .or_else(|| {
-                        if let SelectionStatus::Resize { resize_side, .. } = sel.status {
-                            Some(resize_side.mouse_icon())
-                        } else {
-                            None
-                        }
+                // if we are already resizing, then this cursor takes priority
+                // e.g. we are resizing horizontally but we are on the top left
+                // corner = we should have horizontal resize cursor.
+                (if let SelectionStatus::Resize { resize_side, .. } = sel.status {
+                    Some(resize_side.mouse_icon())
+                } else {
+                    None
+                })
+                .or_else(|| {
+                    // when we started dragging a side, even if we go outside of the bounds of that side (which
+                    // happens often when we are dragging the mouse fast), we don't want the cursor to change
+                    cursor.position().and_then(|cursor| {
+                        sel.corners().side_at(cursor).map(SideOrCorner::mouse_icon)
                     })
+                })
             })
             .unwrap_or_else(|| {
                 if self.selection.is_some_and(Selection::is_move) {
