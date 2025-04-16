@@ -1,9 +1,10 @@
 //! Main logic for the application, handling of events and mutation of the state
 
+use crate::selection::Speed;
 use std::borrow::Cow;
 use std::time::Instant;
 
-use crate::message::{Message, Speed};
+use crate::message::Message;
 use crate::screenshot::RgbaHandle;
 use crate::selection::selection_lock::OptionalSelectionExt;
 use crate::theme::THEME;
