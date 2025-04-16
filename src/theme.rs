@@ -141,6 +141,8 @@ theme! {
     non_selected_region = color!(0x00_00_00, 0.5),
     /// Color of the background
     bg = color!(0x_00_00_00),
+    /// Background color for errors
+    error_bg = color!(0x_ff_00_00, 0.6),
     /// Color of text
     fg = color!(0x_ff_ff_ff),
     /// Color of text for the "width" and "height" size indicators

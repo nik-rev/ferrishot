@@ -12,7 +12,7 @@ use iced::keyboard::{Key, Modifiers};
 use iced::mouse::Cursor;
 use iced::widget::canvas::Path;
 use iced::widget::text::Shaping;
-use iced::widget::{Space, Stack, canvas, column, row};
+use iced::widget::{self, Column, Space, Stack, canvas, column, container, row};
 use iced::{Background, Color, Element, Font, Length, Point, Rectangle, Size, Task};
 
 use crate::background_image::BackgroundImage;
@@ -119,78 +119,18 @@ impl App {
                     .is_none()
                     .then(|| self.render_welcome_message()),
             )
-            // icons
-            .push_maybe(
-                // icons around the selection
-                self.selection.filter(|sel| sel.is_idle()).map(|sel| {
-                    let (image_width, image_height, _) = self.screenshot.raw();
-                    sel.render_icons(image_width as f32, image_height as f32)
-                }),
-            )
+            .push(self.render_errors())
+            // icons around the selection
+            .push_maybe(self.selection.filter(|sel| sel.is_idle()).map(|sel| {
+                let (image_width, image_height, _) = self.screenshot.raw();
+                sel.render_icons(image_width as f32, image_height as f32)
+            }))
             // size indicator
             .push_maybe(self.selection.get().map(|(sel, key)| {
                 let (image_width, image_height, _) = self.screenshot.raw();
                 crate::widgets::size_indicator(image_height, image_width, sel.norm().rect, key)
             }))
             .into()
-    }
-
-    /// Renders the welcome message that the user sees when they first launch the program
-    fn render_welcome_message<'a>(&self) -> Element<'a, Message> {
-        use iced::widget::text;
-        const WIDTH: u32 = 340;
-        const HEIGHT: u32 = 100;
-
-        const FONT_SIZE: f32 = 13.0;
-
-        let (width, height, _) = self.screenshot.raw();
-        let vertical_space = Space::with_height(height / 2 - HEIGHT / 2);
-        let horizontal_space = Space::with_width(width / 2 - WIDTH / 2);
-
-        let bold = Font {
-            weight: iced::font::Weight::Bold,
-            ..Font::default()
-        };
-
-        let keys = |key: &'static str, action: &'static str| {
-            row![
-                row![
-                    Space::with_width(Length::Fill),
-                    text(key)
-                        .size(FONT_SIZE)
-                        .font(bold)
-                        .shaping(Shaping::Advanced)
-                        .align_y(Vertical::Bottom)
-                ]
-                .width(60.0),
-                Space::with_width(Length::Fixed(20.0)),
-                text(action).size(FONT_SIZE).align_y(Vertical::Bottom),
-            ]
-        };
-
-        let stuff = iced::widget::container(
-            column![
-                keys("Mouse", "Select screenshot area"),
-                keys("Ctrl + S", "Save screenshot to a file"),
-                keys("Enter", "Copy screenshot to clipboard"),
-                keys("Esc", "Exit"),
-            ]
-            .spacing(4.0)
-            .height(HEIGHT)
-            .width(WIDTH)
-            .padding(10.0),
-        )
-        .style(|_| iced::widget::container::Style {
-            text_color: Some(THEME.fg_on_accent_bg),
-            background: Some(Background::Color(THEME.accent.scale_alpha(0.95))),
-            border: iced::Border::default()
-                .color(Color::WHITE)
-                .rounded(6.0)
-                .width(1.5),
-            shadow: iced::Shadow::default(),
-        });
-
-        column![vertical_space, row![horizontal_space, stuff]].into()
     }
 
     /// Modifies the app's state
@@ -449,6 +389,99 @@ impl App {
         frame.fill(&outside, THEME.non_selected_region);
     }
 
+    /// Renders the welcome message that the user sees when they first launch the program
+    fn render_welcome_message<'a>(&self) -> Element<'a, Message> {
+        use iced::widget::text;
+        const WIDTH: u32 = 340;
+        const HEIGHT: u32 = 100;
+
+        const FONT_SIZE: f32 = 13.0;
+
+        let (width, height, _) = self.screenshot.raw();
+        let vertical_space = Space::with_height(height / 2 - HEIGHT / 2);
+        let horizontal_space = Space::with_width(width / 2 - WIDTH / 2);
+
+        let bold = Font {
+            weight: iced::font::Weight::Bold,
+            ..Font::default()
+        };
+
+        let keys = |key: &'static str, action: &'static str| {
+            row![
+                row![
+                    Space::with_width(Length::Fill),
+                    text(key)
+                        .size(FONT_SIZE)
+                        .font(bold)
+                        .shaping(Shaping::Advanced)
+                        .align_y(Vertical::Bottom)
+                ]
+                .width(60.0),
+                Space::with_width(Length::Fixed(20.0)),
+                text(action).size(FONT_SIZE).align_y(Vertical::Bottom),
+            ]
+        };
+
+        let stuff = iced::widget::container(
+            column![
+                keys("Mouse", "Select screenshot area"),
+                keys("Ctrl + S", "Save screenshot to a file"),
+                keys("Enter", "Copy screenshot to clipboard"),
+                keys("Esc", "Exit"),
+            ]
+            .spacing(4.0)
+            .height(HEIGHT)
+            .width(WIDTH)
+            .padding(10.0),
+        )
+        .style(|_| iced::widget::container::Style {
+            text_color: Some(THEME.fg_on_accent_bg),
+            background: Some(Background::Color(THEME.accent.scale_alpha(0.95))),
+            border: iced::Border::default()
+                .color(Color::WHITE)
+                .rounded(6.0)
+                .width(1.5),
+            shadow: iced::Shadow::default(),
+        });
+
+        column![vertical_space, row![horizontal_space, stuff]].into()
+    }
+
+    /// Shows up to 3 of the most recent errors in the UI
+    fn render_errors(&self) -> iced::Element<Message> {
+        const ERROR_WIDTH: u32 = 300;
+
+        let errors = self
+            .errors()
+            .into_iter()
+            // don't display more than the most recent 3 errors
+            .take(3)
+            .map(|error| {
+                container(widget::text!("Error: {error}"))
+                    .height(80)
+                    .width(ERROR_WIDTH)
+                    .style(|_| container::Style {
+                        text_color: Some(THEME.fg),
+                        background: Some(Background::Color(THEME.error_bg)),
+                        border: iced::Border {
+                            color: THEME.drop_shadow,
+                            width: 4.0,
+                            radius: 2.0.into(),
+                        },
+                        shadow: iced::Shadow::default(),
+                    })
+                    .padding(10.0)
+                    .into()
+            })
+            .collect::<Column<_>>()
+            .width(ERROR_WIDTH)
+            .spacing(30);
+
+        let (image_width, _, _) = self.screenshot.raw();
+
+        row![Space::with_width(image_width - ERROR_WIDTH), errors].into()
+    }
+
     /// Receives keybindings
     #[must_use]
     pub fn handle_key_press(key: Key, mods: Modifiers) -> Option<Message> {
@@ -528,8 +561,7 @@ impl App {
         self.errors.push(ErrorMessage::new(error));
     }
 
-    /// Retrieve all valid errors
-    #[expect(dead_code, reason = "will be useful later")]
+    /// Retrieve errors that have not yet expired
     fn errors(&self) -> Vec<String> {
         /// When there is an error, display it for this amount of time
         const ERROR_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(5);
@@ -540,6 +572,7 @@ impl App {
             .rev()
             .map_while(|err| {
                 let time_passed = now - err.timestamp;
+                log::error!("{:#?}, {:#?}", now, err.timestamp);
                 (time_passed <= ERROR_TIMEOUT).then_some(err.message.to_string())
             })
             .collect()
