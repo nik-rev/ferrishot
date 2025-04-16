@@ -12,10 +12,9 @@ fn main() {
     // tray icon for Mac / Windows
     #[cfg(not(target_os = "linux"))]
     {
-        let icon =
-            tray_icon::icon::Icon::from_rgba(LOGO.to_vec(), 64, 64).expect("Failed to open icon");
+        let icon = tray_icon::Icon::from_rgba(LOGO.to_vec(), 64, 64).expect("Failed to open icon");
 
-        let tray_icon = tray_icon::TrayIconBuilder::new()
+        let _tray_icon = tray_icon::TrayIconBuilder::new()
             .with_title("ferrishot")
             .with_tooltip("Take a screenshot using ferrishot")
             .with_icon(icon)
