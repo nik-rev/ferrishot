@@ -16,6 +16,28 @@ pub enum Corner {
     BottomRight,
 }
 
+/// Side of a rectangle
+#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub enum Side {
+    /// Top side
+    Top,
+    /// Right side
+    Right,
+    /// Bottom side
+    Bottom,
+    /// Left side
+    Left,
+}
+
+/// Side and corner
+#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub enum SideOrCorner {
+    /// One of the 4 sides of a rectangle
+    Side(Side),
+    /// One of the 4 corners of a rectangle
+    Corner(Corner),
+}
+
 impl Corner {
     /// # Arguments
     ///
@@ -55,28 +77,6 @@ impl Corner {
             Self::BottomRight => initial_rect.with_width(|w| w + dx).with_height(|h| h + dy),
         }
     }
-}
-
-/// Side of a rectangle
-#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
-pub enum Side {
-    /// Top side
-    Top,
-    /// Right side
-    Right,
-    /// Bottom side
-    Bottom,
-    /// Left side
-    Left,
-}
-
-/// Side and corner
-#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
-pub enum SideOrCorner {
-    /// One of the 4 sides of a rectangle
-    Side(Side),
-    /// One of the 4 corners of a rectangle
-    Corner(Corner),
 }
 
 impl SideOrCorner {
