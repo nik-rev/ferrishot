@@ -7,28 +7,6 @@ use crate::{
     selection::{Selection, selection_lock::SelectionIsSome},
 };
 
-/// How fast the selection resizes
-#[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Debug)]
-pub enum Speed {
-    /// Resize follows the cursor. Cursor moves 1px -> the selection resizes by 1px
-    Regular,
-    /// Resize is slower than the cursor. Cursor moves 1px -> the selection resizes by less than that
-    Slow {
-        /// The speed was previously different, so the selection status must be updated to sync
-        has_speed_changed: bool,
-    },
-}
-
-impl Speed {
-    /// For a given px of cursor movement, how many px does the selection resize by?
-    pub const fn speed(self) -> f32 {
-        match self {
-            Self::Regular => 1.0,
-            Self::Slow { .. } => 0.1,
-        }
-    }
-}
-
 /// Represents an action happening in the application
 #[derive(Debug, Clone)]
 pub enum Message {

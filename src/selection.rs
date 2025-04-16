@@ -18,6 +18,28 @@ pub const FRAME_WIDTH: f32 = 2.0;
 /// icon itself and space around it (bigger than `ICON_SIZE`)
 pub const ICON_BUTTON_SIZE: f32 = 37.0;
 
+/// How fast the selection resizes
+#[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Debug)]
+pub enum Speed {
+    /// Resize follows the cursor. Cursor moves 1px -> the selection resizes by 1px
+    Regular,
+    /// Resize is slower than the cursor. Cursor moves 1px -> the selection resizes by less than that
+    Slow {
+        /// The speed was previously different, so the selection status must be updated to sync
+        has_speed_changed: bool,
+    },
+}
+
+impl Speed {
+    /// For a given px of cursor movement, how many px does the selection resize by?
+    pub const fn speed(self) -> f32 {
+        match self {
+            Self::Regular => 1.0,
+            Self::Slow { .. } => 0.1,
+        }
+    }
+}
+
 /// The selected area of the desktop which will be captured
 #[derive(Debug, Default, Copy, Clone)]
 pub struct Selection {
@@ -60,7 +82,17 @@ pub enum SelectionStatus {
 /// Methods for guarantee that selection exists
 ///
 /// We have this because very often in the app we want to pass the knowledge that our `Selection`
-/// exists through a `Message`, however
+/// exists through a `Message`, however it is not possible to do that
+///
+/// For example, we send `Message::Foo` from `<App as canvas::Program<Message>>::update` if, and only if `App.selection.is_some()`.
+///
+/// Inside of `App::update` we receive this message and we have access to a `&mut App`. We need to
+/// modify the selection and we are certain that it exists. Yet we must still use an `unwrap`.
+///
+/// This module prevents that. When obtaining a `Selection` from an `App`, we also get a `SelectionIsSome`.
+/// This struct is only possible to construct from the `Option<Selection>::get` method.
+///
+/// This adds a little bit of complexity in exchange for preventing dozens of `expect`/`unwrap`s in the app and a type-safe way of guaranteeing that `Selection` exists.
 pub mod selection_lock {
     use super::Selection;
 

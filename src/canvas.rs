@@ -27,10 +27,11 @@ pub struct MouseState {
     is_shift_down: bool,
 }
 
+use crate::selection::Speed;
 use crate::{
     App, CONFIG,
     corners::SideOrCorner,
-    message::{Message, Speed},
+    message::Message,
     selection::{Selection, SelectionStatus, selection_lock::OptionalSelectionExt as _},
     theme::THEME,
 };
