@@ -13,7 +13,7 @@ use iced::mouse::Cursor;
 use iced::widget::canvas::Path;
 use iced::widget::text::Shaping;
 use iced::widget::{Space, Stack, canvas, column, row};
-use iced::{Background, Color, Font, Length, Point, Rectangle, Size, Task};
+use iced::{Background, Color, Element, Font, Length, Point, Rectangle, Size, Task};
 
 use crate::background_image::BackgroundImage;
 use crate::corners::{Side, SideOrCorner};
@@ -114,63 +114,11 @@ impl App {
             // border around the selection
             .push(canvas(self).width(Length::Fill).height(Length::Fill))
             // information popup, when there is no selection
-            .push_maybe(self.selection.is_none().then(|| {
-                use iced::widget::text;
-                const WIDTH: u32 = 340;
-                const HEIGHT: u32 = 100;
-
-                const FONT_SIZE: f32 = 13.0;
-
-                let (width, height, _) = self.screenshot.raw();
-                let vertical_space = Space::with_height(height / 2 - HEIGHT / 2);
-                let horizontal_space = Space::with_width(width / 2 - WIDTH / 2);
-
-                let bold = Font {
-                    weight: iced::font::Weight::Bold,
-                    ..Font::default()
-                };
-
-                let keys = |key: &'static str, action: &'static str| {
-                    row![
-                        row![
-                            Space::with_width(Length::Fill),
-                            text(key)
-                                .size(FONT_SIZE)
-                                .font(bold)
-                                .shaping(Shaping::Advanced)
-                                .align_y(Vertical::Bottom)
-                        ]
-                        .width(60.0),
-                        Space::with_width(Length::Fixed(20.0)),
-                        text(action).size(FONT_SIZE).align_y(Vertical::Bottom),
-                    ]
-                };
-
-                let stuff = iced::widget::container(
-                    column![
-                        keys("Mouse", "Select screenshot area"),
-                        keys("Ctrl + S", "Save screenshot to a file"),
-                        keys("Enter", "Copy screenshot to clipboard"),
-                        keys("Esc", "Exit"),
-                    ]
-                    .spacing(4.0)
-                    .height(HEIGHT)
-                    .width(WIDTH)
-                    .padding(10.0),
-                )
-                .style(|_| iced::widget::container::Style {
-                    text_color: Some(THEME.fg_on_accent_bg),
-                    background: Some(Background::Color(THEME.accent.scale_alpha(0.95))),
-                    border: iced::Border::default(),
-                    shadow: iced::Shadow {
-                        color: Color::WHITE,
-                        offset: iced::Vector::default(),
-                        blur_radius: 6.0,
-                    },
-                });
-
-                column![vertical_space, row![horizontal_space, stuff]]
-            }))
+            .push_maybe(
+                self.selection
+                    .is_none()
+                    .then(|| self.render_welcome_message()),
+            )
             // icons
             .push_maybe(
                 // icons around the selection
@@ -185,6 +133,65 @@ impl App {
                 crate::widgets::size_indicator(image_height, image_width, sel.norm().rect, key)
             }))
             .into()
+    }
+
+    /// Renders the welcome message that the user sees when they first launch the program
+    fn render_welcome_message<'a>(&self) -> Element<'a, Message> {
+        use iced::widget::text;
+        const WIDTH: u32 = 340;
+        const HEIGHT: u32 = 100;
+
+        const FONT_SIZE: f32 = 13.0;
+
+        let (width, height, _) = self.screenshot.raw();
+        let vertical_space = Space::with_height(height / 2 - HEIGHT / 2);
+        let horizontal_space = Space::with_width(width / 2 - WIDTH / 2);
+
+        let bold = Font {
+            weight: iced::font::Weight::Bold,
+            ..Font::default()
+        };
+
+        let keys = |key: &'static str, action: &'static str| {
+            row![
+                row![
+                    Space::with_width(Length::Fill),
+                    text(key)
+                        .size(FONT_SIZE)
+                        .font(bold)
+                        .shaping(Shaping::Advanced)
+                        .align_y(Vertical::Bottom)
+                ]
+                .width(60.0),
+                Space::with_width(Length::Fixed(20.0)),
+                text(action).size(FONT_SIZE).align_y(Vertical::Bottom),
+            ]
+        };
+
+        let stuff = iced::widget::container(
+            column![
+                keys("Mouse", "Select screenshot area"),
+                keys("Ctrl + S", "Save screenshot to a file"),
+                keys("Enter", "Copy screenshot to clipboard"),
+                keys("Esc", "Exit"),
+            ]
+            .spacing(4.0)
+            .height(HEIGHT)
+            .width(WIDTH)
+            .padding(10.0),
+        )
+        .style(|_| iced::widget::container::Style {
+            text_color: Some(THEME.fg_on_accent_bg),
+            background: Some(Background::Color(THEME.accent.scale_alpha(0.95))),
+            border: iced::Border::default(),
+            shadow: iced::Shadow {
+                color: Color::WHITE,
+                offset: iced::Vector::default(),
+                blur_radius: 6.0,
+            },
+        });
+
+        column![vertical_space, row![horizontal_space, stuff]].into()
     }
 
     /// Modifies the app's state
