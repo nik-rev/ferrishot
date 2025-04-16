@@ -1,4 +1,15 @@
 //! The canvas handles drawing the selection frame
+use iced::Event::{Keyboard, Mouse};
+use iced::keyboard::Event::KeyPressed;
+use iced::keyboard::Event::KeyReleased;
+use iced::keyboard::Key::{Character, Named};
+use iced::keyboard::Modifiers as Mods;
+use iced::keyboard::key::Named::F11;
+use iced::keyboard::key::Named::{Enter, Escape, Shift};
+use iced::mouse::Button::{Left, Middle, Right};
+use iced::mouse::Event::ButtonPressed;
+use iced::mouse::Event::ButtonReleased;
+use iced::mouse::Event::CursorMoved;
 use iced::{
     Rectangle, Renderer, Theme,
     mouse::{self, Interaction},
@@ -90,15 +101,12 @@ impl canvas::Program<Message> for App {
         _bounds: Rectangle,
         cursor: iced::advanced::mouse::Cursor,
     ) -> Option<widget::Action<Message>> {
-        use iced::Event::{Keyboard, Mouse};
-        use iced::keyboard;
-
         let message = match event {
-            Mouse(mouse::Event::ButtonPressed(mouse::Button::Left)) => {
+            Mouse(ButtonPressed(Left)) => {
                 state.is_left_down = true;
                 Message::LeftMouseDown(cursor)
             }
-            Mouse(mouse::Event::ButtonPressed(mouse::Button::Right)) => {
+            Mouse(ButtonPressed(Right)) => {
                 state.is_right_down = true;
                 if let Some(cursor) = cursor.position() {
                     if let Some((selection, sel_is_some)) = self.selection.get() {
@@ -114,11 +122,11 @@ impl canvas::Program<Message> for App {
                     return None;
                 }
             }
-            Mouse(mouse::Event::ButtonReleased(mouse::Button::Right)) => {
+            Mouse(ButtonReleased(Right)) => {
                 state.is_right_down = false;
                 Message::EnterIdle
             }
-            Mouse(mouse::Event::ButtonReleased(mouse::Button::Left)) => {
+            Mouse(ButtonReleased(Left)) => {
                 state.is_left_down = false;
                 if CONFIG.instant && self.selections_created == 1 {
                     // we have created 1 selections in total, (the current one),
@@ -129,15 +137,27 @@ impl canvas::Program<Message> for App {
                     Message::EnterIdle
                 }
             }
-            Keyboard(keyboard::Event::KeyReleased { key, .. })
-                if *key == keyboard::Key::Named(keyboard::key::Named::Shift) =>
-            {
+            Keyboard(KeyReleased { key, .. }) if *key == Named(Shift) => {
                 state.is_shift_down = false;
                 Message::NoOp
             }
-            Keyboard(keyboard::Event::KeyPressed { key, .. })
-                if *key == keyboard::Key::Named(keyboard::key::Named::Shift) =>
+            // Esc
+            Keyboard(KeyPressed { key, .. }) if *key == Named(Escape) => Message::Exit,
+            // Ctrl + C or Enter
+            Keyboard(KeyPressed { key, modifiers, .. })
+                if (*key == Named(Enter))
+                    || (*modifiers == Mods::CTRL && *key == Character("c".into())) =>
             {
+                Message::CopyToClipboard
+            }
+            // Ctrl + S
+            Keyboard(KeyPressed { key, modifiers, .. })
+                if (*modifiers == Mods::CTRL && *key == Character("s".into())) =>
+            {
+                Message::SaveScreenshot
+            }
+            Keyboard(KeyPressed { key, .. }) if *key == Named(F11) => Message::SelectFullScreen,
+            Keyboard(KeyPressed { key, .. }) if *key == Named(Shift) => {
                 state.is_shift_down = true;
 
                 // If we are already resizing a side, and we press shift, we
@@ -178,9 +198,7 @@ impl canvas::Program<Message> for App {
                     Message::NoOp
                 }
             }
-            Mouse(mouse::Event::CursorMoved { position })
-                if self.selection.is_some_and(Selection::is_resize) =>
-            {
+            Mouse(CursorMoved { position }) if self.selection.is_some_and(Selection::is_resize) => {
                 // FIXME: this will not be necessary when we have `let_chains`
                 let (selection, sel_is_some) =
                     self.selection.get().expect("has `.is_some_and()` guard");
@@ -210,9 +228,7 @@ impl canvas::Program<Message> for App {
                     },
                 }
             }
-            Mouse(mouse::Event::CursorMoved { position })
-                if self.selection.is_some_and(Selection::is_move) =>
-            {
+            Mouse(CursorMoved { position }) if self.selection.is_some_and(Selection::is_move) => {
                 // FIXME: this will not be necessary when we have `let_chains`
                 let current_selection = self.selection.expect("has `.is_some_and()` guard").norm();
 
@@ -239,12 +255,10 @@ impl canvas::Program<Message> for App {
                     },
                 }
             }
-            Mouse(mouse::Event::CursorMoved { position })
-                if self.selection.is_some_and(Selection::is_create) =>
-            {
+            Mouse(CursorMoved { position }) if self.selection.is_some_and(Selection::is_create) => {
                 Message::ExtendNewSelection(*position)
             }
-            Mouse(mouse::Event::ButtonPressed(mouse::Button::Middle)) => Message::SelectFullScreen,
+            Mouse(ButtonPressed(Middle)) => Message::SelectFullScreen,
             _ => return None,
         };
 

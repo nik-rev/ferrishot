@@ -8,7 +8,6 @@ use crate::screenshot::RgbaHandle;
 use crate::selection::selection_lock::OptionalSelectionExt;
 use crate::theme::THEME;
 use iced::alignment::Vertical;
-use iced::keyboard::{Key, Modifiers};
 use iced::mouse::Cursor;
 use iced::widget::canvas::Path;
 use iced::widget::text::Shaping;
@@ -415,7 +414,6 @@ impl App {
         use iced::widget::text;
         const WIDTH: u32 = 380;
         const HEIGHT: u32 = 160;
-
         const FONT_SIZE: f32 = 13.0;
 
         let (width, height, _) = self.screenshot.raw();
@@ -503,19 +501,6 @@ impl App {
         let (image_width, _, _) = self.screenshot.raw();
 
         row![Space::with_width(image_width - ERROR_WIDTH), errors].into()
-    }
-
-    /// Receives keybindings
-    #[must_use]
-    pub fn handle_key_press(key: Key, mods: Modifiers) -> Option<Message> {
-        match (key, mods) {
-            (Key::Named(iced::keyboard::key::Named::Escape), _) => Some(Message::Exit),
-            (Key::Character(ch), Modifiers::CTRL) if ch == "c" => Some(Message::CopyToClipboard),
-            (Key::Named(iced::keyboard::key::Named::Enter), _) => Some(Message::CopyToClipboard),
-            (Key::Character(ch), Modifiers::CTRL) if ch == "s" => Some(Message::SaveScreenshot),
-            (Key::Named(iced::keyboard::key::Named::F11), _) => Some(Message::SelectFullScreen),
-            _ => None,
-        }
     }
 
     /// If the given cursor intersects the selected region, give the region and
