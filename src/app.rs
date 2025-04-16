@@ -199,9 +199,10 @@ impl App {
         ]
         .push_maybe(
             // icons around the selection
-            self.selection
-                .filter(|sel| sel.is_idle())
-                .map(|sel| sel.render_icons(icons)),
+            self.selection.filter(|sel| sel.is_idle()).map(|sel| {
+                let (width, height, _) = self.screenshot.raw();
+                sel.render_icons(icons, width as f32, height as f32)
+            }),
         )
         .push_maybe(self.selection.get().map(|(sel, key)| {
             let (image_width, image_height, _) = self.screenshot.raw();

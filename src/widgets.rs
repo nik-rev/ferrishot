@@ -61,8 +61,8 @@ pub fn size_indicator<'a>(
     }
 
     const SPACING: f32 = 12.0;
-    const ESTIMATED_INDICATOR_WIDTH: u32 = 104;
-    const ESTIMATED_INDICATOR_HEIGHT: u32 = 24;
+    const ESTIMATED_INDICATOR_WIDTH: u32 = 120;
+    const ESTIMATED_INDICATOR_HEIGHT: u32 = 26;
 
     let x_offset =
         (rect.bottom_right().x + SPACING).min((image_width - ESTIMATED_INDICATOR_WIDTH) as f32);

@@ -194,6 +194,8 @@ impl Selection {
     pub fn render_icons<'a>(
         self,
         icons: Vec<(Element<'a, Message>, &'static str)>,
+        image_width: f32,
+        image_height: f32,
     ) -> Element<'a, Message> {
         fn add_icons_until_there_is_at_least_n_of_them<'a, const MIN_ELEMENTS: usize>(
             mut icons: Vec<Element<'a, Message>>,
@@ -262,204 +264,274 @@ impl Selection {
         const PX_PER_ICON: f32 = SPACE_BETWEEN_ICONS + ICON_BUTTON_SIZE;
         const MIN_TOP_BOTTOM_ICONS: usize = 3;
         const MIN_SIDE_ICONS: usize = 1;
+
         let sel = self.norm();
+
+        let is_enough_space_at_bottom = image_height - (sel.rect.y + sel.rect.height) > PX_PER_ICON;
+        let is_enough_space_at_right = image_width - (sel.rect.x + sel.rect.width) > PX_PER_ICON;
+        let is_enough_space_at_top = sel.rect.y > PX_PER_ICON;
+        let is_enough_space_at_left = sel.rect.x > PX_PER_ICON;
+
         let icons_len = icons.len();
         let mut icons_iter = icons.into_iter();
         let mut total_icons_positioned = 0;
 
         // first position the icons on each side (bottom -> right -> top -> left)
+        // (bottom_icons, mut bottom_padding)
 
-        let (bottom_icons, mut bottom_padding) = position_icons_in_line(
-            sel.rect.width,
-            tooltip::Position::Bottom,
-            &mut total_icons_positioned,
-            &mut icons_iter,
-            icons_len,
-        );
-        let (right_icons, mut right_padding) = position_icons_in_line(
-            sel.rect.height,
-            tooltip::Position::Right,
-            &mut total_icons_positioned,
-            &mut icons_iter,
-            icons_len,
-        );
-        let (top_icons, mut top_padding) = position_icons_in_line(
-            sel.rect.width,
-            tooltip::Position::Top,
-            &mut total_icons_positioned,
-            &mut icons_iter,
-            icons_len,
-        );
-        let (left_icons, mut left_padding) = position_icons_in_line(
-            sel.rect.height,
-            tooltip::Position::Left,
-            &mut total_icons_positioned,
-            &mut icons_iter,
-            icons_len,
-        );
+        let bottom_icons = is_enough_space_at_bottom.then(|| {
+            position_icons_in_line(
+                sel.rect.width,
+                tooltip::Position::Bottom,
+                &mut total_icons_positioned,
+                &mut icons_iter,
+                icons_len,
+            )
+        });
+
+        let right_icons = is_enough_space_at_right.then(|| {
+            position_icons_in_line(
+                sel.rect.height,
+                tooltip::Position::Right,
+                &mut total_icons_positioned,
+                &mut icons_iter,
+                icons_len,
+            )
+        });
+
+        let top_icons = is_enough_space_at_top.then(|| {
+            position_icons_in_line(
+                sel.rect.width,
+                tooltip::Position::Top,
+                &mut total_icons_positioned,
+                &mut icons_iter,
+                icons_len,
+            )
+        });
+
+        let left_icons = is_enough_space_at_left.then(|| {
+            position_icons_in_line(
+                sel.rect.height,
+                tooltip::Position::Left,
+                &mut total_icons_positioned,
+                &mut icons_iter,
+                icons_len,
+            )
+        });
 
         // if we reach here, our selection is to small to nicely
         // render all of the icons so we must "stack" them somehow
 
         // for the 4 sides, combined they will fit at LEAST 8 icons (3 top 3 bottom 1 right 1 left)
 
-        let bottom_icons = add_icons_until_there_is_at_least_n_of_them::<MIN_TOP_BOTTOM_ICONS>(
-            bottom_icons,
-            &mut icons_iter,
-            &mut bottom_padding,
-            &mut total_icons_positioned,
-            tooltip::Position::Bottom,
-        );
+        let bottom_icons = bottom_icons.map(|(bottom_icons, mut bottom_padding)| {
+            (
+                add_icons_until_there_is_at_least_n_of_them::<MIN_TOP_BOTTOM_ICONS>(
+                    bottom_icons,
+                    &mut icons_iter,
+                    &mut bottom_padding,
+                    &mut total_icons_positioned,
+                    tooltip::Position::Bottom,
+                ),
+                bottom_padding,
+            )
+        });
 
-        let top_icons = add_icons_until_there_is_at_least_n_of_them::<MIN_TOP_BOTTOM_ICONS>(
-            top_icons,
-            &mut icons_iter,
-            &mut top_padding,
-            &mut total_icons_positioned,
-            tooltip::Position::Top,
-        );
+        let top_icons = top_icons.map(|(top_icons, mut top_padding)| {
+            (
+                add_icons_until_there_is_at_least_n_of_them::<MIN_TOP_BOTTOM_ICONS>(
+                    top_icons,
+                    &mut icons_iter,
+                    &mut top_padding,
+                    &mut total_icons_positioned,
+                    tooltip::Position::Top,
+                ),
+                top_padding,
+            )
+        });
 
-        let left_icons = add_icons_until_there_is_at_least_n_of_them::<MIN_SIDE_ICONS>(
-            left_icons,
-            &mut icons_iter,
-            &mut left_padding,
-            &mut total_icons_positioned,
-            tooltip::Position::Left,
-        );
+        let left_icons = left_icons.map(|(left_icons, mut left_padding)| {
+            (
+                add_icons_until_there_is_at_least_n_of_them::<MIN_SIDE_ICONS>(
+                    left_icons,
+                    &mut icons_iter,
+                    &mut left_padding,
+                    &mut total_icons_positioned,
+                    tooltip::Position::Left,
+                ),
+                left_padding,
+            )
+        });
 
-        let right_icons = add_icons_until_there_is_at_least_n_of_them::<MIN_SIDE_ICONS>(
-            right_icons,
-            &mut icons_iter,
-            &mut right_padding,
-            &mut total_icons_positioned,
-            tooltip::Position::Right,
-        );
+        let right_icons = right_icons.map(|(right_icons, mut right_padding)| {
+            (
+                add_icons_until_there_is_at_least_n_of_them::<MIN_SIDE_ICONS>(
+                    right_icons,
+                    &mut icons_iter,
+                    &mut right_padding,
+                    &mut total_icons_positioned,
+                    tooltip::Position::Right,
+                ),
+                right_padding,
+            )
+        });
 
         // position two additional rows of icons on top and bottom
         // if we STILL have extra icons left
 
-        let (extra_top_icons, mut extra_top_padding) = position_icons_in_line(
-            sel.rect.width,
-            tooltip::Position::Top,
-            &mut total_icons_positioned,
-            &mut icons_iter,
-            icons_len,
-        );
-        let (extra_bottom_icons, mut extra_bottom_padding) = position_icons_in_line(
-            sel.rect.width,
-            tooltip::Position::Bottom,
-            &mut total_icons_positioned,
-            &mut icons_iter,
-            icons_len,
-        );
+        let extra_top_icons = is_enough_space_at_top.then(|| {
+            position_icons_in_line(
+                sel.rect.width,
+                tooltip::Position::Top,
+                &mut total_icons_positioned,
+                &mut icons_iter,
+                icons_len,
+            )
+        });
 
-        let extra_bottom_icons = add_icons_until_there_is_at_least_n_of_them::<MIN_TOP_BOTTOM_ICONS>(
-            extra_bottom_icons,
-            &mut icons_iter,
-            &mut extra_bottom_padding,
-            &mut total_icons_positioned,
-            tooltip::Position::Bottom,
-        );
+        let extra_bottom_icons = is_enough_space_at_bottom.then(|| {
+            position_icons_in_line(
+                sel.rect.width,
+                tooltip::Position::Bottom,
+                &mut total_icons_positioned,
+                &mut icons_iter,
+                icons_len,
+            )
+        });
 
-        let extra_top_icons = add_icons_until_there_is_at_least_n_of_them::<MIN_TOP_BOTTOM_ICONS>(
-            extra_top_icons,
-            &mut icons_iter,
-            &mut extra_top_padding,
-            &mut total_icons_positioned,
-            tooltip::Position::Top,
-        );
+        let extra_bottom_icons =
+            extra_bottom_icons.map(|(extra_bottom_icons, mut extra_bottom_padding)| {
+                (
+                    add_icons_until_there_is_at_least_n_of_them::<MIN_TOP_BOTTOM_ICONS>(
+                        extra_bottom_icons,
+                        &mut icons_iter,
+                        &mut extra_bottom_padding,
+                        &mut total_icons_positioned,
+                        tooltip::Position::Bottom,
+                    ),
+                    extra_bottom_padding,
+                )
+            });
 
-        let (extra_extra_top_icons, mut extra_extra_top_padding) = position_icons_in_line(
-            sel.rect.width,
-            tooltip::Position::Top,
-            &mut total_icons_positioned,
-            &mut icons_iter,
-            icons_len,
-        );
+        let extra_top_icons = extra_top_icons.map(|(extra_top_icons, mut extra_top_padding)| {
+            (
+                add_icons_until_there_is_at_least_n_of_them::<MIN_TOP_BOTTOM_ICONS>(
+                    extra_top_icons,
+                    &mut icons_iter,
+                    &mut extra_top_padding,
+                    &mut total_icons_positioned,
+                    tooltip::Position::Top,
+                ),
+                extra_top_padding,
+            )
+        });
 
-        let (extra_extra_bottom_icons, mut extra_extra_bottom_padding) = position_icons_in_line(
-            sel.rect.width,
-            tooltip::Position::Bottom,
-            &mut total_icons_positioned,
-            &mut icons_iter,
-            icons_len,
-        );
+        let extra_extra_top_icons = is_enough_space_at_top.then(|| {
+            position_icons_in_line(
+                sel.rect.width,
+                tooltip::Position::Top,
+                &mut total_icons_positioned,
+                &mut icons_iter,
+                icons_len,
+            )
+        });
+
+        let extra_extra_bottom_icons = is_enough_space_at_bottom.then(|| {
+            position_icons_in_line(
+                sel.rect.width,
+                tooltip::Position::Bottom,
+                &mut total_icons_positioned,
+                &mut icons_iter,
+                icons_len,
+            )
+        });
 
         let extra_extra_top_icons =
-            add_icons_until_there_is_at_least_n_of_them::<MIN_TOP_BOTTOM_ICONS>(
-                extra_extra_top_icons,
-                &mut icons_iter,
-                &mut extra_extra_top_padding,
-                &mut total_icons_positioned,
-                tooltip::Position::Top,
-            );
+            extra_extra_top_icons.map(|(extra_extra_top_icons, mut extra_extra_top_padding)| {
+                (
+                    add_icons_until_there_is_at_least_n_of_them::<MIN_TOP_BOTTOM_ICONS>(
+                        extra_extra_top_icons,
+                        &mut icons_iter,
+                        &mut extra_extra_top_padding,
+                        &mut total_icons_positioned,
+                        tooltip::Position::Top,
+                    ),
+                    extra_extra_top_padding,
+                )
+            });
 
-        let extra_extra_bottom_icons =
-            add_icons_until_there_is_at_least_n_of_them::<MIN_TOP_BOTTOM_ICONS>(
-                extra_extra_bottom_icons,
-                &mut icons_iter,
-                &mut extra_extra_bottom_padding,
-                &mut total_icons_positioned,
-                tooltip::Position::Bottom,
-            );
+        let extra_extra_bottom_icons = extra_extra_bottom_icons.map(
+            |(extra_extra_bottom_icons, mut extra_extra_bottom_padding)| {
+                (
+                    add_icons_until_there_is_at_least_n_of_them::<MIN_TOP_BOTTOM_ICONS>(
+                        extra_extra_bottom_icons,
+                        &mut icons_iter,
+                        &mut extra_extra_bottom_padding,
+                        &mut total_icons_positioned,
+                        tooltip::Position::Bottom,
+                    ),
+                    extra_extra_bottom_padding,
+                )
+            },
+        );
 
         debug_assert!(
             icons_iter.as_slice().is_empty(),
-            "all icons have been rendered"
+            "not all icons have been rendered"
         );
 
-        let right_icons = Column::from_vec(right_icons)
-            .spacing(SPACE_BETWEEN_ICONS)
-            .width(PX_PER_ICON)
-            .padding(Padding::default().top(right_padding));
-        let left_icons = Column::from_vec(left_icons)
-            .spacing(SPACE_BETWEEN_ICONS)
-            .width(PX_PER_ICON)
-            .padding(Padding::default().top(left_padding));
+        let right_icons = right_icons.map(|(right_icons, right_padding)| {
+            Column::from_vec(right_icons)
+                .spacing(SPACE_BETWEEN_ICONS)
+                .width(PX_PER_ICON)
+                .padding(Padding::default().top(right_padding))
+        });
+        let left_icons = left_icons.map(|(left_icons, left_padding)| {
+            Column::from_vec(left_icons)
+                .spacing(SPACE_BETWEEN_ICONS)
+                .width(PX_PER_ICON)
+                .padding(Padding::default().top(left_padding))
+        });
 
         // there is no way to get amount of children
         // from a Row. that would be prety useful
         let mut top_icon_rows_count = 0;
-        let top_icons: Column<_> = vec![
-            (extra_extra_top_icons, extra_extra_top_padding),
-            (extra_top_icons, extra_top_padding),
-            (top_icons, top_padding),
-        ]
-        .into_iter()
-        .filter_map(|(icons, padding)| {
-            (!icons.is_empty()).then(|| {
-                top_icon_rows_count += 1;
-                row![
-                    Space::with_width(sel.rect.x),
-                    Row::from_vec(icons)
-                        .spacing(SPACE_BETWEEN_ICONS)
-                        .height(PX_PER_ICON)
-                        .padding(Padding::default().left(padding))
-                ]
-                .into()
+        let top_icons: Column<_> = extra_extra_top_icons
+            .into_iter()
+            .chain(extra_top_icons)
+            .chain(top_icons)
+            .filter_map(|(icons, padding)| {
+                (!icons.is_empty()).then(|| {
+                    top_icon_rows_count += 1;
+                    row![
+                        Space::with_width(sel.rect.x),
+                        Row::from_vec(icons)
+                            .spacing(SPACE_BETWEEN_ICONS)
+                            .height(PX_PER_ICON)
+                            .padding(Padding::default().left(padding))
+                    ]
+                    .into()
+                })
             })
-        })
-        .collect();
+            .collect();
 
-        let bottom_icons: Column<_> = vec![
-            (bottom_icons, bottom_padding),
-            (extra_bottom_icons, extra_bottom_padding),
-            (extra_extra_bottom_icons, extra_extra_bottom_padding),
-        ]
-        .into_iter()
-        .filter_map(|(icons, padding)| {
-            (!icons.is_empty()).then(|| {
-                row![
-                    Space::with_width(sel.rect.x),
-                    Row::from_vec(icons)
-                        .spacing(SPACE_BETWEEN_ICONS)
-                        .height(PX_PER_ICON)
-                        .padding(Padding::default().left(padding))
-                ]
-                .into()
+        let bottom_icons: Column<_> = bottom_icons
+            .into_iter()
+            .chain(extra_bottom_icons)
+            .chain(extra_extra_bottom_icons)
+            .filter_map(|(icons, padding)| {
+                (!icons.is_empty()).then(|| {
+                    row![
+                        Space::with_width(sel.rect.x),
+                        Row::from_vec(icons)
+                            .spacing(SPACE_BETWEEN_ICONS)
+                            .height(PX_PER_ICON)
+                            .padding(Padding::default().left(padding))
+                    ]
+                    .into()
+                })
             })
-        })
-        .collect();
+            .collect();
 
         // include the frame so the icons do not touch the frame
         let selection_height = FRAME_WIDTH.mul_add(2.0, sel.rect.height);
@@ -477,14 +549,15 @@ impl Selection {
             // top icon row
             top_icons,
             // right icon row + left icon row
-            row![
-                Space::with_width(sel.rect.x - PX_PER_ICON).height(Length::Fill),
-                left_icons,
-                Space::with_width(FRAME_WIDTH.mul_add(2.0, sel.rect.width)).height(Length::Fill),
-                right_icons
-            ]
-            .padding(Padding::default().top(height_added / 2.0))
-            .height(selection_height + height_added),
+            row![Space::with_width(sel.rect.x - PX_PER_ICON).height(Length::Fill),]
+                .push_maybe(left_icons)
+                .push(
+                    Space::with_width(FRAME_WIDTH.mul_add(2.0, sel.rect.width))
+                        .height(Length::Fill)
+                )
+                .push_maybe(right_icons)
+                .padding(Padding::default().top(height_added / 2.0))
+                .height(selection_height + height_added),
             // bottom icon row
             bottom_icons,
         ]

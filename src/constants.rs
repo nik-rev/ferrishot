@@ -10,8 +10,6 @@ pub const FRAME_CIRCLE_RADIUS: f32 = 6.0;
 pub const FRAME_INTERACTION_AREA: f32 = 30.0;
 /// The size of the lines of the frame of the selection
 pub const FRAME_WIDTH: f32 = 2.0;
-// The color of the background for non-selected regions
-// pub const NON_SELECTED_REGION_COLOR: Color = color!(0x00_00_00, 0.4);
 
 /// Width and height for icons *inside* of buttons
 pub const ICON_SIZE: f32 = 32.0;
