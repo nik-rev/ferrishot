@@ -6,7 +6,7 @@
   - Select entire monitor (F11)
   - Save Screenshot (Ctrl + S)
   - Exit (Esc)
-- Added an indicator for the width and height of selection in the bottom right corner
+- Added an indicator for the width and height of selection in the bottom right corner. This indicator can be edited to set the selection to a concrete size!
 
 # v0.1.0 - 12 April 2025
 

@@ -1,13 +1,12 @@
 //! Widgets with custom styles
 use iced::{
     Background, Border, Element, Length, Rectangle, Shadow,
-    widget::{self, Space, column, row},
+    widget::{self, Space, column, row, text::Shaping},
 };
 
 use crate::{
-    constants::{ICON_BUTTON_SIZE, ICON_SIZE},
     rectangle::RectangleExt as _,
-    selection::selection_lock::SelectionIsSome,
+    selection::{ICON_BUTTON_SIZE, selection_lock::SelectionIsSome},
     theme::THEME,
 };
 
@@ -84,7 +83,9 @@ pub fn size_indicator<'a>(
             sel_is_some,
         }
     });
-    let x = iced::widget::text("x ").color(THEME.fg);
+    let x = iced::widget::text("✕ ")
+        .color(THEME.fg)
+        .shaping(Shaping::Advanced);
     let space = iced::widget::text(" ");
     let c = widget::container(row![space, width, x, height]).style(|_| widget::container::Style {
         text_color: None,
@@ -114,6 +115,9 @@ pub fn icon_tooltip<'a, Message>(
 
 /// Styled icon as a button
 pub fn icon<'a, Message>(icon: crate::icons::Icon) -> widget::Button<'a, Message> {
+    /// Width and height for icons *inside* of buttons
+    const ICON_SIZE: f32 = 32.0;
+
     widget::button(
         widget::Svg::new(icon.svg())
             .style(|_, _| widget::svg::Style {

@@ -10,6 +10,9 @@ keywords = ["screenshot", "screen-capture", "capture", "flameshot"]
 categories = ["visualization", "multimedia"]
 authors = ["Nik Revenco"]
 
+[build-dependencies]
+image = "0.25.6"
+
 [dependencies]
 mouse_position = "0.1.4"
 xcap = { version = "0.4.1", features = ["image", "vendored"] }
@@ -36,6 +39,9 @@ rfd = "0.15.3"
 etcetera = "0.10.0"
 chrono = "0.4.40"
 tempfile = "3.19.1"
+
+[target.'cfg(not(target_os = "linux"))'.dependencies]
+tray-icon = "0.20.0"
 
 [lints.rust]
 missing_docs = "warn"

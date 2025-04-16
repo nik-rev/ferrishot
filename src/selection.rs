@@ -4,13 +4,19 @@ use iced::widget::{Column, Row, Space, row, tooltip};
 use iced::{Element, Length, Padding};
 use iced::{Point, Rectangle, Size};
 
-use crate::constants::SPACE_BETWEEN_ICONS;
-use crate::constants::{FRAME_WIDTH, ICON_BUTTON_SIZE};
 use crate::corners::Corners;
 use crate::corners::SideOrCorner;
+use crate::icon;
 use crate::message::Message;
 use crate::rectangle::RectangleExt;
 use crate::theme::THEME;
+
+/// The size of the lines of the frame of the selection
+pub const FRAME_WIDTH: f32 = 2.0;
+
+/// Size of the button for the icon, which includes the
+/// icon itself and space around it (bigger than `ICON_SIZE`)
+pub const ICON_BUTTON_SIZE: f32 = 37.0;
 
 /// The selected area of the desktop which will be captured
 #[derive(Debug, Default, Copy, Clone)]
@@ -25,7 +31,7 @@ pub struct Selection {
 #[derive(Debug, Default, Clone, Copy, PartialEq, derive_more::IsVariant)]
 pub enum SelectionStatus {
     /// The selection is currently being resized
-    Resized {
+    Resize {
         /// Position of the selection rectangle before we started resizing it
         initial_rect: Rectangle,
         /// Cursor position before we started resizing it
@@ -33,10 +39,10 @@ pub enum SelectionStatus {
         /// The side or corner being resized
         resize_side: SideOrCorner,
     },
-    /// The selection is currently being dragged
+    /// The selection is currently being moved entirely
     ///
     /// left click + hold + move mouse
-    Dragged {
+    Move {
         /// Top-left point of the selection Rect before we started dragging the
         /// selection
         initial_rect_pos: Point,
@@ -172,11 +178,11 @@ impl Selection {
         }
         to self.status {
             /// The selection is currently being dragged
-            pub const fn is_dragged(self) -> bool;
+            pub const fn is_move(self) -> bool;
             /// The selection is not moving
             pub const fn is_idle(self) -> bool;
             /// The selection is being resized
-            pub const fn is_resized(self) -> bool;
+            pub const fn is_resize(self) -> bool;
             /// The selection is being created
             pub const fn is_create(self) -> bool;
         }
@@ -195,12 +201,7 @@ impl Selection {
     // same size as the entire screen - so no icons can be rendered at all.
     //
     // We should add even more fallbacks so that it can render a little bit inside of the selection.
-    pub fn render_icons<'a>(
-        self,
-        icons: Vec<(Element<'a, Message>, &'static str)>,
-        image_width: f32,
-        image_height: f32,
-    ) -> Element<'a, Message> {
+    pub fn render_icons<'a>(self, image_width: f32, image_height: f32) -> Element<'a, Message> {
         fn add_icons_until_there_is_at_least_n_of_them<'a, const MIN_ELEMENTS: usize>(
             mut icons: Vec<Element<'a, Message>>,
             mut iter: impl Iterator<Item = (Element<'a, Message>, &'static str)>,
@@ -255,6 +256,7 @@ impl Selection {
 
             (icons, padding)
         }
+
         // Here is the behaviour that we want
         //
         // We have a list of icons we want to render.
@@ -268,6 +270,23 @@ impl Selection {
         const PX_PER_ICON: f32 = SPACE_BETWEEN_ICONS + ICON_BUTTON_SIZE;
         const MIN_TOP_BOTTOM_ICONS: usize = 3;
         const MIN_SIDE_ICONS: usize = 1;
+        const SPACE_BETWEEN_ICONS: f32 = 2.0;
+
+        let icons = vec![
+            (
+                icon!(Fullscreen).on_press(Message::FullSelection).into(),
+                "Select entire monitor (F11)",
+            ),
+            (
+                icon!(Clipboard).on_press(Message::CopyToClipboard).into(),
+                "Copy to Clipboard (Enter)",
+            ),
+            (
+                icon!(Save).on_press(Message::SaveScreenshot).into(),
+                "Save Screenshot (Ctrl + S)",
+            ),
+            (icon!(Close).on_press(Message::Exit).into(), "Exit (Esc)"),
+        ];
 
         let sel = self.norm();
 

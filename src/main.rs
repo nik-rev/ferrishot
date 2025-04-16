@@ -3,8 +3,24 @@
 use ferrishot::App;
 use iced::Font;
 
+/// Logo of ferrishot
+const LOGO: &[u8; 0x4000] = include_bytes!(concat!(env!("OUT_DIR"), "/logo.bin"));
+
 fn main() {
     env_logger::builder().init();
+
+    // tray icon for Mac / Windows
+    #[cfg(not(target_os = "linux"))]
+    {
+        let icon =
+            tray_icon::icon::Icon::from_rgba(LOGO.to_vec(), 64, 64).expect("Failed to open icon");
+
+        let tray_icon = tray_icon::TrayIconBuilder::new()
+            .with_title("ferrishot")
+            .with_tooltip("Take a screenshot using ferrishot")
+            .with_icon(icon)
+            .build();
+    }
 
     // On linux, a daemon is required to provide clipboard access even when
     // the process dies.
@@ -26,6 +42,10 @@ fn main() {
         .window(iced::window::Settings {
             level: iced::window::Level::Normal,
             fullscreen: true,
+            icon: Some(
+                iced::window::icon::from_rgba(LOGO.to_vec(), 64, 64)
+                    .expect("logo.bin contains valid RGBA"),
+            ),
             ..Default::default()
         })
         .subscription(|_state| iced::keyboard::on_key_press(App::handle_key_press))
