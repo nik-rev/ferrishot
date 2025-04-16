@@ -267,10 +267,12 @@ impl Selection {
 
         let sel = self.norm();
 
-        let is_enough_space_at_bottom = image_height - (sel.rect.y + sel.rect.height) > PX_PER_ICON;
-        let is_enough_space_at_right = image_width - (sel.rect.x + sel.rect.width) > PX_PER_ICON;
-        let is_enough_space_at_top = sel.rect.y > PX_PER_ICON;
-        let is_enough_space_at_left = sel.rect.x > PX_PER_ICON;
+        let is_enough_space_at_bottom =
+            image_height - (sel.rect.y + sel.rect.height) > ICON_BUTTON_SIZE;
+        let is_enough_space_at_right =
+            image_width - (sel.rect.x + sel.rect.width) > ICON_BUTTON_SIZE;
+        let is_enough_space_at_top = sel.rect.y > ICON_BUTTON_SIZE;
+        let is_enough_space_at_left = sel.rect.x > ICON_BUTTON_SIZE;
 
         let icons_len = icons.len();
         let mut icons_iter = icons.into_iter();
