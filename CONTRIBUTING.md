@@ -30,3 +30,8 @@ To run:
 ```sh
 cargo run
 ```
+
+## Website
+
+- `docs/index.html` is the landing page and served at `ferrishot.com`
+- `docs/docs/index.html` is created from `mdbook build` in a github action and is served at `ferrishot.com/docs`
