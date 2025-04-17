@@ -3,22 +3,20 @@
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
   };
 
-  outputs =
-    {
-      nixpkgs,
-      flake-utils,
-      ...
-    }:
+  outputs = {
+    nixpkgs,
+    flake-utils,
+    ...
+  }:
     flake-utils.lib.eachDefaultSystem (
-      system:
-      let
+      system: let
         pkgs = import nixpkgs {
           inherit system;
         };
         manifest = pkgs.lib.importTOML ./Cargo.toml;
         buildInputs = with pkgs; [
-          # required for the flake
-          pkgs.makeWrapper
+          # required for the derivation
+          makeWrapper
 
           # makes it more performant
           libGL
@@ -30,10 +28,18 @@
           xorg.libX11
           libxkbcommon
         ];
-      in
-      {
+      in {
         devShells.default = pkgs.mkShell {
-          inherit buildInputs;
+          buildInputs =
+            buildInputs
+            ++ (with pkgs; [
+              cargo
+              rustc
+              rustfmt
+              rustPackages.clippy
+              rust-analyzer
+              bacon
+            ]);
           LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath buildInputs;
         };
         packages.default = pkgs.rustPlatform.buildRustPackage {
@@ -50,6 +56,7 @@
               --suffix LD_LIBRARY_PATH : ${pkgs.lib.makeLibraryPath buildInputs}
           '';
         };
+        formatter = pkgs.alejandra;
       }
     );
 }
