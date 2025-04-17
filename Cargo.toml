@@ -10,6 +10,10 @@ keywords = ["screenshot", "screen-capture", "capture", "flameshot"]
 categories = ["visualization", "multimedia"]
 authors = ["Nik Revenco"]
 
+[dev-dependencies]
+mdbook-admonish = "0.4"
+mdbook-alerts = "0.7.0"
+
 [build-dependencies]
 image = "0.25.6"
 
