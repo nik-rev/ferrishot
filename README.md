@@ -50,13 +50,13 @@ brew install nik-rev/tap/ferrishot
 ### PowerShell
 
 ```sh
-powershell -ExecutionPolicy Bypass -c "irm https://github.com/nik-rev/countryfetch/releases/latest/download/ferrishot-installer.ps1 | iex"
+powershell -ExecutionPolicy Bypass -c "irm https://github.com/nik-rev/ferrishot/releases/latest/download/ferrishot-installer.ps1 | iex"
 ```
 
 ### Shell
 
 ```sh
-curl --proto '=https' --tlsv1.2 -LsSf https://github.com/nik-rev/countryfetch/releases/latest/download/ferrishot-installer.sh | sh
+curl --proto '=https' --tlsv1.2 -LsSf https://github.com/nik-rev/ferrishot/releases/latest/download/ferrishot-installer.sh | sh
 ```
 
 ### Nix
