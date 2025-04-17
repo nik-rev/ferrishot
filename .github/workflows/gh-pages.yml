@@ -19,10 +19,10 @@ jobs:
           # fetch mdbook binary
           curl -sSL https://github.com/rust-lang/mdBook/releases/download/v0.4.48/mdbook-v0.4.48-x86_64-unknown-linux-gnu.tar.gz | tar -xz --directory=bin
           # we want our `./index.html` which is the landing page at the root and served at `ferrishot.com` root
-          # And `./book/index.html` will be served at `ferrishot.com/book`
+          # And `./book/index.html` will be served at `ferrishot.com/docs`
           bin/mdbook build docs
           mv docs/book site
-          mv index.html site
+          mv index.html site/docs
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
