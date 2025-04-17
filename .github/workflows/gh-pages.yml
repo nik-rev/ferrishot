@@ -21,8 +21,9 @@ jobs:
           # we want our `./index.html` which is the landing page at the root and served at `ferrishot.com` root
           # And `./book/index.html` will be served at `ferrishot.com/docs`
           bin/mdbook build docs
-          mv docs/book site/docs
-          mv index.html site/index.html
+          mv docs/book .
+          rm -rf docs
+          mv book docs
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
@@ -30,7 +31,7 @@ jobs:
       - name: Upload GitHub Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: site
+          path: .
 
   deploy:
     runs-on: ubuntu-latest
