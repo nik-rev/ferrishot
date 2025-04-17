@@ -9,6 +9,9 @@ additional-css = ["./theme/theme.css", "./mdbook-admonish.css"]
 default-theme = "light"
 preferred-dark-theme = "light"
 
+[build]
+build-dir = "docs"
+
 [preprocessor.admonish]
 command = "mdbook-admonish"
 assets_version = "3.0.3"    # do not edit: managed by `mdbook-admonish install`

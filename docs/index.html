@@ -2,6 +2,7 @@
   <head>
     <title>Ferrishot | Open Source Screenshot Software</title>
     <meta name="description" content="Ferrishot is a free and open-source, cross-platform tool to take screenshots"></meta>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
   </head>
   <style>
     * { margin: 0; padding: 0; }
@@ -147,12 +148,53 @@
       align-items: center;
       justify-content: center;
     }
+
+    @media (max-width: 600px) {
+      body {
+        gap: 20px;
+        padding: 0 16px;
+        align-items: stretch;
+      }
+
+      main {
+        padding: 40px 20px 80px 20px;
+        max-width: 100%;
+      }
+
+      #logo {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+      }
+
+      #install-button {
+        margin: 40px auto 0 auto;
+      }
+
+      #final-install-button {
+        margin: 60px auto 0 auto;
+      }
+
+      #features h2 {
+        flex-direction: column;
+        gap: 20px;
+        margin-left: 0;
+        margin-right: 0;
+      }
+
+      footer {
+        flex-direction: column;
+        gap: 8px;
+        height: auto;
+        padding: 20px;
+      }
+    }
   </style>
   <body>
     <main>
       <div id="logo-container">
         <div id="logo">
-          <img src="./icons/Ferrishot.svg" id="logo" height="48" width="48"></img>
+          <img src="../icons/Ferrishot.svg" id="logo" height="48" width="48"></img>
           <h1>ferrishot<h1>
         </div>
         <div id="description">
@@ -180,27 +222,6 @@
             <p>Press enter to save to clipboard or Ctrl + S to save to a file.</p>
             <a class="learn-more" href="https://github.com/nik-rev/ferrishot?tab=readme-ov-file#features">Learn more</a>
           </li>
-          <!-- <li> -->
-            <!-- <h3>Screenshot editing (soon)</h3> -->
-            <!-- <p>Modify your screenshots as you take them. Draw arrows, boxes, circles. Write text. Blur sensitive information.</p> -->
-            <!-- <p>All is integrated. No need for a dedicated image editor.</p> -->
-            <!-- <a class="learn-more">Learn more</a> -->
-          <!-- </li> -->
-          <!-- <li> -->
-            <!-- <h3>Vim keybindings (soon)</h3> -->
-            <!-- <p>Never leave your keyboard, if you're into that. Ferrishot is fully usable without a mouse.</p> -->
-            <!-- <a class="learn-more">Learn more</a> -->
-          <!-- </li> -->
-          <!-- <li> -->
-            <!-- <h3>Uploading your screenshot is 1 click away (soon)</h3> -->
-            <!-- <p>Share your screenshot using a link or QR code.</p> -->
-            <!-- <a class="learn-more">Learn more</a> -->
-          <!-- </li> -->
-          <!-- <li> -->
-            <!-- <h3>Make it yours (soon)</h3> -->
-            <!-- <p>Everything is configurable. Theme. Keybindings. Tools.</p> -->
-            <!-- <a class="learn-more">Learn more</a> -->
-          <!-- </li> -->
           <li>
             <h3>Cross-platform</h3>
             <p>Available on Windows, MacOS and Linux.</p>
@@ -217,7 +238,7 @@
     </main>
     <footer>
       <div id="logo">
-        <img src="./icons/Ferrishot.svg" id="logo" height="48" width="48"></img>
+        <img src="../icons/Ferrishot.svg" id="logo" height="48" width="48"></img>
         <h1>ferrishot<h1>
       </div>
     </footer>
