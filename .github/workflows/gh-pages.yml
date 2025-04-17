@@ -21,8 +21,8 @@ jobs:
           # we want our `./index.html` which is the landing page at the root and served at `ferrishot.com` root
           # And `./book/index.html` will be served at `ferrishot.com/docs`
           bin/mdbook build docs
-          mv docs/book site
-          mv index.html site/docs
+          mv docs/book site/docs
+          mv index.html site/index.html
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
