@@ -2,7 +2,7 @@
   <p>
     <h1>
       <a href="https://github.com/nik-rev/ferrishot">
-        <img height="64px" width="64px" src="logo.svg" />
+        <img height="64px" width="64px" src="icons/Ferrishot.svg" />
       </a>
       <br />
       ferrishot

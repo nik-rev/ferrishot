@@ -1,0 +1,277 @@
+<html>
+  <head>
+    <title>Ferrishot | Open Source Screenshot Software</title>
+    <meta name="description" content="Ferrishot is a free and open-source, cross-platform tool to take screenshots"></meta>
+  </head>
+  <style>
+    * { margin: 0; }
+    :root {
+      --accent-color: #dea584;
+      --accent-color-dark: #ab6137;
+      --background: #fff8f0;
+      --text: #452601f0;
+    }
+    main {
+      display: flex;
+      flex-direction: column;
+      width: 64ch;
+    }
+    body {
+      font-family: 'Courier New', Courier, monospace;
+      display: flex;
+      gap: 40px;
+      align-items: center;
+      flex-direction: column;
+      background-color: var(--background);
+    }
+    #logo-container {
+      max-width: 800px;
+      width: 100%;
+      padding-left: 80px;
+      padding-top: 80px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    #logo {
+      display: flex;
+      gap: 10px;
+      h1 {
+        color: var(--accent-color);
+        margin-top: auto;
+        margin-bottom: auto;
+        font-size: 26px;
+      }
+    }
+    #icons {
+      margin-top: -4px;
+      margin-left: 8px;
+      svg {
+        color: var(--accent-color);
+      }
+      a {
+        text-decoration: none;
+      }
+    }
+    #description {
+      display: flex;
+      flex-direction: column;
+      p {
+        color: var(--text);
+        margin: 0;
+        font-style: italic;
+      }
+    }
+    .hidden {
+      display: none;
+    }
+  </style>
+  <body>
+    <!-- <nav> -->
+      <div id="logo-container">
+        <div id="logo">
+          <img src="./icons/Ferrishot.svg" id="logo" height="48" width="48"></img>
+          <h1>ferrishot<h1>
+        </div>
+        <div id="description">
+          <p>Intuitive, yet powerful screenshot software.</p>
+          <p>Free and open source, written in Rust</p>
+        </div>
+        <div id="icons">
+          <a href="https://github.com/nik-rev/ferrishot" title="Ferrishot Source Code on GitHub">
+            <svg height="16px" width="16px" stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg"><path d="M256 32C132.3 32 32 134.9 32 261.7c0 101.5 64.2 187.5 153.2 217.9 1.4.3 2.6.4 3.8.4 8.3 0 11.5-6.1 11.5-11.4 0-5.5-.2-19.9-.3-39.1-8.4 1.9-15.9 2.7-22.6 2.7-43.1 0-52.9-33.5-52.9-33.5-10.2-26.5-24.9-33.6-24.9-33.6-19.5-13.7-.1-14.1 1.4-14.1h.1c22.5 2 34.3 23.8 34.3 23.8 11.2 19.6 26.2 25.1 39.6 25.1 10.5 0 20-3.4 25.6-6 2-14.8 7.8-24.9 14.2-30.7-49.7-5.8-102-25.5-102-113.5 0-25.1 8.7-45.6 23-61.6-2.3-5.8-10-29.2 2.2-60.8 0 0 1.6-.5 5-.5 8.1 0 26.4 3.1 56.6 24.1 17.9-5.1 37-7.6 56.1-7.7 19 .1 38.2 2.6 56.1 7.7 30.2-21 48.5-24.1 56.6-24.1 3.4 0 5 .5 5 .5 12.2 31.6 4.5 55 2.2 60.8 14.3 16.1 23 36.6 23 61.6 0 88.2-52.4 107.6-102.3 113.3 8 7.1 15.2 21.1 15.2 42.5 0 30.7-.3 55.5-.3 63 0 5.4 3.1 11.5 11.4 11.5 1.2 0 2.6-.1 4-.4C415.9 449.2 480 363.1 480 261.7 480 134.9 379.7 32 256 32z"></path></svg>
+          </a>
+          <a href="#download" title="Download Ferrishot">
+            <svg height="16px" width="16px" stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M19 9h-4V3H9v6H5l7 8zM4 19h16v2H4z"></path></svg>
+          </a>
+        </div>
+      </div>
+      <!-- <ul> -->
+        <!-- <li> -->
+          <!-- <a href="#features">Features</a> -->
+        <!-- </li> -->
+        <!-- <li> -->
+          <!-- <a href="#download">Download</a> -->
+        <!-- </li> -->
+        <!-- <li> -->
+          <!-- <a href="#contribute">Contribute</a> -->
+        <!-- </li> -->
+        <!-- <li> -->
+          <!-- <a href="docs.ferrishot">Docs</a> -->
+        <!-- </li> -->
+      <!-- <ul> -->
+    <!-- </nav> -->
+    <main>
+      <!-- <section id="1"> -->
+        <!-- <h2>A cross-platform screenshot app written in Rust</h2> -->
+        <!-- <button>Download</button> -->
+        <!-- <div id="preview"> -->
+          <!-- <img src="..."></img> -->
+        <!-- </div> -->
+      <!-- </section> -->
+      <!-- <section> -->
+        <!-- <h2>Free and Open Source screenshot software</h2> -->
+        <!-- <p>Ferrishot is a free and open-source, cross-platform tool to take screenshots with many built-in features to save you time</p> -->
+      <!-- </section> -->
+      <!-- <section id="features"> -->
+        <!-- <h2>Ferrishot Features<h2> -->
+        <!-- <ul> -->
+          <!-- <li> -->
+            <!-- <div> -->
+              <!-- <h3>Highly customizable</h3> -->
+              <!-- <p> -->
+                <!-- Customize the interface color, button selection, keyboard shortcuts, how images are saved, and more with Ferrishot's accessible configuration dialog. -->
+              <!-- </p> -->
+            <!-- </div> -->
+            <!-- <img /> -->
+          <!-- </li> -->
+          <!-- <li> -->
+            <!-- <img /> -->
+            <!-- <div> -->
+              <!-- <h3>In-app screenshot editing</h3> -->
+              <!-- <p> -->
+                <!-- You can choose to add an arrow mark, highlight text, blur a section, add a text, -->
+                <!-- draw something, add a rectangular/circular shaped border, add an incrementing counter number, -->
+                <!-- and add a solid color box with ferrishot's built-in editing tools. -->
+              <!-- </p> -->
+            <!-- </div> -->
+          <!-- </li> -->
+          <!-- <li> -->
+            <!-- <div> -->
+              <!-- <h3>Simple & intuitive<h3> -->
+              <!-- <p> -->
+                <!-- Using Ferrishot is as simple as launching, dragging the selection box to cover the area you want to capture, making annotations as needed in on-screen and saving the shot to your computer, all with a very simple and straightforward interface. -->
+              <!-- </p> -->
+            <!-- </div> -->
+            <!-- <img /> -->
+          <!-- </li> -->
+          <!-- <li> -->
+            <!-- <img /> -->
+            <!-- <div> -->
+              <!-- <h3>Upload to online platforms<h3> -->
+              <!-- <p> -->
+                <!-- Ferrishot allows users to simply upload their screenshots directly to the cloud in order to easily share it with others. You can upload your image directly to Imgur with a single click and share the URL with others. --> 
+              <!-- </p> -->
+            <!-- </div> -->
+          <!-- </li> -->
+          <!-- <li> -->
+            <!-- <img /> -->
+            <!-- <div> -->
+              <!-- <h3>Command-line interface<h3> -->
+              <!-- <p> -->
+                <!-- Ferrishot can be used fully via the command line. The command line interface lets you script ferrishot and use it as the subject of key binds. -->
+              <!-- </p> -->
+            <!-- </div> -->
+          <!-- </li> -->
+        <!-- </ul> -->
+      <!-- </section> -->
+      <!-- <section id="download"> -->
+        <!-- <ul id="platforms"> -->
+          <!-- <li> -->
+            <!-- <button id="select-Windows"> -->
+              <!-- <img /> -->
+              <!-- <h3>Windows<h3> -->
+            <!-- </button> -->
+          <!-- </li> -->
+          <!-- <li> -->
+            <!-- <button id="select-macOS"> -->
+              <!-- <img /> -->
+              <!-- <h3>macOS<h3> -->
+            <!-- </button> -->
+          <!-- </li> -->
+          <!-- <li> -->
+            <!-- <button id="select-Linux"> -->
+              <!-- <img /> -->
+              <!-- <h3>Linux<h3> -->
+            <!-- </button> -->
+          <!-- </li> -->
+        <!-- </ul> -->
+        <!-- <p>Get the latest ferrishot</p> -->
+        <!-- <section id="download-Windows"> -->
+          <!-- <button>Download Installer</button> -->
+        <!-- </section> -->
+        <!-- <section id="download-macOS"> -->
+          <!-- Homebrew -->
+          <!-- <pre> -->
+            <!-- homebrew -S ferrishot -->
+          <!-- </pre> -->
+        <!-- </section> -->
+        <!-- <section id="download-Linux"> -->
+          <!-- <button>Download AppImage</button> -->
+          <!-- <h4>Install via Package Manager<h4> -->
+          <!-- <ul> -->
+            <!-- <li> -->
+              <!-- <p>Arch</p> -->
+              <!-- <pre> -->
+                <!-- pacman -S ferrishot -->
+              <!-- </pre> -->
+            <!-- </li> -->
+            <!-- <li> -->
+              <!-- <p>Ubuntu</p> -->
+              <!-- <pre> -->
+                <!-- pacman -S ferrishot -->
+              <!-- </pre> -->
+            <!-- </li> -->
+            <!-- <li> -->
+              <!-- <p>Fedora</p> -->
+              <!-- <pre> -->
+                <!-- pacman -S ferrishot -->
+              <!-- </pre> -->
+            <!-- </li> -->
+            <!-- <li> -->
+              <!-- <p>NixOS</p> -->
+              <!-- <pre> -->
+                <!-- pacman -S ferrishot -->
+              <!-- </pre> -->
+            <!-- </li> -->
+          <!-- </ul> -->
+          <!-- <p> -->
+            <!-- Looking for older releases? -->
+          <!-- </p> -->
+        <!-- </section> -->
+      <!-- </section> -->
+      <!-- <section> -->
+        <!-- <img /> -->
+        <!-- <h3>Ferrishot is free and open source. Written in Rust.<h3> -->
+      <!-- </section> -->
+      <!-- <div>Hello World</div> -->
+      <!-- <button id="button">Lol</button> -->
+    </main>
+    <!-- <footer> -->
+      <!-- <ul> -->
+        <!-- <li>Features</li> -->
+        <!-- <li>Download</li> -->
+        <!-- <li>Contribute</li> -->
+        <!-- <li>Donate</li> -->
+        <!-- <li>Docs</li> -->
+      <!-- </ul> -->
+    <!-- </footer> -->
+    <script defer>
+      const operatingSystem =
+        /(darwin|Macintosh|MacIntel|MacPPC|Mac68K|iPhone|iPad|iPod)/i.test(
+          window.navigator.userAgent,
+        )
+          ? "macOS"
+          : /(Linux|X11)/i.test(window.navigator.userAgent)
+            ? "Linux"
+            : "Windows";
+
+      document.getElementById(`select-${operatingSystem}`).classList.add("download-selected");
+      document.getElementById("select-Windows").addEventListener("click", (e) => {
+        document.getElementById("download-Windows").classList.remove("hidden");
+        document.getElementById("download-macOS").classList.add("hidden");
+        document.getElementById("download-Linux").classList.add("hidden");
+      });
+      document.getElementById("select-macOS").addEventListener("click", (e) => {
+        document.getElementById("download-Windows").classList.add("hidden");
+        document.getElementById("download-macOS").classList.remove("hidden");
+        document.getElementById("download-Linux").classList.add("hidden");
+      });
+      document.getElementById("select-Linux").addEventListener("click", (e) => {
+        document.getElementById("download-Windows").classList.add("hidden");
+        document.getElementById("download-macOS").classList.add("hidden");
+        document.getElementById("download-Linux").classList.remove("hidden");
+      });
+    </script>
+  </body>
+</html>
