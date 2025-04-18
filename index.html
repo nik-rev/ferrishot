@@ -12,189 +12,100 @@
       --background: #fff8f0;
       --background-dark: #fae8d4;
       --text: #452601f0;
+      --font: 'Courier New', Courier, monospace;
     }
-    h1, h2, h3 {
-      color: var(--accent-color);
-    }
+    li { list-style: none; }
+    h1, h2, h3, h4, h5, h6 { color: var(--accent-color); }
+    h3, h4, h5, h6 { font-weight: normal; }
+
     .learn-more {
+      text-decoration: underline;
+      font-size: 0.8em;
       margin-top: -6px;
       margin-left: 6px;
-      font-size: 0.8em;
-      text-decoration: underline;
       &::before {
         content: "→ "
       }
     }
-    h3 {
-      font-weight: normal;
-    }
-    body {
-      font-family: 'Courier New', Courier, monospace;
-      display: flex;
-      gap: 40px;
-      align-items: center;
-      flex-direction: column;
-      background-color: var(--background);
-      color: var(--text);
-    }
-    main {
-      display: flex;
-      flex-direction: column;
-      width: 100%;
-      padding-left: 80px;
-      padding-top: 80px;
-      padding-bottom: 120px;
-      max-width: 800px;
-    }
-    #platforms {
-      margin-bottom: 16px;
-    }
-    #download {
-      align-self: start;
-    }
-    #logo-container {
-      width: 100%;
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-    }
-    svg {
-      color: var(--accent-color);
-    }
-    #logo {
-      display: flex;
-      gap: 10px;
-      h1 {
-        margin-top: auto;
-        margin-bottom: auto;
-        font-size: 26px;
-      }
-    }
-    a:has(svg) {
-      text-decoration: none;
-    }
-    #description {
-      display: flex;
-      flex-direction: column;
-      p {
-        margin: 0;
-        font-style: italic;
-      }
-    }
 
-    #install-button {
-      width: full;
-      margin-right: 160px;
-      margin-top: 40px;
-      margin-left: auto;
+    .install-button {
+      width: 171px;
       a {
+        background-color: var(--accent-color);
+        color: var(--background);
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 16px 40px;
+        border: none;
+        cursor: pointer;
+        font: inherit;
         svg {
           color: var(--background);
         }
+        /* pressed effect */
+        box-shadow: 3px 3px var(--text);
         &:active {
           transform: translateX(3px) translateY(3px);
           box-shadow: none;
           transition-property: transform box-shadow;
           transition-duration: 0.07s;
         }
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        padding: 16px 40px;
-        background-color: var(--accent-color);
-        color: var(--background);
-        border: none;
-        cursor: pointer;
-        box-shadow: 3px 3px var(--text);
-        font: inherit;
-      }
-    }
-
-    #final-install-button {
-      margin-top: 100px;
-      margin-left: auto;
-      margin-right: 100px;
-    }
-
-    #features {
-      max-width: 65ch;
-      h2 {
-        display: flex;
-        gap: 60px;
-        margin-top: 120px;
-        margin-left: auto;
-        margin-right: auto;
-      }
-      ul {
-        display: flex;
-        margin-top: 60px;
-        flex-direction: column;
-        gap: 40px;
-        li {
-          list-style: none;
-          display: flex;
-          flex-direction: column;
-          gap: 12px;
-        }
-      }
-    }
-
-    footer {
-      height: 150px;
-      width: 100%;
-      background-color: var(--background-dark);
-      display: flex;
-      justify-content: end;
-      align-items: center;
-      justify-content: center;
-    }
-
-    @media (max-width: 600px) {
-      body {
-        gap: 20px;
-        padding: 0 16px;
-        align-items: stretch;
-      }
-
-      main {
-        padding: 40px 20px 80px 20px;
-        max-width: 100%;
-      }
-
-      #logo {
-        flex-direction: column;
-        align-items: center;
-        text-align: center;
-      }
-
-      #install-button {
-        margin: 40px auto 0 auto;
-      }
-
-      #final-install-button {
-        margin: 60px auto 0 auto;
-      }
-
-      #features h2 {
-        flex-direction: column;
-        gap: 20px;
-        margin-left: 0;
-        margin-right: 0;
-      }
-
-      footer {
-        flex-direction: column;
-        gap: 8px;
-        height: auto;
-        padding: 20px;
       }
     }
   </style>
+  <style>
+    body {
+      font-family: var(--font);
+      background-color: var(--background);
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+    }
+  </style>
   <body>
+    <style>
+      main {
+        display: flex;
+        align-self: center;
+        flex-direction: column;
+        max-width: 65ch;
+        padding: 80px;
+        @media (width <= 600px) {
+          padding: 40px;
+        }
+      }
+    </style>
     <main>
+      <style>
+        #logo-container {
+          display: flex;
+          flex-direction: column;
+          gap: 20px;
+          #description {
+            font-style: italic;
+          }
+          svg {
+            color: var(--accent-color);
+          }
+        }
+      </style>
       <div id="logo-container">
+        <style>
+          #logo {
+            display: flex;
+            gap: 10px;
+            h1 {
+              font-size: 26px;
+              /* center text */
+              margin-top: auto;
+              margin-bottom: auto;
+            }
+          }
+        </style>
         <div id="logo">
-          <img src="../icons/Ferrishot.svg" id="logo" height="48" width="48"></img>
+          <img src="/icons/Ferrishot.svg" id="logo" height="48" width="48"></img>
           <h1>ferrishot<h1>
         </div>
         <div id="description">
@@ -207,10 +118,41 @@
           </a>
         </div>
       </div>
-      <div id="install-button">
-        <a href="https://github.com/nik-rev/ferrishot/tree/main?tab=readme-ov-file#installation">Install<svg height="16px" width="16px" stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M19 9h-4V3H9v6H5l7 8zM4 19h16v2H4z"></path></svg>
-        </a>
+      <style>
+        #first-install-button {
+          width: 100%;
+          display: flex;
+          justify-content: end;
+          @media (width <= 600px) {
+            justify-content: center;
+          }
+          margin-top: 40px;
+          margin-bottom: 80px;
+        }
+      </style>
+      <div id="first-install-button">
+        <div class="install-button">
+          <a href="https://github.com/nik-rev/ferrishot/tree/main?tab=readme-ov-file#installation">Install<svg height="16px" width="16px" stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M19 9h-4V3H9v6H5l7 8zM4 19h16v2H4z"></path></svg>
+          </a>
+        </div>
       </div>
+      <style>
+        #features {
+          h2 {
+            margin-bottom: 60px;
+          }
+          ul {
+            display: flex;
+            gap: 40px;
+            flex-direction: column;
+            li {
+              display: flex;
+              flex-direction: column;
+              gap: 12px;
+            }
+          }
+        }
+      </style>
       <section id="features">
         <h2 class="title">
           # Features
@@ -228,17 +170,42 @@
           </li>
         </ul>
       </section>
+      <style>
+        #final-install-button {
+          margin-top: 120px;
+          display: flex;
+          margin-right: 60px;
+          justify-content: end;
+          margin-bottom: 80px;
+          @media (width <= 600px) {
+            margin-top: 90px;
+            margin-right: 45px;
+            margin-bottom: 40px;
+          }
+        }
+      </style>
       <div id="final-install-button">
-        <div id="install-button">
+        <div class="install-button">
           <i>sounds cool?</i>
           <a href="https://github.com/nik-rev/ferrishot/tree/main?tab=readme-ov-file#installation">Install<svg height="16px" width="16px" stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M19 9h-4V3H9v6H5l7 8zM4 19h16v2H4z"></path></svg>
           </a>
         </div>
       </div>
     </main>
+    <style>
+      footer {
+        height: 150px;
+        width: 100%;
+        background-color: var(--background-dark);
+        display: flex;
+        justify-content: end;
+        align-items: center;
+        justify-content: center;
+      }
+    </style>
     <footer>
       <div id="logo">
-        <img src="../icons/Ferrishot.svg" id="logo" height="48" width="48"></img>
+        <img src="/icons/Ferrishot.svg" id="logo" height="48" width="48"></img>
         <h1>ferrishot<h1>
       </div>
     </footer>
