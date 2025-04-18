@@ -1,10 +1,5 @@
 //! Command line arguments to configure the program
-use std::sync::LazyLock;
-
 use clap::Parser;
-
-/// Configuration of the app
-pub static CONFIG: LazyLock<Config> = LazyLock::new(Config::parse);
 
 /// Configuration for the program
 #[derive(Parser, Debug)]

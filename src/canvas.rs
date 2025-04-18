@@ -1,19 +1,20 @@
 //! The canvas handles drawing the selection frame
-use iced::Event::{Keyboard, Mouse};
+use iced::advanced::debug::core::SmolStr;
+use iced::keyboard::key::Named::F11;
+use iced::keyboard::key::Named::{Enter, Escape, Shift};
 use iced::keyboard::Event::KeyPressed;
 use iced::keyboard::Event::KeyReleased;
 use iced::keyboard::Key::{Character, Named};
 use iced::keyboard::Modifiers as Mods;
-use iced::keyboard::key::Named::F11;
-use iced::keyboard::key::Named::{Enter, Escape, Shift};
 use iced::mouse::Button::{Left, Middle, Right};
 use iced::mouse::Event::ButtonPressed;
 use iced::mouse::Event::ButtonReleased;
 use iced::mouse::Event::CursorMoved;
+use iced::Event::{Keyboard, Mouse};
 use iced::{
-    Rectangle, Renderer, Theme,
     mouse::{self, Interaction},
-    widget::{self, Action, canvas},
+    widget::{self, canvas, Action},
+    Rectangle, Renderer, Theme,
 };
 
 /// Holds information about the mouse
@@ -29,11 +30,11 @@ pub struct MouseState {
 
 use crate::selection::Speed;
 use crate::{
-    App, CONFIG,
     corners::SideOrCorner,
     message::Message,
-    selection::{Selection, SelectionStatus, selection_lock::OptionalSelectionExt as _},
+    selection::{selection_lock::OptionalSelectionExt as _, Selection, SelectionStatus},
     theme::THEME,
+    App,
 };
 
 impl canvas::Program<Message> for App {
@@ -129,7 +130,7 @@ impl canvas::Program<Message> for App {
             }
             Mouse(ButtonReleased(Left)) => {
                 state.is_left_down = false;
-                if CONFIG.instant && self.selections_created == 1 {
+                if self.config.instant && self.selections_created == 1 {
                     // we have created 1 selections in total, (the current one),
                     // in which case we want to copy it to the clipboard as the
                     // --instant flag was provided
@@ -138,27 +139,38 @@ impl canvas::Program<Message> for App {
                     Message::EnterIdle
                 }
             }
-            Keyboard(KeyReleased { key, .. }) if *key == Named(Shift) => {
+            Keyboard(KeyReleased {
+                key: Named(Shift), ..
+            }) => {
                 state.is_shift_down = false;
                 Message::NoOp
             }
             // Esc
-            Keyboard(KeyPressed { key, .. }) if *key == Named(Escape) => Message::Exit,
-            // Ctrl + C or Enter
-            Keyboard(KeyPressed { key, modifiers, .. })
-                if (*key == Named(Enter))
-                    || (*modifiers == Mods::CTRL && *key == Character("c".into())) =>
-            {
-                Message::CopyToClipboard
-            }
+            Keyboard(KeyPressed {
+                key: Named(Escape), ..
+            }) => Message::Exit,
+            // Ctrl + C
+            Keyboard(KeyPressed {
+                key: Character(c),
+                modifiers: Mods::CTRL,
+                ..
+            }) if *c == "c" => Message::CopyToClipboard,
+            // Enter
+            Keyboard(KeyPressed {
+                key: Named(Enter), ..
+            }) => Message::CopyToClipboard,
             // Ctrl + S
-            Keyboard(KeyPressed { key, modifiers, .. })
-                if (*modifiers == Mods::CTRL && *key == Character("s".into())) =>
-            {
-                Message::SaveScreenshot
-            }
-            Keyboard(KeyPressed { key, .. }) if *key == Named(F11) => Message::SelectFullScreen,
-            Keyboard(KeyPressed { key, .. }) if *key == Named(Shift) => {
+            Keyboard(KeyPressed {
+                key: Character(c),
+                modifiers: Mods::CTRL,
+                ..
+            }) if *c == "s" => Message::SaveScreenshot,
+            Keyboard(KeyPressed {
+                key: Named(F11), ..
+            }) => Message::SelectFullScreen,
+            Keyboard(KeyPressed {
+                key: Named(Shift), ..
+            }) => {
                 state.is_shift_down = true;
 
                 // If we are already resizing a side, and we press shift, we
@@ -168,8 +180,8 @@ impl canvas::Program<Message> for App {
                     cursor
                         .position()
                         .map_or(Message::NoOp, |current_cursor_pos| {
-                            if let SelectionStatus::Resize { resize_side, .. } = selection.status {
-                                Message::Resize {
+                            match selection.status {
+                                SelectionStatus::Resize { resize_side, .. } => Message::Resize {
                                     resize_side,
                                     // start resizing from this point on
                                     current_cursor_pos,
@@ -180,9 +192,8 @@ impl canvas::Program<Message> for App {
                                     speed: Speed::Slow {
                                         has_speed_changed: true,
                                     },
-                                }
-                            } else if let SelectionStatus::Move { .. } = selection.status {
-                                Message::MoveSelection {
+                                },
+                                SelectionStatus::Move { .. } => Message::MoveSelection {
                                     current_cursor_pos,
                                     initial_cursor_pos: current_cursor_pos,
                                     current_selection: selection,
@@ -190,9 +201,8 @@ impl canvas::Program<Message> for App {
                                     speed: Speed::Slow {
                                         has_speed_changed: true,
                                     },
-                                }
-                            } else {
-                                Message::NoOp
+                                },
+                                _ => Message::NoOp,
                             }
                         })
                 } else {
