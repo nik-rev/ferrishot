@@ -4,10 +4,14 @@ language = "en"
 multilingual = false
 src = "src"
 title = "docs"
+
 [output.html]
+cname = "ferrishot.com"
 additional-css = ["./theme/theme.css", "./mdbook-admonish.css"]
 default-theme = "light"
 preferred-dark-theme = "light"
+git-repository-url = "https://github.com/nik-rev/ferrishot"
+edit-url-template = "https://github.com/nik-rev/ferrishot/edit/main/docs/{path}"
 
 [build]
 build-dir = "docs"
