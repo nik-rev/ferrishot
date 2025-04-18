@@ -1,20 +1,19 @@
 //! The canvas handles drawing the selection frame
-use iced::advanced::debug::core::SmolStr;
-use iced::keyboard::key::Named::F11;
-use iced::keyboard::key::Named::{Enter, Escape, Shift};
+use iced::Event::{Keyboard, Mouse};
 use iced::keyboard::Event::KeyPressed;
 use iced::keyboard::Event::KeyReleased;
 use iced::keyboard::Key::{Character, Named};
 use iced::keyboard::Modifiers as Mods;
+use iced::keyboard::key::Named::F11;
+use iced::keyboard::key::Named::{Enter, Escape, Shift};
 use iced::mouse::Button::{Left, Middle, Right};
 use iced::mouse::Event::ButtonPressed;
 use iced::mouse::Event::ButtonReleased;
 use iced::mouse::Event::CursorMoved;
-use iced::Event::{Keyboard, Mouse};
 use iced::{
-    mouse::{self, Interaction},
-    widget::{self, canvas, Action},
     Rectangle, Renderer, Theme,
+    mouse::{self, Interaction},
+    widget::{self, Action, canvas},
 };
 
 /// Holds information about the mouse
@@ -30,11 +29,11 @@ pub struct MouseState {
 
 use crate::selection::Speed;
 use crate::{
+    App,
     corners::SideOrCorner,
     message::Message,
-    selection::{selection_lock::OptionalSelectionExt as _, Selection, SelectionStatus},
+    selection::{Selection, SelectionStatus, selection_lock::OptionalSelectionExt as _},
     theme::THEME,
-    App,
 };
 
 impl canvas::Program<Message> for App {
@@ -167,7 +166,8 @@ impl canvas::Program<Message> for App {
             }) if *c == "s" => Message::SaveScreenshot,
             Keyboard(KeyPressed {
                 key: Named(F11), ..
-            }) => Message::SelectFullScreen,
+            })
+            | Mouse(ButtonPressed(Middle)) => Message::SelectFullScreen,
             Keyboard(KeyPressed {
                 key: Named(Shift), ..
             }) => {
@@ -269,7 +269,6 @@ impl canvas::Program<Message> for App {
             Mouse(CursorMoved { position }) if self.selection.is_some_and(Selection::is_create) => {
                 Message::ExtendNewSelection(*position)
             }
-            Mouse(ButtonPressed(Middle)) => Message::SelectFullScreen,
             _ => return None,
         };
 
