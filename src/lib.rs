@@ -36,4 +36,3 @@ pub use clipboard::{CLIPBOARD_DAEMON_ID, run_clipboard_daemon};
 
 pub use app::App;
 pub use app::SAVED_IMAGE;
-pub use config::CONFIG;
