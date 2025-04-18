@@ -105,7 +105,7 @@ impl Default for App {
             selection: None,
             selections_created: 0,
             errors: vec![],
-            config: Config::parse()
+            config: Config::parse(),
         }
     }
 }
