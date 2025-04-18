@@ -14,6 +14,8 @@ pub enum Message {
     NoOp,
     /// Exits the application
     Exit,
+    /// Upload screenshot to the internet
+    Upload,
     /// The left mouse button is down
     LeftMouseDown(Cursor),
     /// Enter idle mode

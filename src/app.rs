@@ -1,7 +1,10 @@
 //! Main logic for the application, handling of events and mutation of the state
 
+use crate::image_upload::ImageUploadService;
 use crate::selection::Speed;
 use std::borrow::Cow;
+use std::fs::{self, File};
+use std::io::Write;
 use std::time::Instant;
 
 use crate::message::Message;
@@ -313,6 +316,38 @@ impl App {
                 let _ = SAVED_IMAGE.set(cropped_image);
 
                 return Self::exit();
+            }
+            Message::Upload => {
+                let Some(selection) = self.selection.as_ref().map(|sel| Selection::norm(*sel))
+                else {
+                    self.error("Selection does not exist. There is nothing to copy!");
+                    return Task::none();
+                };
+
+                let (width, height, pixels) = self.screenshot.raw();
+                let cropped_image = selection.process_image(width, height, pixels);
+                let tempfile = match tempfile::TempDir::new() {
+                    Ok(tempdir) => tempdir.into_path().join("ferrishot-screenshot.png"),
+                    Err(err) => {
+                        self.error(err.to_string());
+                        return Task::none();
+                    }
+                };
+
+                if let Err(err) = cropped_image.save_with_format(&tempfile, image::ImageFormat::Png)
+                {
+                    self.error(err.to_string());
+                };
+
+                return Task::future(async move {
+                    {
+                        let file = tempfile;
+                        let response = crate::image_upload::ZeroZero::upload(&file).await;
+
+                        Message::NoOp
+                    }
+                })
+                .chain(Self::exit());
             }
             Message::Resize {
                 current_cursor_pos,

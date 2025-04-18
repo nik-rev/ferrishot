@@ -298,7 +298,8 @@ impl Selection {
         // for each side in [bottom, right, top, left] we render
         // all of the icons that fit on that side.
         //
-        // But then we may have a small selection which doesn't manage to render all of the icons
+        // But then we may have a small selection which doesn't manage to render all of the icons,
+        // so we deal with that by rendering a couple extra rows on top and bottom
         const PX_PER_ICON: f32 = SPACE_BETWEEN_ICONS + ICON_BUTTON_SIZE;
         const MIN_TOP_BOTTOM_ICONS: usize = 3;
         const MIN_SIDE_ICONS: usize = 1;
@@ -318,6 +319,10 @@ impl Selection {
                 "Save Screenshot (Ctrl + S)",
             ),
             (icon!(Close).on_press(Message::Exit).into(), "Exit (Esc)"),
+            (
+                icon!(Upload).on_press(Message::Upload).into(),
+                "Upload screenshot online",
+            ),
         ];
 
         let sel = self.norm();

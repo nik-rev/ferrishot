@@ -73,4 +73,6 @@ icons! {
     Square,
     /// Add text
     Text,
+    /// Upload image to the internet
+    Upload,
 }

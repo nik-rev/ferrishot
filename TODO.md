@@ -2,6 +2,7 @@
 
 These are the features that I plan on adding to ferrishot! Not all of these may be added.
 
+- Add support for saving as multiple formats. PNG / JPEG / WEBP
 - Upload image to the web, and have access to its QR code so you can easily get it from mobile
 - Snap to edges / borders of visible objects on the screen
 - Read text on the screen (i.e. OCR)

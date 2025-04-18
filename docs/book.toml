@@ -3,7 +3,7 @@ authors = ["Nik Revenco"]
 language = "en"
 multilingual = false
 src = "src"
-title = "docs"
+title = "ferrishot"
 
 [output.html]
 cname = "ferrishot.com"
