@@ -33,5 +33,5 @@ cargo run
 
 ## Website
 
-- `docs/index.html` is the landing page and served at `ferrishot.com`
-- `docs/docs/index.html` is created from `mdbook build` in a github action and is served at `ferrishot.com/docs`
+- `index.html` is the landing page and served at `ferrishot.com`. You can just open this file in the browser
+- `docs` is built using `mdbook serve`. It is served at `ferrishot.com/docs`
