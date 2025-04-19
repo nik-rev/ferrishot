@@ -1,5 +1,6 @@
 //! Main logic for the application, handling of events and mutation of the state
 
+use crate::CONFIG;
 use crate::selection::Speed;
 use std::borrow::Cow;
 use std::time::Instant;
@@ -126,10 +127,20 @@ impl App {
                 sel.render_icons(image_width as f32, image_height as f32)
             }))
             // size indicator
-            .push_maybe(self.selection.get().map(|(sel, key)| {
-                let (image_width, image_height, _) = self.screenshot.raw();
-                crate::widgets::size_indicator(image_height, image_width, sel.norm().rect, key)
-            }))
+            .push_maybe(
+                self.selection
+                    .filter(|_| CONFIG.settings.size_indicator)
+                    .get()
+                    .map(|(sel, key)| {
+                        let (image_width, image_height, _) = self.screenshot.raw();
+                        crate::widgets::size_indicator(
+                            image_height,
+                            image_width,
+                            sel.norm().rect,
+                            key,
+                        )
+                    }),
+            )
             .into()
     }
 

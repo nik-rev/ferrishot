@@ -6,7 +6,7 @@ use iced::keyboard::Key::{Character, Named};
 use iced::keyboard::Modifiers as Mods;
 use iced::keyboard::key::Named::F11;
 use iced::keyboard::key::Named::{Enter, Escape, Shift};
-use iced::mouse::Button::{Left, Middle, Right};
+use iced::mouse::Button::{Left, Right};
 use iced::mouse::Event::ButtonPressed;
 use iced::mouse::Event::ButtonReleased;
 use iced::mouse::Event::CursorMoved;
@@ -259,7 +259,6 @@ impl canvas::Program<Message> for App {
             Mouse(CursorMoved { position }) if self.selection.is_some_and(Selection::is_create) => {
                 Message::ExtendNewSelection(*position)
             }
-            Mouse(ButtonPressed(Middle)) => Message::SelectFullScreen,
             _ => return None,
         };
 

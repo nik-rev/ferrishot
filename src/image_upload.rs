@@ -29,12 +29,13 @@ pub enum ImageUploadService {
 
 impl ImageUploadService {
     /// The base URL where image files should be uploaded
-    fn post_url(self) -> &'static str {
+    const fn post_url(self) -> &'static str {
         match self {
-            ImageUploadService::TheNullPointer => "https://0x0.st",
+            Self::TheNullPointer => "https://0x0.st",
         }
     }
 
+    /// Upload the image to the given upload service
     pub async fn upload_image(self, file_path: &std::path::Path) -> Result<String, Box<dyn Error>> {
         let request = crate::CLIENT
             .request(reqwest::Method::POST, self.post_url())
@@ -44,7 +45,7 @@ impl ImageUploadService {
             );
 
         match self {
-            ImageUploadService::TheNullPointer => Ok(request
+            Self::TheNullPointer => Ok(request
                 .multipart(
                     reqwest::multipart::Form::new()
                         .file("file", file_path)

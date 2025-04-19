@@ -1,25 +1,14 @@
 //! The ferrishot app
 
-use std::io::Read as _;
-
-use ferrishot::{App, CONFIG, Config};
+use ferrishot::{App, CONFIG};
 use iced::Font;
-use miette::IntoDiagnostic as _;
 
 /// Logo of ferrishot
 const LOGO: &[u8; 0x4000] = include_bytes!(concat!(env!("OUT_DIR"), "/logo.bin"));
 
 fn main() -> miette::Result<()> {
-    let mut buf = String::new();
-
-    std::io::stdin()
-        .read_to_string(&mut buf)
-        .into_diagnostic()?;
-
-    let config = knus::parse::<Config>("<stdin>", &buf)?;
-
-    let item = &config.settings;
-    dbg!(&config);
+    let a = &CONFIG.settings;
+    dbg!(&CONFIG);
 
     Ok(())
 }

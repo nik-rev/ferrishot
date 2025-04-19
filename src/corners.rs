@@ -95,6 +95,7 @@ pub enum SideOrCorner {
 }
 
 impl SideOrCorner {
+    /// All the variants for the side or corner
     fn variants() -> String {
         Side::iter()
             .map(|side| -> &'static str { side.into() })
@@ -108,13 +109,15 @@ impl FromStr for SideOrCorner {
     type Err = String;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        if let Ok(side) = Side::from_str(s) {
-            Ok(Self::Side(side))
-        } else if let Ok(corner) = Corner::from_str(s) {
-            Ok(Self::Corner(corner))
-        } else {
-            Err(format!("expected one of {}", Self::variants()))
-        }
+        Side::from_str(s).map_or_else(
+            |_| {
+                Corner::from_str(s).map_or_else(
+                    |_| Err(format!("expected one of {}", Self::variants())),
+                    |corner| Ok(Self::Corner(corner)),
+                )
+            },
+            |side| Ok(Self::Side(side)),
+        )
     }
 }
 
@@ -132,16 +135,19 @@ impl FromStr for RectPlace {
     type Err = String;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        if let Ok(side_or_corner) = s.parse::<SideOrCorner>() {
-            Ok(Self::SideOrCorner(side_or_corner))
-        } else if s == "center" {
-            Ok(Self::Center)
-        } else {
-            Err(format!(
-                "expected one of center, {}",
-                SideOrCorner::variants()
-            ))
-        }
+        s.parse::<SideOrCorner>().map_or_else(
+            |_| {
+                if s == "center" {
+                    Ok(Self::Center)
+                } else {
+                    Err(format!(
+                        "expected one of center, {}",
+                        SideOrCorner::variants()
+                    ))
+                }
+            },
+            |side_or_corner| Ok(Self::SideOrCorner(side_or_corner)),
+        )
     }
 }
 

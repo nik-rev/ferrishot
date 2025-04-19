@@ -29,6 +29,7 @@ mod config;
 mod corners;
 mod icons;
 mod image_upload;
+mod key;
 mod message;
 mod rectangle;
 mod screenshot;
