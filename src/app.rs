@@ -89,8 +89,6 @@ pub struct App {
     pub screenshot: RgbaHandle,
     /// Area of the screen that is selected for capture
     pub selection: Option<Selection>,
-    /// The user specified configuration
-    pub config: Config,
     /// Errors to display to the user
     pub errors: Vec<ErrorMessage>,
 }
@@ -105,7 +103,6 @@ impl Default for App {
             selection: None,
             selections_created: 0,
             errors: vec![],
-            config: Config::parse(),
         }
     }
 }

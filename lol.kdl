@@ -1,7 +1,5 @@
-settings {
-  default-image-upload-provider "the-null-pointer"
-  instant true
-}
+default-image-upload-provider "the-null-pointer"
+instant true
 
 theme {
   accent-fg "#ab6137"

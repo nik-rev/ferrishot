@@ -2,23 +2,15 @@
 
 use std::error::Error;
 
-use documented::{Documented, DocumentedVariants};
 use knus::DecodeScalar;
 use serde::{Deserialize, Serialize};
 
 #[derive(
-    Copy,
-    Clone,
-    PartialEq,
-    Debug,
-    Eq,
-    PartialOrd,
-    Ord,
-    Serialize,
-    Deserialize,
-    DocumentedVariants,
-    Documented,
-    DecodeScalar,
+    Copy, Clone, PartialEq, Debug, Eq, PartialOrd, Ord, Serialize, Deserialize, DecodeScalar,
+)]
+#[cfg_attr(
+    feature = "docgen",
+    derive(documented::DocumentedVariants, documented::Documented)
 )]
 #[serde(rename_all = "kebab-case")]
 /// Choose which image upload service should be used by default when pressing "Upload Online"

@@ -27,6 +27,7 @@ pub struct MouseState {
     is_shift_down: bool,
 }
 
+use crate::CONFIG;
 use crate::selection::Speed;
 use crate::{
     App,
@@ -129,7 +130,7 @@ impl canvas::Program<Message> for App {
             }
             Mouse(ButtonReleased(Left)) => {
                 state.is_left_down = false;
-                if self.config.instant && self.selections_created == 1 {
+                if CONFIG.instant && self.selections_created == 1 {
                     // we have created 1 selections in total, (the current one),
                     // in which case we want to copy it to the clipboard as the
                     // --instant flag was provided
@@ -144,30 +145,6 @@ impl canvas::Program<Message> for App {
                 state.is_shift_down = false;
                 Message::NoOp
             }
-            // Esc
-            Keyboard(KeyPressed {
-                key: Named(Escape), ..
-            }) => Message::Exit,
-            // Ctrl + C
-            Keyboard(KeyPressed {
-                key: Character(c),
-                modifiers: Mods::CTRL,
-                ..
-            }) if *c == "c" => Message::CopyToClipboard,
-            // Enter
-            Keyboard(KeyPressed {
-                key: Named(Enter), ..
-            }) => Message::CopyToClipboard,
-            // Ctrl + S
-            Keyboard(KeyPressed {
-                key: Character(c),
-                modifiers: Mods::CTRL,
-                ..
-            }) if *c == "s" => Message::SaveScreenshot,
-            Keyboard(KeyPressed {
-                key: Named(F11), ..
-            })
-            | Mouse(ButtonPressed(Middle)) => Message::SelectFullScreen,
             Keyboard(KeyPressed {
                 key: Named(Shift), ..
             }) => {

@@ -1,5 +1,5 @@
 //! Configuration of ferrishot
-use std::{collections::HashMap, fs, sync::LazyLock};
+use std::{collections::HashMap, fs, path::PathBuf, sync::LazyLock};
 
 use clap::Parser;
 use etcetera::BaseStrategy;
@@ -12,22 +12,42 @@ use crate::{
     message::Message,
 };
 
+/// Command line arguments for the program
+#[derive(Parser, Debug)]
+#[command(version, about, author = "Nik Revenco")]
+pub struct Cli {
+    /// Specifies the config file to use
+    #[arg(
+        long,
+        value_name = "file.kdl",
+        default_value_t = etcetera::choose_base_strategy()
+            .map(|strategy| {
+                strategy
+                    .config_dir()
+                    .join("ferrishot")
+                    .join("config.kdl")
+                    .to_string_lossy()
+                    .to_string()
+            })
+            .unwrap_or("ferrishot.kdl".to_owned())
+    )]
+    pub config_file: String,
+}
+
 /// Configuration of the app
 pub static CONFIG: LazyLock<Config> = LazyLock::new(|| {
     use iced::keyboard::Key as IcedKey;
     use iced::keyboard::key::Named as IcedNamed;
 
-    let raw_config = (|| -> miette::Result<KdlConfig> {
-        let config_file = etcetera::choose_base_strategy()
-            .into_diagnostic()?
-            .config_dir()
-            .join("ferrishot")
-            .join("config.kdl");
+    let cli = Cli::parse();
+    let kdl_config = (|| -> miette::Result<KdlConfig> {
+        let config_file = cli.config_file.as_str();
+        let config_file_path = PathBuf::from(config_file);
 
         // if there is no config file, act as if it's simply empty
         let config = knus::parse::<KdlConfig>(
-            config_file.to_string_lossy(),
-            &fs::read_to_string(&config_file)
+            cli.config_file,
+            &fs::read_to_string(&config_file_path)
                 .into_diagnostic()
                 .unwrap_or_default(),
         )?;
@@ -35,16 +55,16 @@ pub static CONFIG: LazyLock<Config> = LazyLock::new(|| {
         Ok(config)
     })();
 
-    match raw_config {
-        Ok(raw_config) => {
-            let raw_keys = raw_config.keys.keys;
+    match kdl_config {
+        Ok(kdl_config) => {
+            let kdl_keys = kdl_config.keys.keys;
             // default keybindings
             let mut keys = HashMap::from([(
                 KeySequence((IcedKey::Named(IcedNamed::Escape), None)),
                 (KeyMods::default(), Message::Exit),
             )]);
-            for raw_key in raw_keys {
-                match raw_key {
+            for key in kdl_keys {
+                match key {
                     Key::CopyToClipboard(key_sequence, key_mods) => {
                         keys.insert(key_sequence, (key_mods, Message::CopyToClipboard));
                     }
@@ -62,7 +82,7 @@ pub static CONFIG: LazyLock<Config> = LazyLock::new(|| {
                             key_sequence,
                             (
                                 key_mods,
-                                Message::Move(direction, amount * raw_config.movement_multiplier),
+                                Message::Move(direction, amount * kdl_config.movement_multiplier),
                             ),
                         );
                     }
@@ -71,7 +91,7 @@ pub static CONFIG: LazyLock<Config> = LazyLock::new(|| {
                             key_sequence,
                             (
                                 key_mods,
-                                Message::Extend(direction, amount * raw_config.movement_multiplier),
+                                Message::Extend(direction, amount * kdl_config.movement_multiplier),
                             ),
                         );
                     }
@@ -80,7 +100,7 @@ pub static CONFIG: LazyLock<Config> = LazyLock::new(|| {
                             key_sequence,
                             (
                                 key_mods,
-                                Message::Shrink(direction, amount * raw_config.movement_multiplier),
+                                Message::Shrink(direction, amount * kdl_config.movement_multiplier),
                             ),
                         );
                     }
@@ -88,12 +108,12 @@ pub static CONFIG: LazyLock<Config> = LazyLock::new(|| {
             }
 
             Config {
-                theme: raw_config.theme,
+                theme: kdl_config.theme,
                 keys,
-                instant: raw_config.instant,
-                default_image_upload_provider: raw_config.default_image_upload_provider,
-                size_indicator: raw_config.size_indicator,
-                movement_multiplier: raw_config.movement_multiplier,
+                instant: kdl_config.instant,
+                default_image_upload_provider: kdl_config.default_image_upload_provider,
+                size_indicator: kdl_config.size_indicator,
+                movement_multiplier: kdl_config.movement_multiplier,
             }
         }
         Err(miette_error) => {
@@ -147,7 +167,7 @@ macro_rules! config {
     (
         $(
             $(#[$doc:meta])*
-            $key:ident: $typ:ty = $defaul:expr
+            $key:ident: $typ:ty = $default:expr
         ),* $(,)?
     ) => {
         #[derive(knus::Decode, Debug)]
@@ -155,10 +175,11 @@ macro_rules! config {
         pub struct KdlConfig {
             $(
                 $(#[$doc])*
-                #[knus(default = $defaul, child, unwrap(argument))]
+                #[knus(default = $default, child, unwrap(argument))]
                 pub $key: $typ,
             )*
             /// Theme
+            #[knus(default, child)]
             pub theme: Theme,
             /// Keybindings
             #[knus(default, child)]
@@ -171,7 +192,7 @@ macro_rules! config {
                     theme: Theme::default(),
                     keys: Keys::default(),
                     $(
-                        $key: $defaul
+                        $key: $default
                     ),*
                 }
             }
@@ -196,7 +217,7 @@ macro_rules! config {
                     theme: Theme::default(),
                     keys: std::collections::HashMap::default(),
                     $(
-                        $key: $defaul
+                        $key: $default
                     ),*
                 }
             }
@@ -309,13 +330,4 @@ pub enum Key {
         #[knus(property(name = "key"), str)] KeySequence,
         #[knus(default, property(name = "mods"), str)] KeyMods,
     ),
-}
-
-/// Configuration for the program
-#[derive(Parser, Debug)]
-#[command(version, about, author = "Nik Revenco")]
-pub struct Cli {
-    /// The first selection will be copied to the clipboard as soon as the left mouse button is released
-    #[arg(long)]
-    pub instant: bool,
 }
