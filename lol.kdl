@@ -2,7 +2,7 @@ default-image-upload-provider "the-null-pointer"
 instant true
 
 theme {
-  accent-fg "#ab6137"
+  accent-fg "#ab6137e"
   accent "#ffffff"
 }
 

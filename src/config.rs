@@ -1,13 +1,12 @@
 //! Configuration of ferrishot
-use std::{collections::HashMap, fs, path::PathBuf, sync::LazyLock};
+use std::{fs, path::PathBuf, sync::LazyLock};
 
 use clap::Parser;
 use etcetera::BaseStrategy;
 use miette::IntoDiagnostic as _;
 
 use crate::{
-    corners::{Corner, Direction, RectPlace, Side, SideOrCorner},
-    image_upload::ImageUploadService,
+    corners::{Direction, RectPlace},
     key::{KeyMods, KeySequence},
     message::Message,
 };
@@ -34,177 +33,41 @@ pub struct Cli {
     pub config_file: String,
 }
 
-/// Configuration of the app
-pub static CONFIG: LazyLock<Config> = LazyLock::new(|| {
-    use iced::keyboard::Key as IcedKey;
-    use iced::keyboard::key::Named as IcedNamed;
+/// `Some(...)` if `$(...)?` exists, `None` otherwise
+#[macro_export]
+macro_rules! opt {
+    () => {
+        None::<&'static str>
+    };
+    ($any:tt) => {
+        Some($any)
+    };
+}
 
-    let cli = Cli::parse();
-    let kdl_config = (|| -> miette::Result<KdlConfig> {
-        let config_file = cli.config_file.as_str();
-        let config_file_path = PathBuf::from(config_file);
-
-        // if there is no config file, act as if it's simply empty
-        let config = knus::parse::<KdlConfig>(
-            cli.config_file,
-            &fs::read_to_string(&config_file_path)
-                .into_diagnostic()
-                .unwrap_or_default(),
-        )?;
-
-        Ok(config)
-    })();
-
-    /// `Some(...)` if `$(...)?` exists, `None` otherwise
-    macro_rules! opt {
-        () => {
-            None::<&'static str>
-        };
-        ($any:tt) => {
-            Some($any)
-        };
-    }
-
-    /// Declare default keybindings
-    macro_rules! default_keys {
-        (
-            $(
-                $key:literal $(mods=$modifier:literal)? => $message:expr
-            ),* $(,)?
-        ) => {{
-            let mut map = HashMap::new();
-            $(
-                map.insert(
-                    $key.parse::<KeySequence>().expect(concat!("default keybinding ", $key, " is incorrect")),
-                    (opt!($($modifier)?).unwrap_or_default().parse::<KeyMods>().expect(concat!("modifiers ", $(stringify!($modifier), )? "is incorrect")), $message)
-                );
-            )*
-            map
-        }};
-    }
-
-    match kdl_config {
-        Ok(kdl_config) => {
-            use Direction::{Down, Left, Right, Up};
-            use Message::{Extend, Goto, Move, Shrink};
-            let kdl_keys = kdl_config.keys.keys;
-            let mut keys = default_keys! {
-                // direction
-                "<" => Goto(RectPlace::SideOrCorner(SideOrCorner::Corner(Corner::BottomLeft))),
-                ">" => Goto(RectPlace::SideOrCorner(SideOrCorner::Corner(Corner::TopRight))),
-                "g c" => Goto(RectPlace::Center),
-                "g g" => Goto(RectPlace::SideOrCorner(SideOrCorner::Corner(Corner::TopLeft))),
-                "G" => Goto(RectPlace::SideOrCorner(SideOrCorner::Corner(Corner::BottomRight))),
-
-                // up movements
-                "g k" => Goto(RectPlace::SideOrCorner(SideOrCorner::Side(Side::Top))),
-
-                "k" => Move(Up, 1),
-                "K" => Extend(Up, 1),
-                "k" mods="ctrl" => Shrink(Up, 1),
-
-                "w" => Move(Up, 5),
-                "W" => Extend(Up, 5),
-                "w" mods="ctrl" => Shrink(Up, 5),
-
-                // right movements
-                "g l" => Goto(RectPlace::SideOrCorner(SideOrCorner::Side(Side::Right))),
-
-                "l" => Move(Right, 1),
-                "L" => Extend(Right, 1),
-                "l" mods="ctrl" => Shrink(Right, 1),
-
-                "e" => Move(Right, 5),
-                "E" => Extend(Right, 5),
-                "e" mods="ctrl" => Shrink(Right, 5),
-
-                // left movements
-                "g h" => Goto(RectPlace::SideOrCorner(SideOrCorner::Side(Side::Left))),
-
-                "b" => Move(Left, 5),
-                "B" => Extend(Left, 5),
-                "b" mods="ctrl" => Shrink(Left, 5),
-
-                "h" => Move(Left, 1),
-                "H" => Extend(Left, 1),
-                "h" mods="ctrl" => Shrink(Left, 1),
-
-                // bottom movements
-                "g j" => Goto(RectPlace::SideOrCorner(SideOrCorner::Side(Side::Bottom))),
-
-                "j" => Move(Down, 1),
-                "J" => Extend(Down, 1),
-                "j" mods="ctrl" => Shrink(Down, 1),
-
-                "n" => Move(Down, 5),
-                "N" => Extend(Down, 5),
-                "n" mods="ctrl" => Shrink(Down, 5),
-            };
-            for key in kdl_keys {
-                match key {
-                    Key::CopyToClipboard(key_sequence, key_mods) => {
-                        keys.insert(key_sequence, (key_mods, Message::CopyToClipboard));
-                    }
-                    Key::SaveScreenshot(key_sequence, key_mods) => {
-                        keys.insert(key_sequence, (key_mods, Message::SaveScreenshot));
-                    }
-                    Key::Exit(key_sequence, key_mods) => {
-                        keys.insert(key_sequence, (key_mods, Message::Exit));
-                    }
-                    Key::Goto(rect_place, key_sequence, key_mods) => {
-                        keys.insert(key_sequence, (key_mods, Message::Goto(rect_place)));
-                    }
-                    Key::Move(direction, amount, key_sequence, key_mods) => {
-                        keys.insert(
-                            key_sequence,
-                            (
-                                key_mods,
-                                Message::Move(direction, amount * kdl_config.movement_multiplier),
-                            ),
-                        );
-                    }
-                    Key::Extend(direction, amount, key_sequence, key_mods) => {
-                        keys.insert(
-                            key_sequence,
-                            (
-                                key_mods,
-                                Message::Extend(direction, amount * kdl_config.movement_multiplier),
-                            ),
-                        );
-                    }
-                    Key::Shrink(direction, amount, key_sequence, key_mods) => {
-                        keys.insert(
-                            key_sequence,
-                            (
-                                key_mods,
-                                Message::Shrink(direction, amount * kdl_config.movement_multiplier),
-                            ),
-                        );
-                    }
-                }
-            }
-
-            Config {
-                theme: kdl_config.theme,
-                keys,
-                instant: kdl_config.instant,
-                default_image_upload_provider: kdl_config.default_image_upload_provider,
-                size_indicator: kdl_config.size_indicator,
-                movement_multiplier: kdl_config.movement_multiplier,
-            }
-        }
-        Err(miette_error) => {
-            eprintln!("{miette_error:?}");
-            std::process::exit(1);
-        }
-    }
-});
+/// Declare default keybindings
+#[macro_export]
+macro_rules! default_keys {
+    (
+        $(
+            $key:literal $(mods=$modifier:literal)? => $message:expr
+        ),* $(,)?
+    ) => {{
+        let mut map = std::collections::HashMap::new();
+        $(
+            map.insert(
+                $key.parse::<$crate::key::KeySequence>().expect(concat!("default keybinding ", $key, " is incorrect")),
+                ($crate::opt!($($modifier)?).unwrap_or_default().parse::<$crate::key::KeyMods>().expect(concat!("modifiers ", $(stringify!($modifier), )? "is incorrect")), $message)
+            );
+        )*
+        $crate::key::KeyMap::new(map)
+    }};
+}
 
 /// Utility macro to create a theme with default colors
 ///
 /// Implementing the `Default` trait would be a lot of repetition and it cannot be automatically
-/// derived. We want `Default` trait to be the same as what we specify for knus (KDL values defaults
-/// if not specified)
+/// derived using the values in `#[knus(default = ...)]`.
+#[macro_export]
 macro_rules! theme {
     (
         $(
@@ -240,6 +103,7 @@ macro_rules! theme {
 ///
 /// It also implements `Default`, removing quite a lot of boilerplate.
 /// We would have to specify `#[knus(default(...))]` and `impl Default`.
+#[macro_export]
 macro_rules! config {
     (
         $(
@@ -260,14 +124,14 @@ macro_rules! config {
             pub theme: Theme,
             /// Keybindings
             #[knus(default, child)]
-            pub keys: Keys,
+            pub keys: $crate::config::Keys,
         }
 
         impl Default for KdlConfig {
             fn default() -> Self {
                 Self {
                     theme: Theme::default(),
-                    keys: Keys::default(),
+                    keys: $crate::config::Keys::default(),
                     $(
                         $key: $default
                     ),*
@@ -285,14 +149,14 @@ macro_rules! config {
             /// Theme
             pub theme: Theme,
             /// A list of processed keybindings for ferrishot.
-            pub keys: std::collections::HashMap<KeySequence, (KeyMods, crate::message::Message)>,
+            pub keys: $crate::key::KeyMap,
         }
 
         impl Default for Config {
             fn default() -> Self {
                 Self {
                     theme: Theme::default(),
-                    keys: std::collections::HashMap::default(),
+                    keys: $crate::key::KeyMap::default(),
                     $(
                         $key: $default
                     ),*
@@ -302,49 +166,86 @@ macro_rules! config {
     }
 }
 
-config! {
-    /// Specifying this option will copy the selection to clipboard as soon as you select your first rectangle.
-    /// This is useful, since often times you may not want to make any modifications to your selection,
-    /// so this makes simple select and copy faster.
-    ///
-    /// When this is `true`, while you are selecting the first square pressing the Right mouse button just once will
-    /// cancel this effect and not instantly copy the screenshot.
-    instant: bool = false,
-    /// The default image service to use when uploading images to the internet.
-    /// We have multiple options because some of them can be down / unreliable etc.
-    ///
-    /// You may also get rate limited by the service if you send too many images, so you can try a different
-    /// one if that happens.
-    default_image_upload_provider: ImageUploadService = ImageUploadService::TheNullPointer,
-    /// Renders a size indicator in the bottom left corner.
-    /// It shows the current height and width of the selection.
-    ///
-    /// You can manually enter a value to change the selection by hand.
-    size_indicator: bool = true,
-    /// Say you have this keybinding
-    ///
-    /// ```kdl
-    /// keys {
-    ///   move "up" 5 "w"
-    /// }
-    /// ```
-    ///
-    /// The amount of pixels this actually moves by when pressing `w`
-    /// depends on `movement_multiplier`.
-    /// - `1`: 5px moved
-    /// - `10`: 50px moved
-    /// - `22`: 110px moved
-    ///
-    /// This applies to all keybindings that take a number like this.
-    movement_multiplier: u32 = 120
-}
+/// Configuration of the app
+///
+/// Static as that means it will never change once the app is launched.
+/// It also makes it easy to get the config values anywhere from the app, even where we don't have access to
+/// the `App`.
+pub static CONFIG: LazyLock<crate::defaults::Config> = LazyLock::new(|| {
+    let cli = Cli::parse();
 
-theme! {
-    /// Color of text which is placed in contrast with the color of `accent_bg`
-    accent_fg = iced::color!(0x_ab_61_37),
-    /// The background color of icons, the selection and such
-    accent = iced::Color::WHITE,
-}
+    let kdl_config = (|| -> miette::Result<crate::defaults::KdlConfig> {
+        let config_file = cli.config_file.as_str();
+        let config_file_path = PathBuf::from(config_file);
+
+        // if there is no config file, act as if it's simply empty
+        let config = knus::parse::<crate::defaults::KdlConfig>(
+            cli.config_file,
+            &fs::read_to_string(&config_file_path)
+                .into_diagnostic()
+                .unwrap_or_default(),
+        )?;
+
+        Ok(config)
+    })();
+
+    match kdl_config {
+        Ok(kdl_config) => {
+            let kdl_keys = kdl_config.keys.keys;
+            let mut keys = crate::defaults::keymap();
+            for key in kdl_keys {
+                match key {
+                    Key::CopyToClipboard(key_sequence, key_mods) => {
+                        keys.insert(key_sequence, key_mods, Message::CopyToClipboard);
+                    }
+                    Key::SaveScreenshot(key_sequence, key_mods) => {
+                        keys.insert(key_sequence, key_mods, Message::SaveScreenshot);
+                    }
+                    Key::Exit(key_sequence, key_mods) => {
+                        keys.insert(key_sequence, key_mods, Message::Exit);
+                    }
+                    Key::Goto(rect_place, key_sequence, key_mods) => {
+                        keys.insert(key_sequence, key_mods, Message::Goto(rect_place));
+                    }
+                    Key::Move(direction, amount, key_sequence, key_mods) => {
+                        keys.insert(
+                            key_sequence,
+                            key_mods,
+                            Message::Move(direction, amount * kdl_config.movement_multiplier),
+                        );
+                    }
+                    Key::Extend(direction, amount, key_sequence, key_mods) => {
+                        keys.insert(
+                            key_sequence,
+                            key_mods,
+                            Message::Extend(direction, amount * kdl_config.movement_multiplier),
+                        );
+                    }
+                    Key::Shrink(direction, amount, key_sequence, key_mods) => {
+                        keys.insert(
+                            key_sequence,
+                            key_mods,
+                            Message::Shrink(direction, amount * kdl_config.movement_multiplier),
+                        );
+                    }
+                }
+            }
+
+            crate::defaults::Config {
+                theme: kdl_config.theme,
+                keys,
+                instant: kdl_config.instant,
+                default_image_upload_provider: kdl_config.default_image_upload_provider,
+                size_indicator: kdl_config.size_indicator,
+                movement_multiplier: kdl_config.movement_multiplier,
+            }
+        }
+        Err(miette_error) => {
+            eprintln!("{miette_error:?}");
+            std::process::exit(1);
+        }
+    }
+});
 
 /// Keybindings for ferrishot
 #[derive(knus::Decode, Debug, Default)]

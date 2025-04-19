@@ -1,11 +1,35 @@
 //! Parse user keybindings
 
-use std::str::FromStr;
+use std::{collections::HashMap, str::FromStr};
 
-use iced::{
-    advanced::graphics::text::cosmic_text::ttf_parser::gpos::MarkToLigatureAdjustment,
-    keyboard::{Modifiers, key::Key as IcedKey},
-};
+use iced::keyboard::{Modifiers, key::Key as IcedKey};
+
+use crate::message::Message;
+
+/// Represents the keybindings for ferrishot
+///
+/// # How to obtain the action for a specific key press
+///
+/// For any given `(previous_key_pressed, current_key_pressed)`:
+/// - if `(current_key_pressed, None)` is in the map and the modifiers match `KeyMods`,
+///   reset `previous_key_pressed = None` and invoke `Message`
+/// - else if `(previous_key_pressed, Some(current_key_pressed))` is in the map, and the modifiers
+///   match `KeyMods` invoke `Message` and reset `previous_key_pressed = None`
+/// - else update `previous_key_pressed = Some(current_key_pressed)`
+#[derive(Debug, Default)]
+pub struct KeyMap {
+    /// Map of Key Pressed <=> Action when pressing that key
+    keys: HashMap<KeySequence, (KeyMods, Message)>,
+}
+
+impl KeyMap {
+    pub fn insert(&mut self, seq: KeySequence, mods: KeyMods, message: Message) {
+        self.keys.insert(seq, (mods, message));
+    }
+    pub fn new(keys: HashMap<KeySequence, (KeyMods, Message)>) -> Self {
+        Self { keys }
+    }
+}
 
 /// A sequence of 2 keys. If there are 2 keys like so:
 /// - (T, None)

@@ -9,7 +9,6 @@ use crate::message::Message;
 use crate::screenshot::RgbaHandle;
 use crate::selection::selection_lock::OptionalSelectionExt;
 use crate::theme::THEME;
-use clap::Parser;
 use iced::alignment::Vertical;
 use iced::mouse::Cursor;
 use iced::widget::canvas::Path;
