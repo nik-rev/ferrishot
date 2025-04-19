@@ -1,29 +1,91 @@
 //! Parse user keybindings
 
-use iced::keyboard::key::Key as IcedKey;
+use std::str::FromStr;
 
-// use iced::keyboard::key::Named;
+use iced::keyboard::{Modifiers, key::Key as IcedKey};
+use strum::IntoEnumIterator;
 
-/// A sequence of keys
-#[derive(Debug)]
-pub struct KeySequence(IcedKey);
+/// A sequence of 2 keys. If there are 2 keys like so:
+/// - (T, None)
+/// - (T, Some(X))
+///
+/// The 2nd key will never be triggered.
+/// We will first search the `HashMap` of keys for the first key.
+/// If it does not exist, search for the 2nd key.
+#[derive(Debug, Hash, PartialEq, PartialOrd, Ord, Eq)]
+pub struct KeySequence(pub (IcedKey, Option<IcedKey>));
+
+/// Modifier keys
+#[derive(Debug, Default)]
+pub struct KeyMods(iced::keyboard::Modifiers);
+
+impl FromStr for KeyMods {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let mut mods = iced::keyboard::Modifiers::empty();
+        for modifier_str in s.split('+') {
+            let modifier = match modifier_str {
+                "shift" => Modifiers::SHIFT,
+                "ctrl" => Modifiers::CTRL,
+                "alt" => Modifiers::ALT,
+                "super" | "windows" | "command" => Modifiers::LOGO,
+                invalid => return Err(format!("Invalid modifier: {invalid}")),
+            };
+            if mods.contains(modifier) {
+                return Err(format!("Duplicate modifier: {modifier_str}"));
+            }
+            mods.insert(modifier);
+        }
+
+        Ok(Self(mods))
+    }
+}
 
 impl std::str::FromStr for KeySequence {
     type Err = String;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        // if let Ok(named) = Named::from_str(s) {
-        //     Ok(Self(IcedKey::Named(named.to_iced())))
-        // };
+        fn parse_key(key: &str) -> Result<IcedKey, String> {
+            Named::from_str(key).map_or_else(
+                |_| {
+                    if key.len() == 1 {
+                        Ok(IcedKey::Character(key.into()))
+                    } else if key.len() == 2 {
+                        Err(format!(
+                            "Invalid key: {key}. Try to place a space in-between the keys: '{} {}'",
+                            key.chars().next().expect("len == 2"),
+                            key.chars().nth(1).expect("len == 2"),
+                        ))
+                    } else {
+                        Err(format!("Invalid key: {key}"))
+                    }
+                },
+                |key| Ok(IcedKey::Named(key.to_iced())),
+            )
+        }
+        let mut first_key = None;
+        for (i, key) in s.split_whitespace().enumerate() {
+            if i >= 2 {
+                return Err("At the moment, more than 2 keys are not supported".to_string());
+            }
+            if let Some(first_key) = first_key {
+                return Ok(Self((first_key, Some(parse_key(key)?))));
+            }
+            first_key = Some(parse_key(key)?);
+        }
 
-        todo!()
+        first_key.map_or_else(
+            || Err("Expected at least 1 key".to_string()),
+            |first_key| Ok(Self((first_key, None))),
+        )
     }
 }
 
 /// Since Iced does not implement `FromStr` for `iced::keyboard::Key::Named`, we have to do this
 macro_rules! named_keys {
     ( $($Key:ident),* $(,)?) => {
-        #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, strum::EnumString, strum::EnumIter)]
+        #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, strum::EnumString, strum::EnumIter, strum::IntoStaticStr)]
         #[strum(serialize_all = "kebab-case")]
         #[expect(
             clippy::upper_case_acronyms,

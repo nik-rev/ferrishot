@@ -7,7 +7,7 @@ use iced::Font;
 const LOGO: &[u8; 0x4000] = include_bytes!(concat!(env!("OUT_DIR"), "/logo.bin"));
 
 fn main() -> miette::Result<()> {
-    let a = &CONFIG.settings;
+    let a = CONFIG.instant;
     dbg!(&CONFIG);
 
     Ok(())

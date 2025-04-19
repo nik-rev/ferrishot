@@ -1,9 +1,9 @@
 //! A message represents some event in the app that mutates the state
 
-use iced::{Point, Rectangle, mouse::Cursor};
+use iced::{Point, Rectangle, mouse::Cursor, wgpu::hal::DynPipelineCache};
 
 use crate::{
-    corners::SideOrCorner,
+    corners::{Direction, RectPlace, SideOrCorner},
     selection::{Selection, Speed, selection_lock::SelectionIsSome},
 };
 
@@ -20,10 +20,6 @@ pub enum Message {
     LeftMouseDown(Cursor),
     /// Enter idle mode
     EnterIdle,
-    /// Copy the screenshot to the clipboard
-    CopyToClipboard,
-    /// Save the screenshot as an image
-    SaveScreenshot,
     /// The selection is currently being resized
     Resize {
         /// Current position of the cursor
@@ -87,4 +83,18 @@ pub enum Message {
     },
     /// Set the selection to the entire screen
     SelectFullScreen,
+
+    // keys
+    /// Copy the screenshot to the clipboard
+    CopyToClipboard,
+    /// Save the screenshot as an image
+    SaveScreenshot,
+    /// Teleport the selection to a place
+    Goto(RectPlace),
+    /// Nudge the selection in this direction by this amount of pixels
+    Move(Direction, u32),
+    /// Increase the selection size in this direction
+    Extend(Direction, u32),
+    /// Decrease the selection size in this direction
+    Shrink(Direction, u32),
 }

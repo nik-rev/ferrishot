@@ -1,30 +1,101 @@
 //! Configuration of ferrishot
-use std::{io::Read as _, sync::LazyLock};
+use std::{collections::HashMap, fs, sync::LazyLock};
 
 use clap::Parser;
+use etcetera::BaseStrategy;
 use miette::IntoDiagnostic as _;
 
 use crate::{
     corners::{Direction, RectPlace},
     image_upload::ImageUploadService,
-    key::KeySequence,
-    theme::Color,
+    key::{KeyMods, KeySequence},
+    message::Message,
 };
 
 /// Configuration of the app
 pub static CONFIG: LazyLock<Config> = LazyLock::new(|| {
-    let config = (|| -> miette::Result<Config> {
-        let mut buf = String::new();
+    use iced::keyboard::Key as IcedKey;
+    use iced::keyboard::key::Named as IcedNamed;
 
-        std::io::stdin()
-            .read_to_string(&mut buf)
-            .into_diagnostic()?;
+    let raw_config = (|| -> miette::Result<KdlConfig> {
+        let config_file = etcetera::choose_base_strategy()
+            .into_diagnostic()?
+            .config_dir()
+            .join("ferrishot")
+            .join("config.kdl");
 
-        Ok(knus::parse::<Config>("<stdin>", &buf)?)
+        // if there is no config file, act as if it's simply empty
+        let config = knus::parse::<KdlConfig>(
+            config_file.to_string_lossy(),
+            &fs::read_to_string(&config_file)
+                .into_diagnostic()
+                .unwrap_or_default(),
+        )?;
+
+        Ok(config)
     })();
 
-    match config {
-        Ok(config) => config,
+    match raw_config {
+        Ok(raw_config) => {
+            let raw_keys = raw_config.keys.keys;
+            // default keybindings
+            let mut keys = HashMap::from([(
+                KeySequence((IcedKey::Named(IcedNamed::Escape), None)),
+                (KeyMods::default(), Message::Exit),
+            )]);
+            for raw_key in raw_keys {
+                match raw_key {
+                    Key::CopyToClipboard(key_sequence, key_mods) => {
+                        keys.insert(key_sequence, (key_mods, Message::CopyToClipboard));
+                    }
+                    Key::SaveScreenshot(key_sequence, key_mods) => {
+                        keys.insert(key_sequence, (key_mods, Message::SaveScreenshot));
+                    }
+                    Key::Exit(key_sequence, key_mods) => {
+                        keys.insert(key_sequence, (key_mods, Message::Exit));
+                    }
+                    Key::Goto(rect_place, key_sequence, key_mods) => {
+                        keys.insert(key_sequence, (key_mods, Message::Goto(rect_place)));
+                    }
+                    Key::Move(direction, amount, key_sequence, key_mods) => {
+                        keys.insert(
+                            key_sequence,
+                            (
+                                key_mods,
+                                Message::Move(direction, amount * raw_config.movement_multiplier),
+                            ),
+                        );
+                    }
+                    Key::Extend(direction, amount, key_sequence, key_mods) => {
+                        keys.insert(
+                            key_sequence,
+                            (
+                                key_mods,
+                                Message::Extend(direction, amount * raw_config.movement_multiplier),
+                            ),
+                        );
+                    }
+                    Key::Shrink(direction, amount, key_sequence, key_mods) => {
+                        keys.insert(
+                            key_sequence,
+                            (
+                                key_mods,
+                                Message::Shrink(direction, amount * raw_config.movement_multiplier),
+                            ),
+                        );
+                    }
+                }
+            }
+
+            Config {
+                theme: raw_config.theme,
+                keys,
+                instant: raw_config.instant,
+                default_image_upload_provider: raw_config.default_image_upload_provider,
+                size_indicator: raw_config.size_indicator,
+                movement_multiplier: raw_config.movement_multiplier,
+            }
+        }
         Err(miette_error) => {
             eprintln!("{miette_error:?}");
             std::process::exit(1);
@@ -32,44 +103,126 @@ pub static CONFIG: LazyLock<Config> = LazyLock::new(|| {
     }
 });
 
-/// Config
-#[derive(knus::Decode, Debug)]
-pub struct Config {
-    /// Settings
-    #[knus(child)]
-    pub settings: Settings,
-    /// Theme
-    #[knus(child)]
-    pub theme: Theme,
-    /// Keybindings
-    #[knus(child)]
-    pub keys: Keys,
+/// Utility macro to create a theme with default colors
+///
+/// Implementing the `Default` trait would be a lot of repetition and it cannot be automatically
+/// derived. We want `Default` trait to be the same as what we specify for knus (KDL values defaults
+/// if not specified)
+macro_rules! theme {
+    (
+        $(
+            #[$($doc:meta)*]
+            $key:ident = $default_color:expr
+        ),* $(,)?
+    ) => {
+        /// Theme for ferrishot
+        #[derive(knus::Decode, Debug)]
+        pub struct Theme {
+            $(
+                #[$($doc),*]
+                #[knus(default = $crate::theme::Color($default_color), child, unwrap(argument, str))]
+                pub $key: $crate::theme::Color,
+            )*
+        }
+
+        impl Default for Theme {
+            fn default() -> Self {
+                Self {
+                    $(
+                        $key: $crate::theme::Color($default_color),
+                    )*
+                }
+            }
+        }
+    };
 }
 
-/// Settings
-#[derive(knus::Decode, Debug)]
-pub struct Settings {
+/// Utility macro to create two similar config structs
+/// The only thing that is different between `KdlConfig` and `Config`
+/// is that the `keys` field changes.
+///
+/// It also implements `Default`, removing quite a lot of boilerplate.
+/// We would have to specify `#[knus(default(...))]` and `impl Default`.
+macro_rules! config {
+    (
+        $(
+            $(#[$doc:meta])*
+            $key:ident: $typ:ty = $defaul:expr
+        ),* $(,)?
+    ) => {
+        #[derive(knus::Decode, Debug)]
+        /// Raw config, not processed into a more useful structure yet
+        pub struct KdlConfig {
+            $(
+                $(#[$doc])*
+                #[knus(default = $defaul, child, unwrap(argument))]
+                pub $key: $typ,
+            )*
+            /// Theme
+            pub theme: Theme,
+            /// Keybindings
+            #[knus(default, child)]
+            pub keys: Keys,
+        }
+
+        impl Default for KdlConfig {
+            fn default() -> Self {
+                Self {
+                    theme: Theme::default(),
+                    keys: Keys::default(),
+                    $(
+                        $key: $defaul
+                    ),*
+                }
+            }
+        }
+
+        /// Processed config, with keybindings that are ready to be used
+        #[derive(Debug)]
+        pub struct Config {
+            $(
+                $(#[$doc])*
+                pub $key: $typ,
+            )*
+            /// Theme
+            pub theme: Theme,
+            /// A list of processed keybindings for ferrishot.
+            pub keys: std::collections::HashMap<KeySequence, (KeyMods, crate::message::Message)>,
+        }
+
+        impl Default for Config {
+            fn default() -> Self {
+                Self {
+                    theme: Theme::default(),
+                    keys: std::collections::HashMap::default(),
+                    $(
+                        $key: $defaul
+                    ),*
+                }
+            }
+        }
+    }
+}
+
+config! {
     /// Specifying this option will copy the selection to clipboard as soon as you select your first rectangle.
     /// This is useful, since often times you may not want to make any modifications to your selection,
     /// so this makes simple select and copy faster.
     ///
     /// When this is `true`, while you are selecting the first square pressing the Right mouse button just once will
     /// cancel this effect and not instantly copy the screenshot.
-    #[knus(default = false, child, unwrap(argument))]
-    pub instant: bool,
+    instant: bool = false,
     /// The default image service to use when uploading images to the internet.
     /// We have multiple options because some of them can be down / unreliable etc.
     ///
     /// You may also get rate limited by the service if you send too many images, so you can try a different
     /// one if that happens.
-    #[knus(default = ImageUploadService::TheNullPointer, child, unwrap(argument))]
-    pub default_image_upload_provider: ImageUploadService,
+    default_image_upload_provider: ImageUploadService = ImageUploadService::TheNullPointer,
     /// Renders a size indicator in the bottom left corner.
     /// It shows the current height and width of the selection.
     ///
     /// You can manually enter a value to change the selection by hand.
-    #[knus(default = true, child, unwrap(argument))]
-    pub size_indicator: bool,
+    size_indicator: bool = true,
     /// Say you have this keybinding
     ///
     /// ```kdl
@@ -85,25 +238,20 @@ pub struct Settings {
     /// - `22`: 110px moved
     ///
     /// This applies to all keybindings that take a number like this.
-    #[knus(default = 120, child, unwrap(argument))]
-    pub movement_multiplier: u32,
+    movement_multiplier: u32 = 120
 }
 
-/// Theme
-#[derive(knus::Decode, Debug)]
-pub struct Theme {
+theme! {
     /// Color of text which is placed in contrast with the color of `accent_bg`
-    #[knus(default = Color(iced::color!(0x_ab_61_37)), child, unwrap(argument, str))]
-    pub accent_fg: Color,
+    accent_fg = iced::color!(0x_ab_61_37),
     /// The background color of icons, the selection and such
-    #[knus(default = Color(iced::Color::WHITE), child, unwrap(argument, str))]
-    pub accent: Color,
+    accent = iced::Color::WHITE,
 }
 
 /// Keybindings for ferrishot
-#[derive(knus::Decode, Debug)]
+#[derive(knus::Decode, Debug, Default)]
 pub struct Keys {
-    /// A list of keybindings for ferrishot
+    /// A list of raw keybindings for ferrishot, directly as read from the config file
     #[knus(children)]
     pub keys: Vec<Key>,
 }
@@ -112,25 +260,34 @@ pub struct Keys {
 #[derive(knus::Decode, Debug)]
 pub enum Key {
     /// Copy the selected region as a screenshot to the clipboard
-    CopyToClipboard(#[knus(argument, str)] KeySequence),
+    CopyToClipboard(
+        #[knus(property(name = "key"), str)] KeySequence,
+        #[knus(default, property(name = "mods"), str)] KeyMods,
+    ),
     /// Save the screenshot as a path
-    SaveScreenshot(#[knus(argument, str)] KeySequence),
+    SaveScreenshot(
+        #[knus(property(name = "key"), str)] KeySequence,
+        #[knus(default, property(name = "mods"), str)] KeyMods,
+    ),
     /// Exit the application
-    Exit(#[knus(argument, str)] KeySequence),
+    Exit(
+        #[knus(property(name = "key"), str)] KeySequence,
+        #[knus(default, property(name = "mods"), str)] KeyMods,
+    ),
     /// Teleport the selection to the given area
     Goto(
         // where to move the rect
         #[knus(argument, str)] RectPlace,
-        // binding
-        #[knus(argument, str)] KeySequence,
+        #[knus(property(name = "key"), str)] KeySequence,
+        #[knus(default, property(name = "mods"), str)] KeyMods,
     ),
     /// Shift the selection in the given direction by pixels
     Move(
         #[knus(argument)] Direction,
         // strength
         #[knus(argument)] u32,
-        // binding
-        #[knus(argument, str)] KeySequence,
+        #[knus(property(name = "key"), str)] KeySequence,
+        #[knus(default, property(name = "mods"), str)] KeyMods,
     ),
     /// Increase the size of the selection in the given direction by pixels
     Extend(
@@ -139,7 +296,8 @@ pub enum Key {
         // strength
         #[knus(argument)] u32,
         // binding
-        #[knus(argument, str)] KeySequence,
+        #[knus(property(name = "key"), str)] KeySequence,
+        #[knus(default, property(name = "mods"), str)] KeyMods,
     ),
     /// Decrease the size of the selection in the given direction by pixels
     Shrink(
@@ -148,7 +306,8 @@ pub enum Key {
         // strength
         #[knus(argument)] u32,
         // binding
-        #[knus(argument, str)] KeySequence,
+        #[knus(property(name = "key"), str)] KeySequence,
+        #[knus(default, property(name = "mods"), str)] KeyMods,
     ),
 }
 
@@ -160,13 +319,3 @@ pub struct Cli {
     #[arg(long)]
     pub instant: bool,
 }
-
-// Pencil(#[knus(argument, str)] KeySequence),
-// Line(#[knus(argument, str)] KeySequence),
-// Square(#[knus(argument, str)] KeySequence),
-// Rectangle(#[knus(argument, str)] KeySequence),
-// Circle(#[knus(argument, str)] KeySequence),
-// Marker(#[knus(argument, str)] KeySequence),
-// Text(#[knus(argument, str)] KeySequence),
-// Undo(#[knus(argument, str)] KeySequence),
-// Redo(#[knus(argument, str)] KeySequence),

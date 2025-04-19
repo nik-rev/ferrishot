@@ -129,7 +129,7 @@ impl App {
             // size indicator
             .push_maybe(
                 self.selection
-                    .filter(|_| CONFIG.settings.size_indicator)
+                    .filter(|_| CONFIG.size_indicator)
                     .get()
                     .map(|(sel, key)| {
                         let (image_width, image_height, _) = self.screenshot.raw();
@@ -425,6 +425,30 @@ impl App {
                         },
                     ));
                 }
+            }
+            Message::Goto(rect_place) => {
+                let Some(selection) = self.selection.as_mut() else {
+                    self.error("Nothing is selected.");
+                    return Task::none();
+                };
+            }
+            Message::Move(direction, pixels) => {
+                let Some(selection) = self.selection.as_mut() else {
+                    self.error("Nothing is selected.");
+                    return Task::none();
+                };
+            }
+            Message::Extend(direction, pixels) => {
+                let Some(selection) = self.selection.as_mut() else {
+                    self.error("Nothing is selected.");
+                    return Task::none();
+                };
+            }
+            Message::Shrink(direction, pixels) => {
+                let Some(selection) = self.selection.as_mut() else {
+                    self.error("Nothing is selected.");
+                    return Task::none();
+                };
             }
         }
 
