@@ -9,6 +9,7 @@ use crate::message::Message;
 use crate::screenshot::RgbaHandle;
 use crate::selection::selection_lock::OptionalSelectionExt;
 use crate::theme::THEME;
+use clap::Parser;
 use iced::alignment::Vertical;
 use iced::mouse::Cursor;
 use iced::widget::canvas::Path;
@@ -88,6 +89,8 @@ pub struct App {
     pub screenshot: RgbaHandle,
     /// Area of the screen that is selected for capture
     pub selection: Option<Selection>,
+    /// The user specified configuration
+    pub config: Config,
     /// Errors to display to the user
     pub errors: Vec<ErrorMessage>,
 }
@@ -102,6 +105,7 @@ impl Default for App {
             selection: None,
             selections_created: 0,
             errors: vec![],
+            config: Config::parse(),
         }
     }
 }
