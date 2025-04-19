@@ -1,0 +1,2 @@
+[alias]
+docgen = "run --manifest-path ./docgen/Cargo.toml --"

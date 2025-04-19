@@ -1,10 +1,7 @@
 //! Main logic for the application, handling of events and mutation of the state
 
-use crate::image_upload::ImageUploadService;
 use crate::selection::Speed;
 use std::borrow::Cow;
-use std::fs::{self, File};
-use std::io::Write;
 use std::time::Instant;
 
 use crate::message::Message;
@@ -337,12 +334,14 @@ impl App {
                 if let Err(err) = cropped_image.save_with_format(&tempfile, image::ImageFormat::Png)
                 {
                     self.error(err.to_string());
-                };
+                }
 
                 return Task::future(async move {
                     {
                         let file = tempfile;
-                        let response = crate::image_upload::ZeroZero::upload(&file).await;
+                        let _response = crate::image_upload::ImageUploadService::TheNullPointer
+                            .upload_image(&file)
+                            .await;
 
                         Message::NoOp
                     }

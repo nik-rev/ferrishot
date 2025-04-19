@@ -1,0 +1,81 @@
+// which service to use for image upload (by default)
+
+settings {
+  default-image-upload-provider "the-null-pointer"
+  instant true
+}
+
+theme {
+  accent-fg "#ab6137"
+  accent-bg "#ffffff"
+}
+
+keys {
+  // undo "top-left"
+  // undo "bottom-right"
+  // undo "Ctrl-z"
+  // redo "Ctrl-Z"
+  // undo "u"
+  // undo "U"
+  
+  // // tools
+  // p pencil
+  // d line
+  // s square
+  // r rectangle
+  // c circle
+  // m marker
+  // t text
+  
+  // direction
+  goto "bottom-left" "<"
+  goto "top-right" ">"
+  goto "center" "gc"
+  goto "top-left" "gg"
+  goto "bottom-right" "G"
+  goto "bottom-left" "<"
+
+  // // up
+  // gk goto top
+
+  // k move up 1
+  // K extend up 1
+  // Ctrl-k shrink up 1
+
+  // w move up 5
+  // W extend up 5
+  // Ctrl-w shrink up 5
+
+  // // right
+  // gl goto right
+
+  // l move right 1
+  // L extend right 1
+  // Ctrl-l shrink right 1
+
+  // e move right 5
+  // E extend right 5
+  // Ctrl-e shrink right 5
+
+  // // left movements
+  // gh goto left
+
+  // b move left 5
+  // B extend left 5
+  // Ctrl-b shrink left 5
+
+  // h move left 1
+  // H extend left 1
+  // Ctrl-h shrink left 1
+
+  // // bottom movements
+  // gj goto bottom
+
+  // j move bottom 1
+  // J extend bottom 1
+  // Ctrl-j shrink bottom 1
+
+  // n move bottom 5
+  // N extend bottom 5
+  // Ctrl-n shrink bottom 5
+}

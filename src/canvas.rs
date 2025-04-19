@@ -129,7 +129,7 @@ impl canvas::Program<Message> for App {
             }
             Mouse(ButtonReleased(Left)) => {
                 state.is_left_down = false;
-                if CONFIG.instant && self.selections_created == 1 {
+                if CONFIG.settings.instant && self.selections_created == 1 {
                     // we have created 1 selections in total, (the current one),
                     // in which case we want to copy it to the clipboard as the
                     // --instant flag was provided

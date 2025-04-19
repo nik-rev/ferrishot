@@ -39,7 +39,7 @@ Grand Movements
 
 - `<`: Move selection to the far bottom left
 - `>`: Move selection to the far top left
-- `gg`: Move selection to the far top left
+- `gg`: Move selection to the far top right
 - `zt`: Move selection to the far top
 - `zb`: Move selection to the far bottom
 - `$`: Move selection to the far right

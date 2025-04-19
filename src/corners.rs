@@ -1,10 +1,27 @@
 //! `Corners` represents the 4 vertices of a `iced::Rectangle`
+
+use std::str::FromStr;
+
 use iced::{Point, Rectangle, mouse};
+use strum::IntoEnumIterator;
 
 use crate::rectangle::RectangleExt as _;
 
 /// Corner of a rectangle
-#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(
+    Copy,
+    Clone,
+    Debug,
+    PartialEq,
+    Eq,
+    PartialOrd,
+    Ord,
+    knus::DecodeScalar,
+    strum::EnumString,
+    strum::IntoStaticStr,
+    strum::EnumIter,
+)]
+#[strum(serialize_all = "kebab-case")]
 pub enum Corner {
     /// Top-left corner
     TopLeft,
@@ -17,7 +34,20 @@ pub enum Corner {
 }
 
 /// Side of a rectangle
-#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(
+    Copy,
+    Clone,
+    Debug,
+    PartialEq,
+    Eq,
+    PartialOrd,
+    Ord,
+    knus::DecodeScalar,
+    strum::EnumString,
+    strum::IntoStaticStr,
+    strum::EnumIter,
+)]
+#[strum(serialize_all = "kebab-case")]
 pub enum Side {
     /// Top side
     Top,
@@ -29,6 +59,32 @@ pub enum Side {
     Left,
 }
 
+/// Where to resize / shrink / extend rectangle
+#[derive(
+    Copy,
+    Clone,
+    Debug,
+    PartialEq,
+    Eq,
+    PartialOrd,
+    Ord,
+    knus::DecodeScalar,
+    strum::EnumString,
+    strum::IntoStaticStr,
+    strum::EnumIter,
+)]
+#[strum(serialize_all = "kebab-case")]
+pub enum Direction {
+    /// Above
+    Up,
+    /// Below
+    Down,
+    /// To the left
+    Left,
+    /// To the right
+    Right,
+}
+
 /// Side and corner
 #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum SideOrCorner {
@@ -36,6 +92,57 @@ pub enum SideOrCorner {
     Side(Side),
     /// One of the 4 corners of a rectangle
     Corner(Corner),
+}
+
+impl SideOrCorner {
+    fn variants() -> String {
+        Side::iter()
+            .map(|side| -> &'static str { side.into() })
+            .chain(Corner::iter().map(|side| -> &'static str { side.into() }))
+            .collect::<Vec<_>>()
+            .join(", ")
+    }
+}
+
+impl FromStr for SideOrCorner {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        if let Ok(side) = Side::from_str(s) {
+            Ok(Self::Side(side))
+        } else if let Ok(corner) = Corner::from_str(s) {
+            Ok(Self::Corner(corner))
+        } else {
+            Err(format!("expected one of {}", Self::variants()))
+        }
+    }
+}
+
+/// A named place of the rectangle
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub enum RectPlace {
+    /// A side or a corner of the rectangle
+    SideOrCorner(SideOrCorner),
+    /// Center of the rectangle
+    Center,
+}
+
+impl FromStr for RectPlace {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        if let Ok(side_or_corner) = s.parse::<SideOrCorner>() {
+            Ok(Self::SideOrCorner(side_or_corner))
+        } else if s == "center" {
+            Ok(Self::Center)
+        } else {
+            Err(format!(
+                "expected one of center, {}",
+                SideOrCorner::variants()
+            ))
+        }
+    }
 }
 
 impl Corner {

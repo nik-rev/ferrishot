@@ -1,14 +1,25 @@
 //! Upload images to free services
 
-use std::{error::Error, sync::LazyLock};
+use std::error::Error;
 
-use reqwest::Client;
+use documented::{Documented, DocumentedVariants};
+use knus::DecodeScalar;
 use serde::{Deserialize, Serialize};
 
-/// Generate a single client for usage in the app
-static CLIENT: LazyLock<Client> = LazyLock::new(Client::new);
-
-#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[derive(
+    Copy,
+    Clone,
+    PartialEq,
+    Debug,
+    Eq,
+    PartialOrd,
+    Ord,
+    Serialize,
+    Deserialize,
+    DocumentedVariants,
+    Documented,
+    DecodeScalar,
+)]
 #[serde(rename_all = "kebab-case")]
 /// Choose which image upload service should be used by default when pressing "Upload Online"
 pub enum ImageUploadService {
@@ -25,7 +36,7 @@ impl ImageUploadService {
     }
 
     pub async fn upload_image(self, file_path: &std::path::Path) -> Result<String, Box<dyn Error>> {
-        let request = CLIENT
+        let request = crate::CLIENT
             .request(reqwest::Method::POST, self.post_url())
             .header(
                 "User-Agent",
