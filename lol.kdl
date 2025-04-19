@@ -11,22 +11,6 @@ theme {
 }
 
 keys {
-  // undo "top-left"
-  // undo "bottom-right"
-  // undo "Ctrl-z"
-  // redo "Ctrl-Z"
-  // undo "u"
-  // undo "U"
-  
-  // // tools
-  // p pencil
-  // d line
-  // s square
-  // r rectangle
-  // c circle
-  // m marker
-  // t text
-  
   // direction
   goto "bottom-left" "<"
   goto "top-right" ">"
@@ -35,47 +19,47 @@ keys {
   goto "bottom-right" "G"
   goto "bottom-left" "<"
 
-  // // up
-  // gk goto top
+  // up movements
+  goto "top" "gk"
 
-  // k move up 1
-  // K extend up 1
-  // Ctrl-k shrink up 1
+  move "up" 1 "k"
+  extend "up" 1 "K"
+  shrink "up" 1 "Ctrl + k"
 
-  // w move up 5
-  // W extend up 5
-  // Ctrl-w shrink up 5
+  move "up" 5 "w"
+  extend "up" 5 "W"
+  shrink "up" 5 "Ctrl-w"
 
-  // // right
-  // gl goto right
+  // right movements
+  goto "right" "gl"
 
-  // l move right 1
-  // L extend right 1
-  // Ctrl-l shrink right 1
+  move "right" 1 "l"
+  extend "right" 1 "L"
+  shrink "right" 1 "Ctrl-l"
 
-  // e move right 5
-  // E extend right 5
-  // Ctrl-e shrink right 5
+  move "right" 5 "e"
+  extend "right" 5 "E"
+  shrink "right" 5 "Ctrl-e"
 
-  // // left movements
-  // gh goto left
+  // left movements
+  goto "left" "gh"  
 
-  // b move left 5
-  // B extend left 5
-  // Ctrl-b shrink left 5
+  move "left" 5 "b"
+  extend "left" 5 "B"
+  shrink "left" 5 "Ctrl-b"
 
-  // h move left 1
-  // H extend left 1
-  // Ctrl-h shrink left 1
+  move "left" 1 "h"
+  extend "left" 1 "H"
+  shrink "left" 1 "Ctrl-h"
 
-  // // bottom movements
-  // gj goto bottom
+  // bottom movements
+  goto "bottom" "gj"
 
-  // j move bottom 1
-  // J extend bottom 1
-  // Ctrl-j shrink bottom 1
+  move "down" 1 "j"
+  extend "down" 1 "J"
+  shrink "down" 1 "Ctrl-j"
 
-  // n move bottom 5
-  // N extend bottom 5
-  // Ctrl-n shrink bottom 5
+  move "down" 5 "n"
+  extend "down" 5 "N"
+  shrink "down" 5 "Ctrl-n"
 }
