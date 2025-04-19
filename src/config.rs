@@ -6,7 +6,7 @@ use etcetera::BaseStrategy;
 use miette::IntoDiagnostic as _;
 
 use crate::{
-    corners::{Direction, RectPlace},
+    corners::{Corner, Direction, RectPlace, Side, SideOrCorner},
     image_upload::ImageUploadService,
     key::{KeyMods, KeySequence},
     message::Message,
@@ -55,14 +55,91 @@ pub static CONFIG: LazyLock<Config> = LazyLock::new(|| {
         Ok(config)
     })();
 
+    /// `Some(...)` if `$(...)?` exists, `None` otherwise
+    macro_rules! opt {
+        () => {
+            None::<&'static str>
+        };
+        ($any:tt) => {
+            Some($any)
+        };
+    }
+
+    /// Declare default keybindings
+    macro_rules! default_keys {
+        (
+            $(
+                $key:literal $(mods=$modifier:literal)? => $message:expr
+            ),* $(,)?
+        ) => {{
+            let mut map = HashMap::new();
+            $(
+                map.insert(
+                    $key.parse::<KeySequence>().expect(concat!("default keybinding ", $key, " is incorrect")),
+                    (opt!($($modifier)?).unwrap_or_default().parse::<KeyMods>().expect(concat!("modifiers ", $(stringify!($modifier), )? "is incorrect")), $message)
+                );
+            )*
+            map
+        }};
+    }
+
     match kdl_config {
         Ok(kdl_config) => {
+            use Direction::{Down, Left, Right, Up};
+            use Message::{Extend, Goto, Move, Shrink};
             let kdl_keys = kdl_config.keys.keys;
-            // default keybindings
-            let mut keys = HashMap::from([(
-                KeySequence((IcedKey::Named(IcedNamed::Escape), None)),
-                (KeyMods::default(), Message::Exit),
-            )]);
+            let mut keys = default_keys! {
+                // direction
+                "<" => Goto(RectPlace::SideOrCorner(SideOrCorner::Corner(Corner::BottomLeft))),
+                ">" => Goto(RectPlace::SideOrCorner(SideOrCorner::Corner(Corner::TopRight))),
+                "g c" => Goto(RectPlace::Center),
+                "g g" => Goto(RectPlace::SideOrCorner(SideOrCorner::Corner(Corner::TopLeft))),
+                "G" => Goto(RectPlace::SideOrCorner(SideOrCorner::Corner(Corner::BottomRight))),
+
+                // up movements
+                "g k" => Goto(RectPlace::SideOrCorner(SideOrCorner::Side(Side::Top))),
+
+                "k" => Move(Up, 1),
+                "K" => Extend(Up, 1),
+                "k" mods="ctrl" => Shrink(Up, 1),
+
+                "w" => Move(Up, 5),
+                "W" => Extend(Up, 5),
+                "w" mods="ctrl" => Shrink(Up, 5),
+
+                // right movements
+                "g l" => Goto(RectPlace::SideOrCorner(SideOrCorner::Side(Side::Right))),
+
+                "l" => Move(Right, 1),
+                "L" => Extend(Right, 1),
+                "l" mods="ctrl" => Shrink(Right, 1),
+
+                "e" => Move(Right, 5),
+                "E" => Extend(Right, 5),
+                "e" mods="ctrl" => Shrink(Right, 5),
+
+                // left movements
+                "g h" => Goto(RectPlace::SideOrCorner(SideOrCorner::Side(Side::Left))),
+
+                "b" => Move(Left, 5),
+                "B" => Extend(Left, 5),
+                "b" mods="ctrl" => Shrink(Left, 5),
+
+                "h" => Move(Left, 1),
+                "H" => Extend(Left, 1),
+                "h" mods="ctrl" => Shrink(Left, 1),
+
+                // bottom movements
+                "g j" => Goto(RectPlace::SideOrCorner(SideOrCorner::Side(Side::Bottom))),
+
+                "j" => Move(Down, 1),
+                "J" => Extend(Down, 1),
+                "j" mods="ctrl" => Shrink(Down, 1),
+
+                "n" => Move(Down, 5),
+                "N" => Extend(Down, 5),
+                "n" mods="ctrl" => Shrink(Down, 5),
+            };
             for key in kdl_keys {
                 match key {
                     Key::CopyToClipboard(key_sequence, key_mods) => {

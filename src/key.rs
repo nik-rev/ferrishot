@@ -2,8 +2,10 @@
 
 use std::str::FromStr;
 
-use iced::keyboard::{Modifiers, key::Key as IcedKey};
-use strum::IntoEnumIterator;
+use iced::{
+    advanced::graphics::text::cosmic_text::ttf_parser::gpos::MarkToLigatureAdjustment,
+    keyboard::{Modifiers, key::Key as IcedKey},
+};
 
 /// A sequence of 2 keys. If there are 2 keys like so:
 /// - (T, None)
@@ -17,13 +19,16 @@ pub struct KeySequence(pub (IcedKey, Option<IcedKey>));
 
 /// Modifier keys
 #[derive(Debug, Default)]
-pub struct KeyMods(iced::keyboard::Modifiers);
+pub struct KeyMods(pub iced::keyboard::Modifiers);
 
 impl FromStr for KeyMods {
     type Err = String;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let mut mods = iced::keyboard::Modifiers::empty();
+        if s.is_empty() {
+            return Ok(Self(Modifiers::empty()));
+        }
         for modifier_str in s.split('+') {
             let modifier = match modifier_str {
                 "shift" => Modifiers::SHIFT,
@@ -67,7 +72,9 @@ impl std::str::FromStr for KeySequence {
         let mut first_key = None;
         for (i, key) in s.split_whitespace().enumerate() {
             if i >= 2 {
-                return Err("At the moment, more than 2 keys are not supported".to_string());
+                return Err(
+                    "At the moment, more than 2 keys in sequence are not supported".to_string(),
+                );
             }
             if let Some(first_key) = first_key {
                 return Ok(Self((first_key, Some(parse_key(key)?))));
