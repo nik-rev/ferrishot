@@ -1,62 +1,66 @@
-default-image-upload-provider "the-null-pointer"
-size-indicator true
-instant false
+// Default config for ferrishot
+//
+// For more information about what each key does, see the docs
+
+default-image-upload-provider the-null-pointer
+size-indicator #true
+instant #false
 
 theme {
-  accent-fg "#ab6137"
-  accent "#ffffff"
+  accent-fg ab6137
+  accent ffffff opacity=0.5
 }
 
 keys {
   // up movements
-  goto "top" key="g k"
+  goto top key=gk
 
-  move "up" 120 key="k"
-  extend "up" 120 key="K"
-  shrink "up" 120 key="k" mods="ctrl"
+  move up 120 key=k
+  extend up 120 key=K
+  shrink up 120 key=k mods=ctrl
 
-  move "up" 600 key="w"
-  extend "up" 600 key="W"
-  shrink "up" 600 key="w" mods="ctrl"
+  move up 600 key=w
+  extend up 600 key=W
+  shrink up 600 key=w mods=ctrl
 
   // right movements
-  goto "right" key="g l"
+  goto right key=gl
 
-  move "right" 120 key="l"
-  extend "right" 120 key="L"
-  shrink "right" 120 key="l" mods="ctrl"
+  move right 120 key=l
+  extend right 120 key=L
+  shrink right 120 key=l mods=ctrl
 
-  move "right" 600 key="e"
-  extend "right" 600 key="E"
-  shrink "right" 600 key="e" mods="ctrl"
+  move right 600 key=e
+  extend right 600 key=E
+  shrink right 600 key=e mods=ctrl
 
   // left movements
-  goto "left" key="g h"  
+  goto left key=gh  
 
-  move "left" 600 key="b"
-  extend "left" 600 key="B"
-  shrink "left" 600 key="b" mods="ctrl"
+  move left 600 key=b
+  extend left 600 key=B
+  shrink left 600 key=b mods=ctrl
 
-  move "left" 120 key="h"
-  extend "left" 120 key="H"
-  shrink "left" 120 key="h" mods="ctrl"
+  move left 120 key=h
+  extend left 120 key=H
+  shrink left 120 key=h mods=ctrl
 
   // bottom movements
-  goto "bottom" key="g j"
+  goto bottom key=gj
 
-  move "down" 120 key="j"
-  extend "down" 120 key="J"
-  shrink "down" 120 key="j" mods="ctrl"
+  move down 120 key=j
+  extend down 120 key=J
+  shrink down 120 key=j mods=ctrl
 
-  move "down" 600 key="n"
-  extend "down" 600 key="N"
-  shrink "down" 600 key="n" mods="ctrl"
+  move down 600 key=n
+  extend down 600 key=N
+  shrink down 600 key=n mods=ctrl
 
   // place
-  goto "bottom-left" key="<"
-  goto "top-right" key=">"
-  goto "center" key="g c"
-  goto "top-left" key="g g"
-  goto "bottom-right" key="G"
-  goto "bottom-left" key="<"
+  goto bottom-left key=<
+  goto top-right key=>
+  goto center key=gc
+  goto top-left key=gg
+  goto bottom-right key=G
+  goto bottom-left key=<
 }

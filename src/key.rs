@@ -4,10 +4,7 @@ use std::{collections::HashMap, str::FromStr};
 
 use iced::keyboard::{Modifiers, key::Key as IcedKey};
 
-use crate::{
-    corners::{Direction, RectPlace},
-    message::Message,
-};
+use crate::{config::Key, message::Message};
 
 /// Represents the keybindings for ferrishot
 ///
@@ -21,10 +18,7 @@ use crate::{
 /// - else update `previous_key_pressed = Some(current_key_pressed)`
 #[derive(Debug, Default)]
 pub struct KeyMap {
-    /// Map of Key Pressed <=> Action when pressing that key
-    ///
-    /// It is an `IndexMap` so that `KeyMap::as_kdl_str` will always return
-    /// the same output (as long as the source code does not change)
+    /// Map of Key Pressed => Action when pressing that key
     keys: HashMap<KeySequence, (KeyMods, Message)>,
 }
 
@@ -34,61 +28,6 @@ pub struct Keys {
     /// A list of raw keybindings for ferrishot, directly as read from the config file
     #[knus(children)]
     pub keys: Vec<Key>,
-}
-
-/// A list of keybindings which exist in the app
-#[derive(knus::Decode, Debug)]
-pub enum Key {
-    /// Copy the selected region as a screenshot to the clipboard
-    CopyToClipboard(
-        #[knus(property(name = "key"), str)] KeySequence,
-        #[knus(default, property(name = "mods"), str)] KeyMods,
-    ),
-    /// Save the screenshot as a path
-    SaveScreenshot(
-        #[knus(property(name = "key"), str)] KeySequence,
-        #[knus(default, property(name = "mods"), str)] KeyMods,
-    ),
-    /// Exit the application
-    Exit(
-        #[knus(property(name = "key"), str)] KeySequence,
-        #[knus(default, property(name = "mods"), str)] KeyMods,
-    ),
-    /// Teleport the selection to the given area
-    Goto(
-        // where to move the rect
-        #[knus(argument, str)] RectPlace,
-        #[knus(property(name = "key"), str)] KeySequence,
-        #[knus(default, property(name = "mods"), str)] KeyMods,
-    ),
-    /// Shift the selection in the given direction by pixels
-    Move(
-        #[knus(argument)] Direction,
-        // strength
-        #[knus(argument)] u32,
-        #[knus(property(name = "key"), str)] KeySequence,
-        #[knus(default, property(name = "mods"), str)] KeyMods,
-    ),
-    /// Increase the size of the selection in the given direction by pixels
-    Extend(
-        // where to extend
-        #[knus(argument)] Direction,
-        // strength
-        #[knus(argument)] u32,
-        // binding
-        #[knus(property(name = "key"), str)] KeySequence,
-        #[knus(default, property(name = "mods"), str)] KeyMods,
-    ),
-    /// Decrease the size of the selection in the given direction by pixels
-    Shrink(
-        // shrink in this direction
-        #[knus(argument)] Direction,
-        // strength
-        #[knus(argument)] u32,
-        // binding
-        #[knus(property(name = "key"), str)] KeySequence,
-        #[knus(default, property(name = "mods"), str)] KeyMods,
-    ),
 }
 
 impl FromIterator<Key> for KeyMap {
@@ -119,20 +58,6 @@ impl FromIterator<Key> for KeyMap {
                 })
                 .collect(),
         }
-    }
-}
-
-// const DEFAULT_CONFIG_STR = ""
-
-impl KeyMap {
-    /// Insert a keybinding
-    pub fn insert(&mut self, seq: KeySequence, mods: KeyMods, message: Message) {
-        self.keys.insert(seq, (mods, message));
-    }
-
-    /// Create a new keymap
-    pub fn new(keys: HashMap<KeySequence, (KeyMods, Message)>) -> Self {
-        Self { keys }
     }
 }
 
@@ -180,6 +105,9 @@ impl std::str::FromStr for KeySequence {
     type Err = String;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
+        for ch in s.chars() {
+            if ch == '<' {}
+        }
         fn parse_key(key: &str) -> Result<IcedKey, String> {
             Named::from_str(key).map_or_else(
                 |_| {
@@ -220,7 +148,7 @@ impl std::str::FromStr for KeySequence {
 
 /// Since Iced does not implement `FromStr` for `iced::keyboard::Key::Named`, we have to do this
 macro_rules! named_keys {
-    ( $($Key:ident),* $(,)?) => {
+    ($($Key:ident),* $(,)?) => {
         #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, strum::EnumString, strum::EnumIter, strum::IntoStaticStr)]
         #[strum(serialize_all = "kebab-case")]
         #[expect(
@@ -229,7 +157,7 @@ macro_rules! named_keys {
         )]
         pub enum Named {
             $(
-                #[doc = concat!("The ", stringify!($Key), "key")]
+                #[doc = concat!("The ", stringify!($Key), " key")]
                 $Key
             ),*
         }

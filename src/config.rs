@@ -1,9 +1,19 @@
 //! Configuration of ferrishot
+//!
+//! Uses KDL as the configuration language <https://kdl.dev/>
+//!
+//! The user's config (`UserKdlConfig`) is merged into the default Kdl configuration
+//! (`DefaultKdlConfig`). This is then transformed into a `Config` by doing a little bit of
+//! extra processing for things that could not be trivially determined during deserialization.
+//! Such as:
+//! - Converting the list of keybindings into a structured `KeyMap` which can be indexed `O(1)` to
+//!   obtain the `Message` to execute for that action.
+//! - Adding opacity to colors
 use std::{fs, path::PathBuf, sync::LazyLock};
 
 use clap::Parser;
 use etcetera::BaseStrategy;
-use miette::IntoDiagnostic as _;
+use miette::IntoDiagnostic;
 
 /// Represents the location of the config file
 ///
@@ -52,15 +62,13 @@ pub static CONFIG: LazyLock<Config> = LazyLock::new(|| {
         let config_file_path = PathBuf::from(config_file);
 
         let default_config =
-            knus::parse::<DefaultKdlConfig>("<default-config>", DEFAULT_KDL_CONFIG_STR)
-                .expect("Default config is valid");
+            knus::parse::<DefaultKdlConfig>("<default-config>", DEFAULT_KDL_CONFIG_STR)?;
+        // .expect("Default config is invalid");
 
         // if there is no config file, act as if it's simply empty
         let user_config = knus::parse::<UserKdlConfig>(
             &CLI.config_file,
-            &fs::read_to_string(&config_file_path)
-                .into_diagnostic()
-                .unwrap_or_default(),
+            &fs::read_to_string(&config_file_path).unwrap_or_default(),
         )?;
 
         Ok(default_config.merge_user_config(user_config))
@@ -71,7 +79,7 @@ pub static CONFIG: LazyLock<Config> = LazyLock::new(|| {
             instant: kdl_config.instant,
             default_image_upload_provider: kdl_config.default_image_upload_provider,
             size_indicator: kdl_config.size_indicator,
-            theme: kdl_config.theme,
+            theme: kdl_config.theme.into(),
             keys: kdl_config
                 .keys
                 .keys
@@ -85,7 +93,10 @@ pub static CONFIG: LazyLock<Config> = LazyLock::new(|| {
     }
 });
 
-use crate::image_upload::ImageUploadService;
+use crate::{
+    corners::{Direction, RectPlace},
+    image_upload::ImageUploadService,
+};
 
 impl DefaultKdlConfig {
     /// Merge the user's config with the default config
@@ -137,7 +148,7 @@ macro_rules! declare_config_options {
             pub keys: $crate::key::Keys,
             /// The default theme of ferrishot
             #[knus(child)]
-            pub theme: Theme,
+            pub theme: DefaultKdlTheme,
             $(
                 $(#[$doc])*
                 #[knus(child, unwrap(argument))]
@@ -160,8 +171,7 @@ macro_rules! declare_config_options {
                 pub $key: Option<$typ>,
             )*
         }
-        /// Configuration for ferrishot. This means the parsed Kdl has been through an extra
-        /// processing step. What this means is that
+        /// Configuration for ferrishot.
         #[derive(Debug)]
         pub struct Config {
             /// Ferrishot's theme and colors
@@ -176,6 +186,19 @@ macro_rules! declare_config_options {
     }
 }
 
+/// Represents the color in the KDL config
+#[derive(knus::Decode, Debug)]
+pub struct Color {
+    /// The underlying color
+    #[knus(argument, str)]
+    color: crate::theme::Color,
+    /// The opacity for this color.
+    /// - `1.0`: Opaque
+    /// - `0.0`: Transparent
+    #[knus(default, property)]
+    opacity: f32,
+}
+
 /// Declare theme keys
 macro_rules! declare_theme_options {
     (
@@ -184,31 +207,90 @@ macro_rules! declare_theme_options {
             $key:ident
         ),* $(,)?
     ) => {
+        /// Ferrishot's default theme and colors
+        #[derive(knus::Decode, Debug)]
+        pub struct DefaultKdlTheme {
+            $(
+                $(#[$doc])*
+                #[knus(child)]
+                pub $key: $crate::config::Color,
+            )*
+        }
+
+        impl From<DefaultKdlTheme> for Theme {
+            fn from(value: DefaultKdlTheme) -> Self {
+                Self {
+                    $(
+                        $key: value.$key.color.with_opacity(value.$key.opacity),
+                    )*
+                }
+            }
+        }
+
         /// The user's custom theme and color overrides
         /// All values are optional and will override whatever is the default
         #[derive(knus::Decode, Debug)]
         pub struct UserKdlTheme {
             $(
-                #[knus(child, unwrap(argument, str))]
-                pub $key: Option<$crate::theme::Color>,
+                $(#[$doc])*
+                #[knus(child)]
+                pub $key: Option<$crate::config::Color>,
             )*
         }
-        /// Ferrishot's theme and colors
-        #[derive(knus::Decode, Debug)]
+
+        /// Theme and colors of ferrishot
+        #[derive(Debug)]
         pub struct Theme {
             $(
-                #[knus(child, unwrap(argument, str))]
+                $(#[$doc])*
                 pub $key: $crate::theme::Color,
             )*
         }
     }
 }
 
-declare_theme_options! {
-    /// Color of text which is placed in contrast with the color of `accent_bg`
-    accent_fg,
-    /// The background color of icons, the selection and such
-    accent,
+/// Create keybindings. Each keybind has form like this:
+///
+/// ```text
+/// Keybind: u32 bool f32 String
+/// ```
+///
+/// Which creates a new key option to have a keybinding in the `kdl` file like so:
+///
+/// ```kdl
+/// keys {
+///   keybind 10 #false 0.8 hello key=g mods=ctrl
+/// }
+/// ```
+///
+/// Which generates a structure like so, when parsed:
+///
+/// ```no_compile
+/// Key::Keybind(10, false, 0.8, "hello", KeySequence("g", None), KeyMods::CTRL)
+/// ```
+macro_rules! declare_key_options {
+    (
+        $(
+            $(#[$doc:meta])*
+            $KeyOption:ident $(: $( $(#[$attr:meta])* $Argument:ty)+)?
+        ),* $(,)?
+    ) => {
+        /// A list of keybindings which exist in the app
+        #[derive(knus::Decode, Debug)]
+        pub enum Key {
+            $(
+                $(#[$doc])*
+                $KeyOption(
+                    $($(
+                        $(#[$attr])*
+                        #[knus(argument)] $Argument,
+                    )*)?
+                    #[knus(property(name = "key"), str)] $crate::key::KeySequence,
+                    #[knus(default, property(name = "mods"), str)] $crate::key::KeyMods,
+                ),
+            )*
+        }
+    }
 }
 
 declare_config_options! {
@@ -230,4 +312,28 @@ declare_config_options! {
     ///
     /// You can manually enter a value to change the selection by hand.
     size_indicator: bool,
+}
+
+declare_key_options! {
+    /// Copy the selected region as a screenshot to the clipboard
+    CopyToClipboard,
+    /// Save the screenshot as a path
+    SaveScreenshot,
+    /// Exit the application
+    Exit,
+    /// Teleport the selection to the given area
+    Goto: #[knus(str)] RectPlace,
+    /// Shift the selection in the given direction by pixels
+    Move: Direction u32,
+    /// Increase the size of the selection in the given direction by pixels
+    Extend: Direction u32,
+    /// Decrease the size of the selection in the given direction by pixels
+    Shrink: Direction u32,
+}
+
+declare_theme_options! {
+    /// Color of text which is placed in contrast with the color of `accent_bg`
+    accent_fg,
+    /// The background color of icons, the selection and such
+    accent,
 }

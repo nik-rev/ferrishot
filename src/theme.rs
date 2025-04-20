@@ -39,9 +39,6 @@ pub struct Color(pub iced::Color);
 /// Parsing hex color failed
 #[derive(Debug, thiserror::Error)]
 pub enum HexColorParseError {
-    /// Missing # character at the beginning
-    #[error("Hex color must start with a `#`")]
-    MissingHex,
     /// Length is not correct
     #[error("Hex color must be 7 characters long")]
     InvalidLength,
@@ -53,13 +50,10 @@ pub enum HexColorParseError {
 impl Color {
     /// Creates a `Color` from a hex string
     pub fn from_hex(hex: &str) -> Result<Self, HexColorParseError> {
-        if !hex.starts_with('#') {
-            return Err(HexColorParseError::MissingHex);
-        }
-        if hex.len() != 7 {
+        if hex.len() != 6 {
             return Err(HexColorParseError::InvalidLength);
         }
-        match [1..=2, 3..=4, 5..=6].map(|i| hex.get(i).and_then(|c| u8::from_str_radix(c, 16).ok()))
+        match [0..=1, 2..=3, 4..=5].map(|i| hex.get(i).and_then(|c| u8::from_str_radix(c, 16).ok()))
         {
             [Some(r), Some(g), Some(b)] => Ok(Self(iced::Color::from_rgb(
                 f32::from(r) / 255.0,
@@ -68,6 +62,14 @@ impl Color {
             ))),
             _ => Err(HexColorParseError::InvalidFormat),
         }
+    }
+    /// Update the opacity of this color.
+    ///
+    /// - `opacity = 1.0`: Opaque
+    /// - `opacity = 0.0`: Transparent
+    pub const fn with_opacity(mut self, opacity: f32) -> Self {
+        self.0.a = opacity;
+        self
     }
 }
 
@@ -88,10 +90,11 @@ impl fmt::Display for Color {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "#{:x}{:x}{:x}",
+            "#{:x}{:x}{:x} opacity={:.2}",
             (self.0.r * 255.0) as u8,
             (self.0.g * 255.0) as u8,
-            (self.0.b * 255.0) as u8
+            (self.0.b * 255.0) as u8,
+            self.0.a
         )
     }
 }

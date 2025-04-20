@@ -2970,7 +2970,7 @@ checksum = "e2db585e1d738fc771bf08a151420d3ed193d9d895a36df7f6f8a9456b911ddc"
 [[package]]
 name = "knus"
 version = "3.2.0"
-source = "git+https://github.com/TheLostLambda/knus#437d9e88570df9cdc63170fcd1623617fe5c538f"
+source = "git+https://github.com/jaxter184/knus?rev=01348798018b2e8443eaf40ef357775a6aba0ac6#01348798018b2e8443eaf40ef357775a6aba0ac6"
 dependencies = [
  "base64",
  "chumsky",
@@ -2983,7 +2983,7 @@ dependencies = [
 [[package]]
 name = "knus-derive"
 version = "3.2.0"
-source = "git+https://github.com/TheLostLambda/knus#437d9e88570df9cdc63170fcd1623617fe5c538f"
+source = "git+https://github.com/jaxter184/knus?rev=01348798018b2e8443eaf40ef357775a6aba0ac6#01348798018b2e8443eaf40ef357775a6aba0ac6"
 dependencies = [
  "heck 0.5.0",
  "proc-macro-error2",
