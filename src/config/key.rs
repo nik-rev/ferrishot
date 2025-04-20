@@ -102,14 +102,13 @@ impl std::str::FromStr for KeySequence {
                     // that means
                     // the first one was 100% a key.
                     keys.push(IcedKey::Character('<'));
-
-                    // SPECIAL-CASE: there is no next character, the user literally
-                    // type a sequence of `<` like: `<<`. So make sure we include the current `<`
-                    if chars.peek().is_none() {
-                        keys.push(IcedKey::Character('<'));
-                    }
                 } else {
                     maybe_parsing_named_key = true;
+                }
+                // SPECIAL-CASE: there is no next character, the strings ends with
+                // `<` so it will be a keybinding
+                if chars.peek().is_none() {
+                    keys.push(IcedKey::Character('<'));
                 }
             } else if maybe_parsing_named_key {
                 if ch == '>' {
@@ -200,6 +199,7 @@ mod test {
         );
         assert_eq!("<<".parse::<Seq>(), Ok(Seq((Ch('<'), Some(Ch('<'))))));
         assert_eq!("<>".parse::<Seq>(), Ok(Seq((Ch('<'), Some(Ch('>'))))));
+        assert_eq!("<".parse::<Seq>(), Ok(Seq((Ch('<'), None))));
         assert_eq!(">>".parse::<Seq>(), Ok(Seq((Ch('>'), Some(Ch('>'))))));
         assert_eq!(
             "<<space>".parse::<Seq>(),
