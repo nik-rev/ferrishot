@@ -4,6 +4,7 @@ use iced::widget::{Column, Row, Space, row, tooltip};
 use iced::{Element, Length, Padding};
 use iced::{Point, Rectangle, Size};
 
+use crate::config::KeyAction;
 use crate::corners::Corners;
 use crate::corners::SideOrCorner;
 use crate::icon;
@@ -307,18 +308,29 @@ impl Selection {
 
         let icons = vec![
             (
-                icon!(Fullscreen).on_press(Message::SelectFullScreen).into(),
+                icon!(Fullscreen)
+                    .on_press(Message::KeyBind(KeyAction::SelectFullScreen))
+                    .into(),
                 "Select entire monitor (F11)",
             ),
             (
-                icon!(Clipboard).on_press(Message::CopyToClipboard).into(),
+                icon!(Clipboard)
+                    .on_press(Message::KeyBind(KeyAction::CopyToClipboard))
+                    .into(),
                 "Copy to Clipboard (Enter)",
             ),
             (
-                icon!(Save).on_press(Message::SaveScreenshot).into(),
+                icon!(Save)
+                    .on_press(Message::KeyBind(KeyAction::SaveScreenshot))
+                    .into(),
                 "Save Screenshot (Ctrl + S)",
             ),
-            (icon!(Close).on_press(Message::Exit).into(), "Exit (Esc)"),
+            (
+                icon!(Close)
+                    .on_press(Message::KeyBind(KeyAction::Exit))
+                    .into(),
+                "Exit (Esc)",
+            ),
             (
                 icon!(Upload).on_press(Message::Upload).into(),
                 "Upload screenshot online",

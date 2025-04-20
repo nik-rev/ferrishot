@@ -12,8 +12,6 @@ use crate::{
 pub enum Message {
     /// Do nothing
     NoOp,
-    /// Exits the application
-    Exit,
     /// Upload screenshot to the internet
     Upload,
     /// The left mouse button is down
@@ -81,20 +79,6 @@ pub enum Message {
         /// always be there (to bypass the limitation that we cannot pass `&mut Selection` in a `Message`)
         sel_is_some: SelectionIsSome,
     },
-    /// Set the selection to the entire screen
-    SelectFullScreen,
-
-    // keys
-    /// Copy the screenshot to the clipboard
-    CopyToClipboard,
-    /// Save the screenshot as an image
-    SaveScreenshot,
-    /// Teleport the selection to a place
-    Goto(RectPlace),
-    /// Nudge the selection in this direction by this amount of pixels
-    Move(Direction, u32),
-    /// Increase the selection size in this direction
-    Extend(Direction, u32),
-    /// Decrease the selection size in this direction
-    Shrink(Direction, u32),
+    /// An action can be triggered by a keybind
+    KeyBind(crate::config::KeyAction),
 }

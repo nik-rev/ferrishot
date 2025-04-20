@@ -1,6 +1,7 @@
 //! Main logic for the application, handling of events and mutation of the state
 
 use crate::CONFIG;
+use crate::config::KeyAction;
 use crate::selection::Speed;
 use std::borrow::Cow;
 use std::time::Instant;
@@ -145,7 +146,6 @@ impl App {
     }
 
     /// Modifies the app's state
-    #[expect(clippy::needless_pass_by_value, reason = "trait function")]
     pub fn update(&mut self, message: Message) -> Task<Message> {
         match message {
             Message::ResizeVertically {
@@ -184,7 +184,6 @@ impl App {
                     .with_x(|x| x - dx);
             }
             Message::NoOp => (),
-            Message::Exit => return Self::exit(),
             Message::LeftMouseDown(cursor) => {
                 if let Some((cursor, side, rect)) = cursor.position().and_then(|cursor_pos| {
                     self.selection.as_mut().and_then(|selected_region| {
@@ -266,64 +265,103 @@ impl App {
 
                 self.selection = Some(new_selection);
             }
-            Message::ExtendNewSelection(new_mouse_position) => {
-                self.update_selection(new_mouse_position);
-            }
-            Message::CopyToClipboard => {
-                let Some(selection) = self.selection.map(Selection::norm) else {
-                    self.error("There is no selection to copy");
-                    return Task::none();
-                };
-
-                let (width, height, pixels) = self.screenshot.raw();
-
-                let cropped_image = selection.process_image(width, height, pixels);
-
-                let image_data = arboard::ImageData {
-                    width: cropped_image.width() as usize,
-                    height: cropped_image.height() as usize,
-                    bytes: std::borrow::Cow::Borrowed(cropped_image.as_bytes()),
-                };
-
-                #[cfg_attr(
-                    target_os = "macos",
-                    expect(unused_variables, reason = "it is used on other platforms")
-                )]
-                match crate::clipboard::set_image(image_data) {
-                    Ok(img_path) => {
-                        // send desktop notification if possible, this is
-                        // just a decoration though so it's ok if we fail to do this
-                        let mut notify = notify_rust::Notification::new();
-
-                        notify
-                            .summary(&format!("Copied image to clipboard {width}px * {height}px"));
-
-                        // images are not supported on macos
-                        #[cfg(not(target_os = "macos"))]
-                        notify.image_path(&img_path.to_string_lossy());
-
-                        let _ = notify.show();
-
-                        return Self::exit();
-                    }
-                    Err(err) => {
-                        self.error(format!("Could not copy the image: {err}"));
+            Message::KeyBind(keybind) => match keybind {
+                KeyAction::SelectFullScreen => {
+                    let (width, height, _) = self.screenshot.raw();
+                    {
+                        self.selection = Some(Selection::new(Point { x: 0.0, y: 0.0 }).with_size(
+                            |_| Size {
+                                width: width as f32,
+                                height: height as f32,
+                            },
+                        ));
                     }
                 }
-            }
-            Message::SaveScreenshot => {
-                let Some(selection) = self.selection.as_ref().map(|sel| Selection::norm(*sel))
-                else {
-                    self.error("Selection does not exist. There is nothing to copy!");
-                    return Task::none();
-                };
+                KeyAction::CopyToClipboard => {
+                    let Some(selection) = self.selection.map(Selection::norm) else {
+                        self.error("There is no selection to copy");
+                        return Task::none();
+                    };
 
-                let (width, height, pixels) = self.screenshot.raw();
-                let cropped_image = selection.process_image(width, height, pixels);
+                    let (width, height, pixels) = self.screenshot.raw();
 
-                let _ = SAVED_IMAGE.set(cropped_image);
+                    let cropped_image = selection.process_image(width, height, pixels);
 
-                return Self::exit();
+                    let image_data = arboard::ImageData {
+                        width: cropped_image.width() as usize,
+                        height: cropped_image.height() as usize,
+                        bytes: std::borrow::Cow::Borrowed(cropped_image.as_bytes()),
+                    };
+
+                    #[cfg_attr(
+                        target_os = "macos",
+                        expect(unused_variables, reason = "it is used on other platforms")
+                    )]
+                    match crate::clipboard::set_image(image_data) {
+                        Ok(img_path) => {
+                            // send desktop notification if possible, this is
+                            // just a decoration though so it's ok if we fail to do this
+                            let mut notify = notify_rust::Notification::new();
+
+                            notify.summary(&format!(
+                                "Copied image to clipboard {width}px * {height}px"
+                            ));
+
+                            // images are not supported on macos
+                            #[cfg(not(target_os = "macos"))]
+                            notify.image_path(&img_path.to_string_lossy());
+
+                            let _ = notify.show();
+
+                            return Self::exit();
+                        }
+                        Err(err) => {
+                            self.error(format!("Could not copy the image: {err}"));
+                        }
+                    }
+                }
+                KeyAction::SaveScreenshot => {
+                    let Some(selection) = self.selection.as_ref().map(|sel| Selection::norm(*sel))
+                    else {
+                        self.error("Selection does not exist. There is nothing to copy!");
+                        return Task::none();
+                    };
+
+                    let (width, height, pixels) = self.screenshot.raw();
+                    let cropped_image = selection.process_image(width, height, pixels);
+
+                    let _ = SAVED_IMAGE.set(cropped_image);
+
+                    return Self::exit();
+                }
+                KeyAction::Exit => return Self::exit(),
+                KeyAction::Goto(rect_place) => {
+                    let Some(selection) = self.selection.as_mut() else {
+                        self.error("Nothing is selected.");
+                        return Task::none();
+                    };
+                }
+                KeyAction::Move(direction, amount) => {
+                    let Some(selection) = self.selection.as_mut() else {
+                        self.error("Nothing is selected.");
+                        return Task::none();
+                    };
+                }
+                KeyAction::Extend(direction, amount) => {
+                    let Some(selection) = self.selection.as_mut() else {
+                        self.error("Nothing is selected.");
+                        return Task::none();
+                    };
+                }
+                KeyAction::Shrink(direction, amount) => {
+                    let Some(selection) = self.selection.as_mut() else {
+                        self.error("Nothing is selected.");
+                        return Task::none();
+                    };
+                }
+            },
+            Message::ExtendNewSelection(new_mouse_position) => {
+                self.update_selection(new_mouse_position);
             }
             Message::Upload => {
                 let Some(selection) = self.selection.as_ref().map(|sel| Selection::norm(*sel))
@@ -350,7 +388,8 @@ impl App {
                 return Task::future(async move {
                     {
                         let file = tempfile;
-                        let _response = crate::image_upload::ImageUploadService::TheNullPointer
+                        let _response = CONFIG
+                            .default_image_upload_provider
                             .upload_image(&file)
                             .await;
 
@@ -413,41 +452,6 @@ impl App {
                     initial_rect: sel.rect,
                     initial_cursor_pos: cursor_pos,
                     resize_side: SideOrCorner::Corner(corners),
-                };
-            }
-            Message::SelectFullScreen => {
-                let (width, height, _) = self.screenshot.raw();
-                {
-                    self.selection = Some(Selection::new(Point { x: 0.0, y: 0.0 }).with_size(
-                        |_| Size {
-                            width: width as f32,
-                            height: height as f32,
-                        },
-                    ));
-                }
-            }
-            Message::Goto(rect_place) => {
-                let Some(selection) = self.selection.as_mut() else {
-                    self.error("Nothing is selected.");
-                    return Task::none();
-                };
-            }
-            Message::Move(direction, pixels) => {
-                let Some(selection) = self.selection.as_mut() else {
-                    self.error("Nothing is selected.");
-                    return Task::none();
-                };
-            }
-            Message::Extend(direction, pixels) => {
-                let Some(selection) = self.selection.as_mut() else {
-                    self.error("Nothing is selected.");
-                    return Task::none();
-                };
-            }
-            Message::Shrink(direction, pixels) => {
-                let Some(selection) = self.selection.as_mut() else {
-                    self.error("Nothing is selected.");
-                    return Task::none();
                 };
             }
         }

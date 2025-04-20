@@ -28,6 +28,7 @@ pub struct MouseState {
 }
 
 use crate::CONFIG;
+use crate::config::KeyAction;
 use crate::selection::Speed;
 use crate::{
     App,
@@ -134,7 +135,7 @@ impl canvas::Program<Message> for App {
                     // we have created 1 selections in total, (the current one),
                     // in which case we want to copy it to the clipboard as the
                     // --instant flag was provided
-                    Message::CopyToClipboard
+                    Message::KeyBind(KeyAction::CopyToClipboard)
                 } else {
                     Message::EnterIdle
                 }

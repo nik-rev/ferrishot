@@ -1,19 +1,9 @@
-//! Configuration of ferrishot
-//!
-//! Uses KDL as the configuration language <https://kdl.dev/>
-//!
-//! The user's config (`UserKdlConfig`) is merged into the default Kdl configuration
-//! (`DefaultKdlConfig`). This is then transformed into a `Config` by doing a little bit of
-//! extra processing for things that could not be trivially determined during deserialization.
-//! Such as:
-//! - Converting the list of keybindings into a structured `KeyMap` which can be indexed `O(1)` to
-//!   obtain the `Message` to execute for that action.
-//! - Adding opacity to colors
-use std::{fs, path::PathBuf, sync::LazyLock};
+use crate::config::DefaultKdlConfig;
+use crate::config::UserKdlConfig;
+use std::{path::PathBuf, sync::LazyLock};
 
 use clap::Parser;
 use etcetera::BaseStrategy;
-use miette::IntoDiagnostic;
 
 /// Represents the location of the config file
 ///
@@ -49,54 +39,7 @@ pub struct Cli {
 pub static CLI: LazyLock<Cli> = LazyLock::new(Cli::parse);
 
 /// The default configuration for ferrishot, to be *merged* with the user's config
-pub const DEFAULT_KDL_CONFIG_STR: &str = include_str!("../default-config.kdl");
-
-/// Configuration of the app
-///
-/// Static as that means it will never change once the app is launched.
-/// It also makes it easy to get the config values anywhere from the app, even where we don't have access to
-/// the `App`.
-pub static CONFIG: LazyLock<Config> = LazyLock::new(|| {
-    let kdl_config = (|| -> miette::Result<DefaultKdlConfig> {
-        let config_file = CLI.config_file.as_str();
-        let config_file_path = PathBuf::from(config_file);
-
-        let default_config =
-            knus::parse::<DefaultKdlConfig>("<default-config>", DEFAULT_KDL_CONFIG_STR)?;
-        // .expect("Default config is invalid");
-
-        // if there is no config file, act as if it's simply empty
-        let user_config = knus::parse::<UserKdlConfig>(
-            &CLI.config_file,
-            &fs::read_to_string(&config_file_path).unwrap_or_default(),
-        )?;
-
-        Ok(default_config.merge_user_config(user_config))
-    })();
-
-    match kdl_config {
-        Ok(kdl_config) => Config {
-            instant: kdl_config.instant,
-            default_image_upload_provider: kdl_config.default_image_upload_provider,
-            size_indicator: kdl_config.size_indicator,
-            theme: kdl_config.theme.into(),
-            keys: kdl_config
-                .keys
-                .keys
-                .into_iter()
-                .collect::<crate::key::KeyMap>(),
-        },
-        Err(miette_error) => {
-            eprintln!("{miette_error:?}");
-            std::process::exit(1);
-        }
-    }
-});
-
-use crate::{
-    corners::{Direction, RectPlace},
-    image_upload::ImageUploadService,
-};
+pub const DEFAULT_KDL_CONFIG_STR: &str = include_str!("../../default-config.kdl");
 
 impl DefaultKdlConfig {
     /// Merge the user's config with the default config
@@ -131,7 +74,21 @@ impl DefaultKdlConfig {
     }
 }
 
+/// Represents the color in the KDL config
+#[derive(knus::Decode, Debug)]
+pub struct Color {
+    /// The underlying color
+    #[knus(argument, str)]
+    pub color: crate::theme::Color,
+    /// The opacity for this color.
+    /// - `1.0`: Opaque
+    /// - `0.0`: Transparent
+    #[knus(default, property)]
+    pub opacity: f32,
+}
+
 /// Declare config options
+#[macro_export]
 macro_rules! declare_config_options {
     (
         $(
@@ -145,7 +102,7 @@ macro_rules! declare_config_options {
         pub struct DefaultKdlConfig {
             /// The default keybindings of ferrishot
             #[knus(child)]
-            pub keys: $crate::key::Keys,
+            pub keys: $crate::config::key::Keys,
             /// The default theme of ferrishot
             #[knus(child)]
             pub theme: DefaultKdlTheme,
@@ -161,7 +118,7 @@ macro_rules! declare_config_options {
         pub struct UserKdlConfig {
             /// User-defined keybindings
             #[knus(child)]
-            pub keys: Option<$crate::key::Keys>,
+            pub keys: Option<$crate::config::key::Keys>,
             /// User-defined colors
             #[knus(child)]
             pub theme: Option<UserKdlTheme>,
@@ -177,7 +134,7 @@ macro_rules! declare_config_options {
             /// Ferrishot's theme and colors
             pub theme: Theme,
             /// Ferrishot's keybindings
-            pub keys: $crate::key::KeyMap,
+            pub keys: $crate::config::key::KeyMap,
             $(
                 $(#[$doc])*
                 pub $key: $typ,
@@ -186,20 +143,8 @@ macro_rules! declare_config_options {
     }
 }
 
-/// Represents the color in the KDL config
-#[derive(knus::Decode, Debug)]
-pub struct Color {
-    /// The underlying color
-    #[knus(argument, str)]
-    color: crate::theme::Color,
-    /// The opacity for this color.
-    /// - `1.0`: Opaque
-    /// - `0.0`: Transparent
-    #[knus(default, property)]
-    opacity: f32,
-}
-
 /// Declare theme keys
+#[macro_export]
 macro_rules! declare_theme_options {
     (
         $(
@@ -249,13 +194,20 @@ macro_rules! declare_theme_options {
     }
 }
 
-/// Create keybindings. Each keybind has form like this:
+/// Create keybindings, specifying the arguments it receives as named fields.
+/// Each keybind is declared like this:
 ///
 /// ```text
-/// Keybind: u32 bool f32 String
+/// Keybind {
+///     a: u32
+///     b: bool
+///     c: f32
+///     d: String
+/// }
 /// ```
 ///
-/// Which creates a new key option to have a keybinding in the `kdl` file like so:
+/// The above creates a new keybind that will take 4 arguments in order, of the respective types.
+/// It can be used in the `config.kdl` file like so:
 ///
 /// ```kdl
 /// keys {
@@ -268,15 +220,23 @@ macro_rules! declare_theme_options {
 /// ```no_compile
 /// Key::Keybind(10, false, 0.8, "hello", KeySequence("g", None), KeyMods::CTRL)
 /// ```
+#[macro_export]
 macro_rules! declare_key_options {
     (
         $(
             $(#[$doc:meta])*
-            $KeyOption:ident $(: $( $(#[$attr:meta])* $Argument:ty)+)?
+            $KeyOption:ident $({
+                $(
+                    $(#[$attr:meta])*
+                    $field:ident: $Argument:ty,
+                )+
+            })?
         ),* $(,)?
     ) => {
         /// A list of keybindings which exist in the app
-        #[derive(knus::Decode, Debug)]
+        ///
+        /// These have just been parsed, they are
+        #[derive(knus::Decode, Debug, Clone)]
         pub enum Key {
             $(
                 $(#[$doc])*
@@ -285,55 +245,33 @@ macro_rules! declare_key_options {
                         $(#[$attr])*
                         #[knus(argument)] $Argument,
                     )*)?
-                    #[knus(property(name = "key"), str)] $crate::key::KeySequence,
-                    #[knus(default, property(name = "mods"), str)] $crate::key::KeyMods,
+                    #[knus(property(name = "key"), str)] $crate::config::key::KeySequence,
+                    #[knus(default, property(name = "mods"), str)] $crate::config::key::KeyMods,
                 ),
             )*
         }
+
+        impl Key {
+            /// Obtain the Action for this key. What will happen when the specific `KeySequence` is fired
+            /// provided that the `KeyMods` match the current key modifiers.
+            pub fn action(self) -> ($crate::config::key::KeySequence, ($crate::config::key::KeyMods, KeyAction)) {
+                match self {
+                    $(
+                        Self::$KeyOption($($($field,)*)? key_sequence, key_mods) => {
+                            (key_sequence, (key_mods, KeyAction::$KeyOption$(($($field),*))?))
+                        },
+                    )*
+                }
+            }
+        }
+
+        /// The action associated with a key
+        #[derive(Debug, Clone)]
+        pub enum KeyAction {
+            $(
+                $(#[$doc])*
+                $KeyOption$(($($Argument,)*))?,
+            )*
+        }
     }
-}
-
-declare_config_options! {
-    /// Specifying this option will copy the selection to clipboard as soon as you select your first rectangle.
-    /// This is useful, since often times you may not want to make any modifications to your selection,
-    /// so this makes simple select and copy faster.
-    ///
-    /// When this is `true`, while you are selecting the first square pressing the Right mouse button just once will
-    /// cancel this effect and not instantly copy the screenshot.
-    instant: bool,
-    /// The default image service to use when uploading images to the internet.
-    /// We have multiple options because some of them can be down / unreliable etc.
-    ///
-    /// You may also get rate limited by the service if you send too many images, so you can try a different
-    /// one if that happens.
-    default_image_upload_provider: ImageUploadService,
-    /// Renders a size indicator in the bottom left corner.
-    /// It shows the current height and width of the selection.
-    ///
-    /// You can manually enter a value to change the selection by hand.
-    size_indicator: bool,
-}
-
-declare_key_options! {
-    /// Copy the selected region as a screenshot to the clipboard
-    CopyToClipboard,
-    /// Save the screenshot as a path
-    SaveScreenshot,
-    /// Exit the application
-    Exit,
-    /// Teleport the selection to the given area
-    Goto: #[knus(str)] RectPlace,
-    /// Shift the selection in the given direction by pixels
-    Move: Direction u32,
-    /// Increase the size of the selection in the given direction by pixels
-    Extend: Direction u32,
-    /// Decrease the size of the selection in the given direction by pixels
-    Shrink: Direction u32,
-}
-
-declare_theme_options! {
-    /// Color of text which is placed in contrast with the color of `accent_bg`
-    accent_fg,
-    /// The background color of icons, the selection and such
-    accent,
 }

@@ -4,7 +4,9 @@ use std::{collections::HashMap, str::FromStr};
 
 use iced::keyboard::{Modifiers, key::Key as IcedKey};
 
-use crate::{config::Key, message::Message};
+use crate::config::Key;
+
+use super::KeyAction;
 
 /// Represents the keybindings for ferrishot
 ///
@@ -19,7 +21,7 @@ use crate::{config::Key, message::Message};
 #[derive(Debug, Default)]
 pub struct KeyMap {
     /// Map of Key Pressed => Action when pressing that key
-    keys: HashMap<KeySequence, (KeyMods, Message)>,
+    keys: HashMap<KeySequence, (KeyMods, KeyAction)>,
 }
 
 /// Keybindings for ferrishot
@@ -33,30 +35,7 @@ pub struct Keys {
 impl FromIterator<Key> for KeyMap {
     fn from_iter<T: IntoIterator<Item = Key>>(iter: T) -> Self {
         Self {
-            keys: iter
-                .into_iter()
-                .map(|key| match key {
-                    Key::CopyToClipboard(key_sequence, key_mods) => {
-                        (key_sequence, (key_mods, Message::CopyToClipboard))
-                    }
-                    Key::SaveScreenshot(key_sequence, key_mods) => {
-                        (key_sequence, (key_mods, Message::SaveScreenshot))
-                    }
-                    Key::Exit(key_sequence, key_mods) => (key_sequence, (key_mods, Message::Exit)),
-                    Key::Goto(rect_place, key_sequence, key_mods) => {
-                        (key_sequence, (key_mods, Message::Goto(rect_place)))
-                    }
-                    Key::Move(direction, amount, key_sequence, key_mods) => {
-                        (key_sequence, (key_mods, Message::Move(direction, amount)))
-                    }
-                    Key::Extend(direction, amount, key_sequence, key_mods) => {
-                        (key_sequence, (key_mods, Message::Extend(direction, amount)))
-                    }
-                    Key::Shrink(direction, amount, key_sequence, key_mods) => {
-                        (key_sequence, (key_mods, Message::Shrink(direction, amount)))
-                    }
-                })
-                .collect(),
+            keys: iter.into_iter().map(|key| key.action()).collect(),
         }
     }
 }
@@ -68,11 +47,11 @@ impl FromIterator<Key> for KeyMap {
 /// The 2nd key will never be triggered.
 /// We will first search the `HashMap` of keys for the first key.
 /// If it does not exist, search for the 2nd key.
-#[derive(Debug, Hash, PartialEq, PartialOrd, Ord, Eq)]
+#[derive(Debug, Hash, PartialEq, PartialOrd, Ord, Eq, Clone)]
 pub struct KeySequence(pub (IcedKey, Option<IcedKey>));
 
 /// Modifier keys
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct KeyMods(pub iced::keyboard::Modifiers);
 
 impl FromStr for KeyMods {
