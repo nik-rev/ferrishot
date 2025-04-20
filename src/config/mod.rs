@@ -10,15 +10,19 @@
 //!   obtain the `Message` to execute for that action.
 //! - Adding opacity to colors
 
-mod definition;
+mod cli;
 mod key;
+mod macros;
 
-use crate::config::definition::Color;
+/// The default configuration for ferrishot, to be *merged* with the user's config
+pub const DEFAULT_KDL_CONFIG_STR: &str = include_str!("../../default-config.kdl");
+
 use crate::config::key::KeyMap;
+use crate::config::macros::Color;
 use crate::corners::Direction;
 use crate::corners::RectPlace;
 use crate::image_upload::ImageUploadService;
-pub use definition::{CLI, DEFAULT_KDL_CONFIG_STR};
+pub use cli::CLI;
 use std::fs;
 use std::path::PathBuf;
 use std::sync::LazyLock;
@@ -56,21 +60,21 @@ crate::declare_key_options! {
     /// Teleport the selection to the given area
     Goto {
         #[knus(str)]
-        rect: RectPlace,
+        place: RectPlace,
     },
     /// Shift the selection in the given direction by pixels
     Move {
-        dir: Direction,
+        direction: Direction,
         amount: u32,
     },
     /// Increase the size of the selection in the given direction by pixels
     Extend {
-        dir: Direction,
+        direction: Direction,
         amount: u32,
     },
     /// Decrease the size of the selection in the given direction by pixels
     Shrink {
-        dir: Direction,
+        direction: Direction,
         amount: u32,
     },
 }
@@ -84,7 +88,7 @@ crate::declare_theme_options! {
 
 /// Configuration of the app
 ///
-/// Static as that means it will never change once the app is launched.
+/// Static as it will never change once the app is launched.
 /// It also makes it easy to get the config values anywhere from the app, even where we don't have access to
 /// the `App`.
 pub static CONFIG: LazyLock<Config> = LazyLock::new(|| {
@@ -93,8 +97,8 @@ pub static CONFIG: LazyLock<Config> = LazyLock::new(|| {
         let config_file_path = PathBuf::from(config_file);
 
         let default_config =
-            knus::parse::<DefaultKdlConfig>("<default-config>", DEFAULT_KDL_CONFIG_STR)?;
-        // .expect("Default config is invalid");
+            knus::parse::<DefaultKdlConfig>("<default-config>", DEFAULT_KDL_CONFIG_STR)
+                .expect("Default config is invalid");
 
         // if there is no config file, act as if it's simply empty
         let user_config = knus::parse::<UserKdlConfig>(

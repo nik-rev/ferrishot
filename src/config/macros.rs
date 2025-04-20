@@ -1,83 +1,24 @@
-use crate::config::DefaultKdlConfig;
-use crate::config::UserKdlConfig;
-use std::{path::PathBuf, sync::LazyLock};
+//! Macros used to define the config keys
 
-use clap::Parser;
-use etcetera::BaseStrategy;
-
-/// Represents the location of the config file
+/// Represents the color node used in the KDL config, to be parsed into
+/// this structure.
 ///
-/// This is only accurate until `Cli::parse` is invoked (see `ferrishot::CLI`).
-/// After that, it can be incorrect if the user passes `--config-file` option
-static CONFIG_FILE_BEFORE_CLI: LazyLock<PathBuf> = LazyLock::new(|| {
-    etcetera::choose_base_strategy().map_or_else(
-        |_| PathBuf::from("ferrishot.kdl"),
-        |strategy| strategy.config_dir().join("ferrishot").join("config.kdl"),
-    )
-});
-
-/// Command line arguments for the program
-#[derive(Parser, Debug)]
-#[command(version, about, author = "Nik Revenco")]
-pub struct Cli {
-    /// Write the default config file
-    #[arg(long, help = format!("Write the default config to {}", CONFIG_FILE_BEFORE_CLI.display()))]
-    pub dump_default_config: bool,
-    /// Specifies the config file to use
-    #[arg(
-        long,
-        value_name = "file.kdl",
-        default_value_t = CONFIG_FILE_BEFORE_CLI.to_string_lossy().to_string()
-    )]
-    pub config_file: String,
-}
-
-/// Command line arguments to this program
+/// # Examples
 ///
-/// It is a static because it is needed by the `CONFIG` static, in order to
-/// read config from the correct place
-pub static CLI: LazyLock<Cli> = LazyLock::new(Cli::parse);
-
-/// The default configuration for ferrishot, to be *merged* with the user's config
-pub const DEFAULT_KDL_CONFIG_STR: &str = include_str!("../../default-config.kdl");
-
-impl DefaultKdlConfig {
-    /// Merge the user's config with the default config
-    pub fn merge_user_config(mut self, user_config: UserKdlConfig) -> Self {
-        if let Some(keys) = user_config.keys {
-            self.keys.keys.extend(keys.keys);
-        }
-
-        if let Some(theme) = user_config.theme {
-            if let Some(accent_fg) = theme.accent_fg {
-                self.theme.accent_fg = accent_fg;
-            }
-
-            if let Some(accent) = theme.accent {
-                self.theme.accent = accent;
-            }
-        }
-
-        if let Some(instant) = user_config.instant {
-            self.instant = instant;
-        }
-
-        if let Some(default_image_upload_provider) = user_config.default_image_upload_provider {
-            self.default_image_upload_provider = default_image_upload_provider;
-        }
-
-        if let Some(size_indicator) = user_config.size_indicator {
-            self.size_indicator = size_indicator;
-        }
-
-        self
-    }
-}
-
-/// Represents the color in the KDL config
+/// ```kdl
+/// theme {
+///   // an opaque white color
+///   background ffffff
+///   // black color with 50% opacity
+///   foreground 000000 opacity=0.5
+/// }
+/// ```
 #[derive(knus::Decode, Debug)]
 pub struct Color {
-    /// The underlying color
+    /// Hex color. Examples:
+    ///
+    /// - `ff0000`: Red
+    /// - `000000`: Black
     #[knus(argument, str)]
     pub color: crate::theme::Color,
     /// The opacity for this color.
@@ -88,6 +29,9 @@ pub struct Color {
 }
 
 /// Declare config options
+///
+/// `UserKdlConfig` is merged into `DefaultKdlConfig` before being processed
+/// into a `Config`
 #[macro_export]
 macro_rules! declare_config_options {
     (
@@ -112,6 +56,54 @@ macro_rules! declare_config_options {
                 pub $key: $typ,
             )*
         }
+
+        impl DefaultKdlConfig {
+            /// Merge the user's top-level config options with the default options.
+            /// User config options take priority.
+            pub fn merge_user_config(mut self, user_config: UserKdlConfig) -> Self {
+                $(
+                    self.$key = user_config.$key.unwrap_or(self.$key);
+                )*
+                // merge keybindings
+                //
+                // If the same keybinding is defined in the default theme and
+                // the user theme, e.g.
+                //
+                // default:
+                //
+                // ```kdl
+                // keys {
+                //   goto top-left key=gg
+                // }
+                // ```
+                //
+                // user:
+                //
+                // ```kdl
+                // keys {
+                //   goto bottom-right key=gg
+                // }
+                // ```
+                //
+                // The user's keybinding will come after. Since we are iterating over the
+                // keys sequentially, and inserting into the `KeyMap` one-by-one, the default keybinding
+                // will be inserted into the `KeyMap`, but it will be overridden by the user keybinding.
+                //
+                // Essentially what we want to make sure is that if the same key is defined twice,
+                // the user keybinding takes priority.
+                self
+                    .keys
+                    .keys
+                    .extend(user_config.keys.unwrap_or_default().keys);
+
+                if let Some(user_theme) = user_config.theme {
+                    self.theme = self.theme.merge_user_theme(user_theme);
+                };
+
+                self
+            }
+        }
+
         /// User's config. Everything is optional. Values will be merged with `DefaultKdlConfig`.
         /// And will take priority over the default values.
         #[derive(knus::Decode, Debug)]
@@ -144,6 +136,9 @@ macro_rules! declare_config_options {
 }
 
 /// Declare theme keys
+///
+/// `UserKdlTheme` is merged into `DefaultKdlTheme` before being processed
+/// into a `Theme`
 #[macro_export]
 macro_rules! declare_theme_options {
     (
@@ -160,6 +155,17 @@ macro_rules! declare_theme_options {
                 #[knus(child)]
                 pub $key: $crate::config::Color,
             )*
+        }
+
+        impl DefaultKdlTheme {
+            /// If the user theme specifies a color, it will override the color in the
+            /// default theme.
+            pub fn merge_user_theme(mut self, user_theme: UserKdlTheme) -> Self {
+                $(
+                    self.$key = user_theme.$key.unwrap_or(self.$key);
+                )*
+                self
+            }
         }
 
         impl From<DefaultKdlTheme> for Theme {
