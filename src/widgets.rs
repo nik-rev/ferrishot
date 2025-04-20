@@ -5,9 +5,9 @@ use iced::{
 };
 
 use crate::{
+    CONFIG,
     rectangle::RectangleExt as _,
     selection::{ICON_BUTTON_SIZE, selection_lock::SelectionIsSome},
-    theme::THEME,
 };
 
 use crate::message::Message;
@@ -38,17 +38,17 @@ pub fn size_indicator<'a>(
                 }
             })
             .style(|_, _| widget::text_input::Style {
-                value: THEME.size_indicator_fg,
-                selection: THEME.text_selection_bg,
+                value: CONFIG.theme.size_indicator_fg,
+                selection: CONFIG.theme.text_selection,
                 // --- none
-                background: Background::Color(THEME.transparent),
+                background: Background::Color(iced::Color::TRANSPARENT),
                 border: iced::Border {
-                    color: THEME.transparent,
+                    color: iced::Color::TRANSPARENT,
                     width: 0.0,
                     radius: 0.0.into(),
                 },
-                icon: THEME.transparent,
-                placeholder: THEME.transparent,
+                icon: iced::Color::TRANSPARENT,
+                placeholder: iced::Color::TRANSPARENT,
             })
             .padding(0.0);
 
@@ -80,12 +80,12 @@ pub fn size_indicator<'a>(
         }
     });
     let x = iced::widget::text("✕ ")
-        .color(THEME.fg)
+        .color(CONFIG.theme.size_indicator_fg)
         .shaping(Shaping::Advanced);
     let space = iced::widget::text(" ");
     let c = widget::container(row![space, width, x, height]).style(|_| widget::container::Style {
         text_color: None,
-        background: Some(Background::Color(THEME.size_indicator_bg)),
+        background: Some(Background::Color(CONFIG.theme.size_indicator_bg)),
         border: iced::Border::default(),
         shadow: iced::Shadow::default(),
     });
@@ -101,8 +101,8 @@ pub fn icon_tooltip<'a, Message>(
 ) -> widget::Tooltip<'a, Message> {
     widget::Tooltip::new(content, tooltip, position)
         .style(|_| widget::container::Style {
-            text_color: Some(THEME.fg),
-            background: Some(Background::Color(THEME.bg)),
+            text_color: Some(CONFIG.theme.tooltip_fg),
+            background: Some(Background::Color(CONFIG.theme.tooltip_bg)),
             border: Border::default(),
             shadow: Shadow::default(),
         })
@@ -117,7 +117,7 @@ pub fn icon<'a, Message>(icon: crate::icons::Icon) -> widget::Button<'a, Message
     widget::button(
         widget::Svg::new(icon.svg())
             .style(|_, _| widget::svg::Style {
-                color: Some(THEME.fg_on_accent_bg),
+                color: Some(CONFIG.theme.icon_fg),
             })
             .width(Length::Fixed(ICON_SIZE))
             .height(Length::Fixed(ICON_SIZE)),
@@ -125,9 +125,9 @@ pub fn icon<'a, Message>(icon: crate::icons::Icon) -> widget::Button<'a, Message
     .width(Length::Fixed(ICON_BUTTON_SIZE))
     .height(Length::Fixed(ICON_BUTTON_SIZE))
     .style(move |_, _| {
-        let mut style = widget::button::Style::default().with_background(THEME.accent);
+        let mut style = widget::button::Style::default().with_background(CONFIG.theme.icon_bg);
         style.shadow = Shadow {
-            color: THEME.drop_shadow,
+            color: CONFIG.theme.drop_shadow,
             blur_radius: 3.0,
             offset: iced::Vector { x: 0.0, y: 0.0 },
         };

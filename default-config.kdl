@@ -7,55 +7,82 @@ size-indicator #true
 instant #false
 
 theme {
-  accent-fg 0x_ab_61_37
-  accent 0x_ff_ff_ff opacity=0.5
-  selection_border_drop_shadow 0x00_00_00 opacity=0.5
+  selection-frame 0xab_61_37
+  
+  non-selected-region 0x00_00_00 opacity=0.5
+  
+  drop-shadow 0x00_00_00 opacity=0.5
+  
+  text-selection 0xab_61_37 opacity=0.3
+  
+  size-indicator-fg 0xff_ff_ff
+  size-indicator-bg 0x00_00_00 opacity=0.5
+  
+  tooltip-fg 0xff_ff_ff
+  tooltip-bg 0x00_00_00
+  
+  error-fg 0xff_ff_ff
+  error-bg 0xff_00_00 opacity=0.6
+  
+  info-box-fg 0xff_ff_ff
+  info-box-bg 0xab_61_37 opacity=0.95
+  
+  icon-fg 0xff_ff_ff
+  icon-bg 0xab_61_37
 }
 
 keys {
+  exit key=<escape>
+
+  copy-to-clipboard mods=ctrl key=c
+  copy-to-clipboard key=<enter>
+
+  save-screenshot mods=ctrl key=s
+  select-full-screen key=<f11>
+  
   // up movements
   goto top key=gk
 
   move up 120 key=k
   extend up 120 key=K
-  shrink up 120 key=k mods=ctrl
+  shrink up 120 mods=ctrl key=k
 
   move up 600 key=w
   extend up 600 key=W
-  shrink up 600 key=w mods=ctrl
+  shrink up 600 mods=ctrl key=w
 
   // right movements
   goto right key=gl
 
   move right 120 key=l
   extend right 120 key=L
-  shrink right 120 key=l mods=ctrl
+  shrink right 120 mods=ctrl key=l
 
   move right 600 key=e
   extend right 600 key=E
-  shrink right 600 key=e mods=ctrl
+  shrink right 600 mods=ctrl key=e
 
   // left movements
   goto left key=gh  
 
   move left 600 key=b
   extend left 600 key=B
-  shrink left 600 key=b mods=ctrl
+  shrink left 600 mods=ctrl key=b
 
   move left 120 key=h
   extend left 120 key=H
-  shrink left 120 key=h mods=ctrl
+  shrink left 120 mods=ctrl key=h
 
   // bottom movements
   goto bottom key=gj
 
   move down 120 key=j
   extend down 120 key=J
-  shrink down 120 key=j mods=ctrl
+  shrink down 120 mods=ctrl key=j
 
   move down 600 key=n
   extend down 600 key=N
-  shrink down 600 key=n mods=ctrl
+  shrink down 600 mods=ctrl key=n
 
   // place
   goto bottom-left key=<

@@ -24,7 +24,7 @@ pub struct Color {
     /// The opacity for this color.
     /// - `1.0`: Opaque
     /// - `0.0`: Transparent
-    #[knus(default, property)]
+    #[knus(default = 1.0, property)]
     pub opacity: f32,
 }
 
@@ -175,9 +175,9 @@ macro_rules! declare_theme_options {
                         $key: {
                             let [.., r, g, b] = value.$key.color.to_be_bytes();
                             iced::Color::from_rgba(
-                                (r as f32) / 255.0,
-                                (g as f32) / 255.0,
-                                (b as f32) / 255.0,
+                                f32::from(r) / 255.0,
+                                f32::from(g) / 255.0,
+                                f32::from(b) / 255.0,
                                 value.$key.opacity
                             )
                         },
@@ -268,7 +268,7 @@ macro_rules! declare_key_options {
         impl Key {
             /// Obtain the Action for this key. What will happen when the specific `KeySequence` is fired
             /// provided that the `KeyMods` match the current key modifiers.
-            pub const fn action(self) -> ($crate::config::key::KeySequence, ($crate::config::key::KeyMods, KeyAction)) {
+            pub fn action(self) -> ($crate::config::key::KeySequence, ($crate::config::key::KeyMods, KeyAction)) {
                 match self {
                     $(
                         Self::$KeyOption($($($field,)*)? key_sequence, key_mods) => {

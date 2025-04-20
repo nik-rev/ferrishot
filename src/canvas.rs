@@ -2,7 +2,7 @@
 use iced::Event::{Keyboard, Mouse};
 use iced::keyboard::Event::KeyPressed;
 use iced::keyboard::Event::KeyReleased;
-use iced::keyboard::Key::{Character, Named};
+use iced::keyboard::Key::{self, Character, Named};
 use iced::keyboard::Modifiers as Mods;
 use iced::keyboard::key::Named::F11;
 use iced::keyboard::key::Named::{Enter, Escape, Shift};
@@ -17,29 +17,31 @@ use iced::{
 };
 
 /// Holds information about the mouse
-#[derive(Default, Debug, Clone, Copy)]
-pub struct MouseState {
+#[derive(Default, Debug, Clone)]
+pub struct KeysState {
     /// Left mouse click is currently being held down
     is_left_down: bool,
     /// Left mouse click is currently being held down
     is_right_down: bool,
     /// Shift key is currently being held down
     is_shift_down: bool,
+    /// The last key that was pressed
+    last_key_pressed: Option<Key>,
 }
 
 use crate::CONFIG;
 use crate::config::KeyAction;
+use crate::config::key::KeySequence;
 use crate::selection::Speed;
 use crate::{
     App,
     corners::SideOrCorner,
     message::Message,
     selection::{Selection, SelectionStatus, selection_lock::OptionalSelectionExt as _},
-    theme::THEME,
 };
 
 impl canvas::Program<Message> for App {
-    type State = MouseState;
+    type State = KeysState;
 
     fn draw(
         &self,
@@ -54,8 +56,10 @@ impl canvas::Program<Message> for App {
         self.render_shade(&mut frame, bounds);
 
         if let Some(selection) = self.selection.map(Selection::norm) {
-            selection.render_border(&mut frame, THEME.accent);
-            selection.corners().render_circles(&mut frame, THEME.accent);
+            selection.render_border(&mut frame, CONFIG.theme.selection_frame);
+            selection
+                .corners()
+                .render_circles(&mut frame, CONFIG.theme.selection_frame);
         }
 
         vec![frame.into_geometry()]
@@ -104,6 +108,41 @@ impl canvas::Program<Message> for App {
         _bounds: Rectangle,
         cursor: iced::advanced::mouse::Cursor,
     ) -> Option<widget::Action<Message>> {
+        if let Keyboard(KeyPressed { key, modifiers, .. }) = event {
+            if let Some((_, action)) = CONFIG
+                .keys
+                .keys
+                // e.g. for instance keybind for `g` should take priority over `gg`
+                .get(&KeySequence((key.clone(), None)))
+                // e.g. in this case we try the `gg` keybinding since `g` does not exist
+                .or_else(|| {
+                    state
+                        .last_key_pressed
+                        .as_ref()
+                        .and_then(|last_key_pressed| {
+                            CONFIG
+                                .keys
+                                .keys
+                                .get(&KeySequence((last_key_pressed.clone(), Some(key.clone()))))
+                        })
+                })
+                .filter(|(mods, _)| *modifiers == mods.0)
+            {
+                // the last key pressed needs to be reset for it to be
+                // correct in future invocations
+                //
+                // For example if I press `gg`, and it activates some keybinding
+                // I would have to press `gg` *again* to active it.
+                //
+                // If we did not reset, then `ggg` would trigger the `gg` keybindings
+                // twice
+                state.last_key_pressed = None;
+                return Some(Action::publish(Message::KeyBind(action.clone())));
+            }
+
+            state.last_key_pressed = Some(key.clone());
+        }
+
         let message = match event {
             Mouse(ButtonPressed(Left)) => {
                 state.is_left_down = true;

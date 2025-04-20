@@ -14,10 +14,10 @@
 //!
 //! When modifying the config options, make sure to update the `default-config.kdl` file
 
-mod cli;
-mod key;
-mod macros;
-mod named_key;
+pub mod cli;
+pub mod key;
+pub mod macros;
+pub mod named_key;
 
 /// The default configuration for ferrishot, to be *merged* with the user's config
 pub const DEFAULT_KDL_CONFIG_STR: &str = include_str!("../../default-config.kdl");
@@ -85,12 +85,38 @@ crate::declare_key_options! {
 }
 
 crate::declare_theme_options! {
-    /// Color of text which is placed in contrast with the color of `accent_bg`
-    accent_fg,
-    /// The background color of icons, the selection and such
-    accent,
-    /// Drop shadow of the border around the selection
-    selection_border_drop_shadow,
+    /// Color of the border around the selection
+    selection_frame,
+    /// Color of the region outside of the selected area
+    non_selected_region,
+    /// Color of drop shadow, used for stuff like:
+    ///
+    /// - drop shadow of icons
+    /// - drop shadow of selection rectangle
+    /// - drop shadow around error box
+    drop_shadow,
+    /// Background color of selected text
+    text_selection,
+    /// Foreground color of the size indicator
+    size_indicator_fg,
+    /// Background color of the size indicator
+    size_indicator_bg,
+    /// Text color of the tooltip
+    tooltip_fg,
+    /// Background color of the tooltip
+    tooltip_bg,
+    /// Color of the text on errors
+    error_fg,
+    /// Background color of the error boxes
+    error_bg,
+    /// Background color of the info box, which shows various tips
+    info_box_bg,
+    /// Text color of the info box, which shows various tips
+    info_box_fg,
+    /// Background color of the icons around the selection
+    icon_bg,
+    /// Color of icons around the selection
+    icon_fg,
 }
 
 /// Configuration of the app
@@ -104,8 +130,7 @@ pub static CONFIG: LazyLock<Config> = LazyLock::new(|| {
         let config_file_path = PathBuf::from(config_file);
 
         let default_config =
-            knus::parse::<DefaultKdlConfig>("<default-config>", DEFAULT_KDL_CONFIG_STR)
-                .expect("Default config is invalid");
+            knus::parse::<DefaultKdlConfig>("<default-config>", DEFAULT_KDL_CONFIG_STR)?;
 
         // if there is no config file, act as if it's simply empty
         let user_config = knus::parse::<UserKdlConfig>(

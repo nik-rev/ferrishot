@@ -33,7 +33,6 @@ mod message;
 mod rectangle;
 mod screenshot;
 mod selection;
-mod theme;
 mod widgets;
 
 #[cfg(target_os = "linux")]

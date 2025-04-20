@@ -3,7 +3,10 @@
 use crate::config::named_key::Named;
 use std::{collections::HashMap, str::FromStr};
 
-use iced::keyboard::{Modifiers, key::Key as IcedKey};
+use iced::{
+    advanced::debug::core::SmolStr,
+    keyboard::{Modifiers, key::Key as IcedKey},
+};
 
 use crate::config::Key;
 
@@ -22,7 +25,7 @@ use super::KeyAction;
 #[derive(Debug, Default)]
 pub struct KeyMap {
     /// Map of Key Pressed => Action when pressing that key
-    keys: HashMap<KeySequence, (KeyMods, KeyAction)>,
+    pub keys: HashMap<KeySequence, (KeyMods, KeyAction)>,
 }
 
 /// Keybindings for ferrishot
@@ -49,7 +52,7 @@ impl FromIterator<Key> for KeyMap {
 /// We will first search the `HashMap` of keys for the first key.
 /// If it does not exist, search for the 2nd key.
 #[derive(Debug, Hash, PartialEq, PartialOrd, Ord, Eq, Clone)]
-pub struct KeySequence(pub (IcedKey<char>, Option<IcedKey<char>>));
+pub struct KeySequence(pub (IcedKey, Option<IcedKey>));
 
 /// Modifier keys
 #[derive(Debug, Default, Clone)]
@@ -101,22 +104,23 @@ impl std::str::FromStr for KeySequence {
                     //
                     // that means
                     // the first one was 100% a key.
-                    keys.push(IcedKey::Character('<'));
+                    keys.push(IcedKey::Character(SmolStr::new("<")));
                 } else {
                     maybe_parsing_named_key = true;
                 }
+
                 // SPECIAL-CASE: there is no next character, the strings ends with
                 // `<` so it will be a keybinding
                 if chars.peek().is_none() {
-                    keys.push(IcedKey::Character('<'));
+                    keys.push(IcedKey::Character(SmolStr::new("<")));
                 }
             } else if maybe_parsing_named_key {
                 if ch == '>' {
                     if named_key_buf.is_empty() {
                         // SPECIAL-CASE: in this case the user types exactly `<>`
                         // Make sure that the first `<` is also not ignored
-                        keys.push(IcedKey::Character('<'));
-                        keys.push(IcedKey::Character('>'));
+                        keys.push(IcedKey::Character(SmolStr::new("<")));
+                        keys.push(IcedKey::Character(SmolStr::new(">")));
                     } else {
                         // we are currently at the end of a named key
                         //
@@ -140,7 +144,7 @@ impl std::str::FromStr for KeySequence {
                     named_key_buf.push(ch);
                 }
             } else {
-                keys.push(IcedKey::Character(ch));
+                keys.push(IcedKey::Character(SmolStr::new(ch.to_string())));
             }
         }
         let mut keys = keys.into_iter();
@@ -174,17 +178,26 @@ mod test {
         use IcedKey::Named;
         use KeySequence as Seq;
 
-        assert_eq!("gh".parse::<Seq>(), Ok(Seq((Ch('g'), Some(Ch('h'))))));
-        assert_eq!("ge".parse::<Seq>(), Ok(Seq((Ch('g'), Some(Ch('e'))))));
-        assert_eq!("x".parse::<Seq>(), Ok(Seq((Ch('x'), None))));
-        assert_eq!("Lx".parse::<Seq>(), Ok(Seq((Ch('L'), Some(Ch('x'))))));
+        assert_eq!(
+            "gh".parse::<Seq>(),
+            Ok(Seq((Ch(SmolStr::new("g")), Some(Ch(SmolStr::new("h"))))))
+        );
+        assert_eq!(
+            "ge".parse::<Seq>(),
+            Ok(Seq((Ch(SmolStr::new("g")), Some(Ch(SmolStr::new("e"))))))
+        );
+        assert_eq!("x".parse::<Seq>(), Ok(Seq((Ch(SmolStr::new("x")), None))));
+        assert_eq!(
+            "Lx".parse::<Seq>(),
+            Ok(Seq((Ch(SmolStr::new("L")), Some(Ch(SmolStr::new("x"))))))
+        );
         assert_eq!(
             "".parse::<Seq>(),
             Err("Expected at least 1 key.".to_string())
         );
         assert_eq!(
             "<space>x".parse::<Seq>(),
-            Ok(Seq((Named(key::Named::Space), Some(Ch('x')))))
+            Ok(Seq((Named(key::Named::Space), Some(Ch(SmolStr::new("x"))))))
         );
         assert_eq!(
             "<space><space>".parse::<Seq>(),
@@ -195,15 +208,24 @@ mod test {
         );
         assert_eq!(
             "x<space>".parse::<Seq>(),
-            Ok(Seq((Ch('x'), Some(Named(key::Named::Space)))))
+            Ok(Seq((Ch(SmolStr::new("x")), Some(Named(key::Named::Space)))))
         );
-        assert_eq!("<<".parse::<Seq>(), Ok(Seq((Ch('<'), Some(Ch('<'))))));
-        assert_eq!("<>".parse::<Seq>(), Ok(Seq((Ch('<'), Some(Ch('>'))))));
-        assert_eq!("<".parse::<Seq>(), Ok(Seq((Ch('<'), None))));
-        assert_eq!(">>".parse::<Seq>(), Ok(Seq((Ch('>'), Some(Ch('>'))))));
+        assert_eq!(
+            "<<".parse::<Seq>(),
+            Ok(Seq((Ch(SmolStr::new("<")), Some(Ch(SmolStr::new("<"))))))
+        );
+        assert_eq!(
+            "<>".parse::<Seq>(),
+            Ok(Seq((Ch(SmolStr::new("<")), Some(Ch(SmolStr::new(">"))))))
+        );
+        assert_eq!("<".parse::<Seq>(), Ok(Seq((Ch(SmolStr::new("<")), None))));
+        assert_eq!(
+            ">>".parse::<Seq>(),
+            Ok(Seq((Ch(SmolStr::new(">")), Some(Ch(SmolStr::new(">"))))))
+        );
         assert_eq!(
             "<<space>".parse::<Seq>(),
-            Ok(Seq((Ch('<'), Some(Named(key::Named::Space)))))
+            Ok(Seq((Ch(SmolStr::new("<")), Some(Named(key::Named::Space)))))
         );
         assert_eq!(
             "<f32><f31>".parse::<Seq>(),
@@ -211,7 +233,7 @@ mod test {
         );
         assert_eq!(
             "><f32>".parse::<Seq>(),
-            Ok(Seq((Ch('>'), Some(Named(key::Named::F32)))))
+            Ok(Seq((Ch(SmolStr::new(">")), Some(Named(key::Named::F32)))))
         );
         assert_eq!(
             "abc".parse::<Seq>(),

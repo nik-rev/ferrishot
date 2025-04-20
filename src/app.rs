@@ -9,7 +9,6 @@ use std::time::Instant;
 use crate::message::Message;
 use crate::screenshot::RgbaHandle;
 use crate::selection::selection_lock::OptionalSelectionExt;
-use crate::theme::THEME;
 use iced::alignment::Vertical;
 use iced::mouse::Cursor;
 use iced::widget::canvas::Path;
@@ -462,7 +461,12 @@ impl App {
     /// Renders the black tint on regions that are not selected
     pub fn render_shade(&self, frame: &mut canvas::Frame, bounds: Rectangle) {
         let Some(selection) = self.selection.map(Selection::norm) else {
-            frame.fill_rectangle(bounds.position(), bounds.size(), THEME.non_selected_region);
+            // fill the entire screen in non-selected
+            frame.fill_rectangle(
+                bounds.position(),
+                bounds.size(),
+                CONFIG.theme.non_selected_region,
+            );
             return;
         };
 
@@ -480,7 +484,7 @@ impl App {
             p.move_to(selection.top_left());
         });
 
-        frame.fill(&outside, THEME.non_selected_region);
+        frame.fill(&outside, CONFIG.theme.non_selected_region);
     }
 
     /// Renders the welcome message that the user sees when they first launch the program
@@ -530,8 +534,8 @@ impl App {
             .padding(10.0),
         )
         .style(|_| iced::widget::container::Style {
-            text_color: Some(THEME.fg_on_accent_bg),
-            background: Some(Background::Color(THEME.accent.scale_alpha(0.95))),
+            text_color: Some(CONFIG.theme.info_box_fg),
+            background: Some(Background::Color(CONFIG.theme.info_box_bg)),
             border: iced::Border::default()
                 .color(Color::WHITE)
                 .rounded(6.0)
@@ -556,10 +560,10 @@ impl App {
                     .height(80)
                     .width(ERROR_WIDTH)
                     .style(|_| container::Style {
-                        text_color: Some(THEME.fg),
-                        background: Some(Background::Color(THEME.error_bg)),
+                        text_color: Some(CONFIG.theme.error_fg),
+                        background: Some(Background::Color(CONFIG.theme.error_bg)),
                         border: iced::Border {
-                            color: THEME.drop_shadow,
+                            color: CONFIG.theme.drop_shadow,
                             width: 4.0,
                             radius: 2.0.into(),
                         },
