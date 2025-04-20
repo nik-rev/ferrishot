@@ -13,6 +13,7 @@
 mod cli;
 mod key;
 mod macros;
+mod named_key;
 
 /// The default configuration for ferrishot, to be *merged* with the user's config
 pub const DEFAULT_KDL_CONFIG_STR: &str = include_str!("../../default-config.kdl");

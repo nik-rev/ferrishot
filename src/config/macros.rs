@@ -1,4 +1,4 @@
-//! Macros used to define the config keys
+//! Macros used to declare the configuration keys
 
 /// Represents the color node used in the KDL config, to be parsed into
 /// this structure.
