@@ -9,6 +9,10 @@
 //! - Converting the list of keybindings into a structured `KeyMap` which can be indexed `O(1)` to
 //!   obtain the `Message` to execute for that action.
 //! - Adding opacity to colors
+//!
+//! ---
+//!
+//! When modifying the config options, make sure to update the `default-config.kdl` file
 
 mod cli;
 mod key;
@@ -85,6 +89,8 @@ crate::declare_theme_options! {
     accent_fg,
     /// The background color of icons, the selection and such
     accent,
+    /// Drop shadow of the border around the selection
+    selection_border_drop_shadow,
 }
 
 /// Configuration of the app

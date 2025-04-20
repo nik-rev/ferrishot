@@ -7,10 +7,10 @@ use iced::{Point, Rectangle, Size};
 use crate::config::KeyAction;
 use crate::corners::Corners;
 use crate::corners::SideOrCorner;
-use crate::icon;
 use crate::message::Message;
 use crate::rectangle::RectangleExt;
 use crate::theme::THEME;
+use crate::{CONFIG, icon};
 
 /// The size of the lines of the frame of the selection
 pub const FRAME_WIDTH: f32 = 2.0;
@@ -153,7 +153,7 @@ impl Selection {
             self.pos(),
             self.size(),
             iced::widget::canvas::Stroke::default()
-                .with_color(THEME.drop_shadow)
+                .with_color(CONFIG.theme.selection_border_drop_shadow)
                 .with_width(FRAME_WIDTH * 2.0),
         );
         frame.stroke_rectangle(

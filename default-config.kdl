@@ -7,8 +7,9 @@ size-indicator #true
 instant #false
 
 theme {
-  accent-fg ab6137
-  accent ffffff opacity=0.5
+  accent-fg 0x_ab_61_37
+  accent 0x_ff_ff_ff opacity=0.5
+  selection_border_drop_shadow 0x00_00_00 opacity=0.5
 }
 
 keys {
