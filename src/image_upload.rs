@@ -6,7 +6,17 @@ use knus::DecodeScalar;
 use serde::{Deserialize, Serialize};
 
 #[derive(
-    Copy, Clone, PartialEq, Debug, Eq, PartialOrd, Ord, Serialize, Deserialize, DecodeScalar,
+    Copy,
+    Clone,
+    PartialEq,
+    Debug,
+    Eq,
+    PartialOrd,
+    Ord,
+    Serialize,
+    Deserialize,
+    DecodeScalar,
+    Default,
 )]
 #[cfg_attr(
     feature = "docgen",
@@ -16,6 +26,7 @@ use serde::{Deserialize, Serialize};
 /// Choose which image upload service should be used by default when pressing "Upload Online"
 pub enum ImageUploadService {
     /// Website: `https://0x0.st`
+    #[default]
     TheNullPointer,
 }
 

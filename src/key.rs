@@ -4,7 +4,10 @@ use std::{collections::HashMap, str::FromStr};
 
 use iced::keyboard::{Modifiers, key::Key as IcedKey};
 
-use crate::message::Message;
+use crate::{
+    corners::{Direction, RectPlace},
+    message::Message,
+};
 
 /// Represents the keybindings for ferrishot
 ///
@@ -19,13 +22,115 @@ use crate::message::Message;
 #[derive(Debug, Default)]
 pub struct KeyMap {
     /// Map of Key Pressed <=> Action when pressing that key
+    ///
+    /// It is an `IndexMap` so that `KeyMap::as_kdl_str` will always return
+    /// the same output (as long as the source code does not change)
     keys: HashMap<KeySequence, (KeyMods, Message)>,
 }
 
+/// Keybindings for ferrishot
+#[derive(knus::Decode, Debug, Default)]
+pub struct Keys {
+    /// A list of raw keybindings for ferrishot, directly as read from the config file
+    #[knus(children)]
+    pub keys: Vec<Key>,
+}
+
+/// A list of keybindings which exist in the app
+#[derive(knus::Decode, Debug)]
+pub enum Key {
+    /// Copy the selected region as a screenshot to the clipboard
+    CopyToClipboard(
+        #[knus(property(name = "key"), str)] KeySequence,
+        #[knus(default, property(name = "mods"), str)] KeyMods,
+    ),
+    /// Save the screenshot as a path
+    SaveScreenshot(
+        #[knus(property(name = "key"), str)] KeySequence,
+        #[knus(default, property(name = "mods"), str)] KeyMods,
+    ),
+    /// Exit the application
+    Exit(
+        #[knus(property(name = "key"), str)] KeySequence,
+        #[knus(default, property(name = "mods"), str)] KeyMods,
+    ),
+    /// Teleport the selection to the given area
+    Goto(
+        // where to move the rect
+        #[knus(argument, str)] RectPlace,
+        #[knus(property(name = "key"), str)] KeySequence,
+        #[knus(default, property(name = "mods"), str)] KeyMods,
+    ),
+    /// Shift the selection in the given direction by pixels
+    Move(
+        #[knus(argument)] Direction,
+        // strength
+        #[knus(argument)] u32,
+        #[knus(property(name = "key"), str)] KeySequence,
+        #[knus(default, property(name = "mods"), str)] KeyMods,
+    ),
+    /// Increase the size of the selection in the given direction by pixels
+    Extend(
+        // where to extend
+        #[knus(argument)] Direction,
+        // strength
+        #[knus(argument)] u32,
+        // binding
+        #[knus(property(name = "key"), str)] KeySequence,
+        #[knus(default, property(name = "mods"), str)] KeyMods,
+    ),
+    /// Decrease the size of the selection in the given direction by pixels
+    Shrink(
+        // shrink in this direction
+        #[knus(argument)] Direction,
+        // strength
+        #[knus(argument)] u32,
+        // binding
+        #[knus(property(name = "key"), str)] KeySequence,
+        #[knus(default, property(name = "mods"), str)] KeyMods,
+    ),
+}
+
+impl FromIterator<Key> for KeyMap {
+    fn from_iter<T: IntoIterator<Item = Key>>(iter: T) -> Self {
+        Self {
+            keys: iter
+                .into_iter()
+                .map(|key| match key {
+                    Key::CopyToClipboard(key_sequence, key_mods) => {
+                        (key_sequence, (key_mods, Message::CopyToClipboard))
+                    }
+                    Key::SaveScreenshot(key_sequence, key_mods) => {
+                        (key_sequence, (key_mods, Message::SaveScreenshot))
+                    }
+                    Key::Exit(key_sequence, key_mods) => (key_sequence, (key_mods, Message::Exit)),
+                    Key::Goto(rect_place, key_sequence, key_mods) => {
+                        (key_sequence, (key_mods, Message::Goto(rect_place)))
+                    }
+                    Key::Move(direction, amount, key_sequence, key_mods) => {
+                        (key_sequence, (key_mods, Message::Move(direction, amount)))
+                    }
+                    Key::Extend(direction, amount, key_sequence, key_mods) => {
+                        (key_sequence, (key_mods, Message::Extend(direction, amount)))
+                    }
+                    Key::Shrink(direction, amount, key_sequence, key_mods) => {
+                        (key_sequence, (key_mods, Message::Shrink(direction, amount)))
+                    }
+                })
+                .collect(),
+        }
+    }
+}
+
+// const DEFAULT_CONFIG_STR = ""
+
 impl KeyMap {
+    /// Insert a keybinding
     pub fn insert(&mut self, seq: KeySequence, mods: KeyMods, message: Message) {
         self.keys.insert(seq, (mods, message));
     }
+
+    /// Create a new keymap
     pub fn new(keys: HashMap<KeySequence, (KeyMods, Message)>) -> Self {
         Self { keys }
     }

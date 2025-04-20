@@ -5,241 +5,79 @@ use clap::Parser;
 use etcetera::BaseStrategy;
 use miette::IntoDiagnostic as _;
 
-use crate::{
-    corners::{Direction, RectPlace},
-    key::{KeyMods, KeySequence},
-    message::Message,
-};
+/// Represents the location of the config file
+///
+/// This is only accurate until `Cli::parse` is invoked (see `ferrishot::CLI`).
+/// After that, it can be incorrect if the user passes `--config-file` option
+static CONFIG_FILE_BEFORE_CLI: LazyLock<PathBuf> = LazyLock::new(|| {
+    etcetera::choose_base_strategy().map_or_else(
+        |_| PathBuf::from("ferrishot.kdl"),
+        |strategy| strategy.config_dir().join("ferrishot").join("config.kdl"),
+    )
+});
 
 /// Command line arguments for the program
 #[derive(Parser, Debug)]
 #[command(version, about, author = "Nik Revenco")]
 pub struct Cli {
+    /// Write the default config file
+    #[arg(long, help = format!("Write the default config to {}", CONFIG_FILE_BEFORE_CLI.display()))]
+    pub dump_default_config: bool,
     /// Specifies the config file to use
     #[arg(
         long,
         value_name = "file.kdl",
-        default_value_t = etcetera::choose_base_strategy()
-            .map(|strategy| {
-                strategy
-                    .config_dir()
-                    .join("ferrishot")
-                    .join("config.kdl")
-                    .to_string_lossy()
-                    .to_string()
-            })
-            .unwrap_or("ferrishot.kdl".to_owned())
+        default_value_t = CONFIG_FILE_BEFORE_CLI.to_string_lossy().to_string()
     )]
     pub config_file: String,
 }
 
-/// `Some(...)` if `$(...)?` exists, `None` otherwise
-#[macro_export]
-macro_rules! opt {
-    () => {
-        None::<&'static str>
-    };
-    ($any:tt) => {
-        Some($any)
-    };
-}
-
-/// Declare default keybindings
-#[macro_export]
-macro_rules! default_keys {
-    (
-        $(
-            $key:literal $(mods=$modifier:literal)? => $message:expr
-        ),* $(,)?
-    ) => {{
-        let mut map = std::collections::HashMap::new();
-        $(
-            map.insert(
-                $key.parse::<$crate::key::KeySequence>().expect(concat!("default keybinding ", $key, " is incorrect")),
-                ($crate::opt!($($modifier)?).unwrap_or_default().parse::<$crate::key::KeyMods>().expect(concat!("modifiers ", $(stringify!($modifier), )? "is incorrect")), $message)
-            );
-        )*
-        $crate::key::KeyMap::new(map)
-    }};
-}
-
-/// Utility macro to create a theme with default colors
+/// Command line arguments to this program
 ///
-/// Implementing the `Default` trait would be a lot of repetition and it cannot be automatically
-/// derived using the values in `#[knus(default = ...)]`.
-#[macro_export]
-macro_rules! theme {
-    (
-        $(
-            #[$($doc:meta)*]
-            $key:ident = $default_color:expr
-        ),* $(,)?
-    ) => {
-        /// Theme for ferrishot
-        #[derive(knus::Decode, Debug)]
-        pub struct Theme {
-            $(
-                #[$($doc),*]
-                #[knus(default = $crate::theme::Color($default_color), child, unwrap(argument, str))]
-                pub $key: $crate::theme::Color,
-            )*
-        }
+/// It is a static because it is needed by the `CONFIG` static, in order to
+/// read config from the correct place
+pub static CLI: LazyLock<Cli> = LazyLock::new(Cli::parse);
 
-        impl Default for Theme {
-            fn default() -> Self {
-                Self {
-                    $(
-                        $key: $crate::theme::Color($default_color),
-                    )*
-                }
-            }
-        }
-    };
-}
-
-/// Utility macro to create two similar config structs
-/// The only thing that is different between `KdlConfig` and `Config`
-/// is that the `keys` field changes.
-///
-/// It also implements `Default`, removing quite a lot of boilerplate.
-/// We would have to specify `#[knus(default(...))]` and `impl Default`.
-#[macro_export]
-macro_rules! config {
-    (
-        $(
-            $(#[$doc:meta])*
-            $key:ident: $typ:ty = $default:expr
-        ),* $(,)?
-    ) => {
-        #[derive(knus::Decode, Debug)]
-        /// Raw config, not processed into a more useful structure yet
-        pub struct KdlConfig {
-            $(
-                $(#[$doc])*
-                #[knus(default = $default, child, unwrap(argument))]
-                pub $key: $typ,
-            )*
-            /// Theme
-            #[knus(default, child)]
-            pub theme: Theme,
-            /// Keybindings
-            #[knus(default, child)]
-            pub keys: $crate::config::Keys,
-        }
-
-        impl Default for KdlConfig {
-            fn default() -> Self {
-                Self {
-                    theme: Theme::default(),
-                    keys: $crate::config::Keys::default(),
-                    $(
-                        $key: $default
-                    ),*
-                }
-            }
-        }
-
-        /// Processed config, with keybindings that are ready to be used
-        #[derive(Debug)]
-        pub struct Config {
-            $(
-                $(#[$doc])*
-                pub $key: $typ,
-            )*
-            /// Theme
-            pub theme: Theme,
-            /// A list of processed keybindings for ferrishot.
-            pub keys: $crate::key::KeyMap,
-        }
-
-        impl Default for Config {
-            fn default() -> Self {
-                Self {
-                    theme: Theme::default(),
-                    keys: $crate::key::KeyMap::default(),
-                    $(
-                        $key: $default
-                    ),*
-                }
-            }
-        }
-    }
-}
+/// The default configuration for ferrishot, to be *merged* with the user's config
+pub const DEFAULT_KDL_CONFIG_STR: &str = include_str!("../default-config.kdl");
 
 /// Configuration of the app
 ///
 /// Static as that means it will never change once the app is launched.
 /// It also makes it easy to get the config values anywhere from the app, even where we don't have access to
 /// the `App`.
-pub static CONFIG: LazyLock<crate::defaults::Config> = LazyLock::new(|| {
-    let cli = Cli::parse();
-
-    let kdl_config = (|| -> miette::Result<crate::defaults::KdlConfig> {
-        let config_file = cli.config_file.as_str();
+pub static CONFIG: LazyLock<Config> = LazyLock::new(|| {
+    let kdl_config = (|| -> miette::Result<DefaultKdlConfig> {
+        let config_file = CLI.config_file.as_str();
         let config_file_path = PathBuf::from(config_file);
 
+        let default_config =
+            knus::parse::<DefaultKdlConfig>("<default-config>", DEFAULT_KDL_CONFIG_STR)
+                .expect("Default config is valid");
+
         // if there is no config file, act as if it's simply empty
-        let config = knus::parse::<crate::defaults::KdlConfig>(
-            cli.config_file,
+        let user_config = knus::parse::<UserKdlConfig>(
+            &CLI.config_file,
             &fs::read_to_string(&config_file_path)
                 .into_diagnostic()
                 .unwrap_or_default(),
         )?;
 
-        Ok(config)
+        Ok(default_config.merge_user_config(user_config))
     })();
 
     match kdl_config {
-        Ok(kdl_config) => {
-            let kdl_keys = kdl_config.keys.keys;
-            let mut keys = crate::defaults::keymap();
-            for key in kdl_keys {
-                match key {
-                    Key::CopyToClipboard(key_sequence, key_mods) => {
-                        keys.insert(key_sequence, key_mods, Message::CopyToClipboard);
-                    }
-                    Key::SaveScreenshot(key_sequence, key_mods) => {
-                        keys.insert(key_sequence, key_mods, Message::SaveScreenshot);
-                    }
-                    Key::Exit(key_sequence, key_mods) => {
-                        keys.insert(key_sequence, key_mods, Message::Exit);
-                    }
-                    Key::Goto(rect_place, key_sequence, key_mods) => {
-                        keys.insert(key_sequence, key_mods, Message::Goto(rect_place));
-                    }
-                    Key::Move(direction, amount, key_sequence, key_mods) => {
-                        keys.insert(
-                            key_sequence,
-                            key_mods,
-                            Message::Move(direction, amount * kdl_config.movement_multiplier),
-                        );
-                    }
-                    Key::Extend(direction, amount, key_sequence, key_mods) => {
-                        keys.insert(
-                            key_sequence,
-                            key_mods,
-                            Message::Extend(direction, amount * kdl_config.movement_multiplier),
-                        );
-                    }
-                    Key::Shrink(direction, amount, key_sequence, key_mods) => {
-                        keys.insert(
-                            key_sequence,
-                            key_mods,
-                            Message::Shrink(direction, amount * kdl_config.movement_multiplier),
-                        );
-                    }
-                }
-            }
-
-            crate::defaults::Config {
-                theme: kdl_config.theme,
-                keys,
-                instant: kdl_config.instant,
-                default_image_upload_provider: kdl_config.default_image_upload_provider,
-                size_indicator: kdl_config.size_indicator,
-                movement_multiplier: kdl_config.movement_multiplier,
-            }
-        }
+        Ok(kdl_config) => Config {
+            instant: kdl_config.instant,
+            default_image_upload_provider: kdl_config.default_image_upload_provider,
+            size_indicator: kdl_config.size_indicator,
+            theme: kdl_config.theme,
+            keys: kdl_config
+                .keys
+                .keys
+                .into_iter()
+                .collect::<crate::key::KeyMap>(),
+        },
         Err(miette_error) => {
             eprintln!("{miette_error:?}");
             std::process::exit(1);
@@ -247,65 +85,149 @@ pub static CONFIG: LazyLock<crate::defaults::Config> = LazyLock::new(|| {
     }
 });
 
-/// Keybindings for ferrishot
-#[derive(knus::Decode, Debug, Default)]
-pub struct Keys {
-    /// A list of raw keybindings for ferrishot, directly as read from the config file
-    #[knus(children)]
-    pub keys: Vec<Key>,
+use crate::image_upload::ImageUploadService;
+
+impl DefaultKdlConfig {
+    /// Merge the user's config with the default config
+    pub fn merge_user_config(mut self, user_config: UserKdlConfig) -> Self {
+        if let Some(keys) = user_config.keys {
+            self.keys.keys.extend(keys.keys);
+        }
+
+        if let Some(theme) = user_config.theme {
+            if let Some(accent_fg) = theme.accent_fg {
+                self.theme.accent_fg = accent_fg;
+            }
+
+            if let Some(accent) = theme.accent {
+                self.theme.accent = accent;
+            }
+        }
+
+        if let Some(instant) = user_config.instant {
+            self.instant = instant;
+        }
+
+        if let Some(default_image_upload_provider) = user_config.default_image_upload_provider {
+            self.default_image_upload_provider = default_image_upload_provider;
+        }
+
+        if let Some(size_indicator) = user_config.size_indicator {
+            self.size_indicator = size_indicator;
+        }
+
+        self
+    }
 }
 
-/// A list of keybindings which exist in the app
-#[derive(knus::Decode, Debug)]
-pub enum Key {
-    /// Copy the selected region as a screenshot to the clipboard
-    CopyToClipboard(
-        #[knus(property(name = "key"), str)] KeySequence,
-        #[knus(default, property(name = "mods"), str)] KeyMods,
-    ),
-    /// Save the screenshot as a path
-    SaveScreenshot(
-        #[knus(property(name = "key"), str)] KeySequence,
-        #[knus(default, property(name = "mods"), str)] KeyMods,
-    ),
-    /// Exit the application
-    Exit(
-        #[knus(property(name = "key"), str)] KeySequence,
-        #[knus(default, property(name = "mods"), str)] KeyMods,
-    ),
-    /// Teleport the selection to the given area
-    Goto(
-        // where to move the rect
-        #[knus(argument, str)] RectPlace,
-        #[knus(property(name = "key"), str)] KeySequence,
-        #[knus(default, property(name = "mods"), str)] KeyMods,
-    ),
-    /// Shift the selection in the given direction by pixels
-    Move(
-        #[knus(argument)] Direction,
-        // strength
-        #[knus(argument)] u32,
-        #[knus(property(name = "key"), str)] KeySequence,
-        #[knus(default, property(name = "mods"), str)] KeyMods,
-    ),
-    /// Increase the size of the selection in the given direction by pixels
-    Extend(
-        // where to extend
-        #[knus(argument)] Direction,
-        // strength
-        #[knus(argument)] u32,
-        // binding
-        #[knus(property(name = "key"), str)] KeySequence,
-        #[knus(default, property(name = "mods"), str)] KeyMods,
-    ),
-    /// Decrease the size of the selection in the given direction by pixels
-    Shrink(
-        // shrink in this direction
-        #[knus(argument)] Direction,
-        // strength
-        #[knus(argument)] u32,
-        // binding
-        #[knus(property(name = "key"), str)] KeySequence,
-        #[knus(default, property(name = "mods"), str)] KeyMods,
-    ),
+/// Declare config options
+macro_rules! declare_config_options {
+    (
+        $(
+            $(#[$doc:meta])*
+            $key:ident: $typ:ty
+        ),* $(,)?
+    ) => {
+        /// The default config as read from the default config file, included as a static string in the binary.
+        /// All values are required and must be specified
+        #[derive(knus::Decode, Debug)]
+        pub struct DefaultKdlConfig {
+            /// The default keybindings of ferrishot
+            #[knus(child)]
+            pub keys: $crate::key::Keys,
+            /// The default theme of ferrishot
+            #[knus(child)]
+            pub theme: Theme,
+            $(
+                $(#[$doc])*
+                #[knus(child, unwrap(argument))]
+                pub $key: $typ,
+            )*
+        }
+        /// User's config. Everything is optional. Values will be merged with `DefaultKdlConfig`.
+        /// And will take priority over the default values.
+        #[derive(knus::Decode, Debug)]
+        pub struct UserKdlConfig {
+            /// User-defined keybindings
+            #[knus(child)]
+            pub keys: Option<$crate::key::Keys>,
+            /// User-defined colors
+            #[knus(child)]
+            pub theme: Option<UserKdlTheme>,
+            $(
+                $(#[$doc])*
+                #[knus(child, unwrap(argument))]
+                pub $key: Option<$typ>,
+            )*
+        }
+        /// Configuration for ferrishot. This means the parsed Kdl has been through an extra
+        /// processing step. What this means is that
+        #[derive(Debug)]
+        pub struct Config {
+            /// Ferrishot's theme and colors
+            pub theme: Theme,
+            /// Ferrishot's keybindings
+            pub keys: $crate::key::KeyMap,
+            $(
+                $(#[$doc])*
+                pub $key: $typ,
+            )*
+        }
+    }
+}
+
+/// Declare theme keys
+macro_rules! declare_theme_options {
+    (
+        $(
+            $(#[$doc:meta])*
+            $key:ident
+        ),* $(,)?
+    ) => {
+        /// The user's custom theme and color overrides
+        /// All values are optional and will override whatever is the default
+        #[derive(knus::Decode, Debug)]
+        pub struct UserKdlTheme {
+            $(
+                #[knus(child, unwrap(argument, str))]
+                pub $key: Option<$crate::theme::Color>,
+            )*
+        }
+        /// Ferrishot's theme and colors
+        #[derive(knus::Decode, Debug)]
+        pub struct Theme {
+            $(
+                #[knus(child, unwrap(argument, str))]
+                pub $key: $crate::theme::Color,
+            )*
+        }
+    }
+}
+
+declare_theme_options! {
+    /// Color of text which is placed in contrast with the color of `accent_bg`
+    accent_fg,
+    /// The background color of icons, the selection and such
+    accent,
+}
+
+declare_config_options! {
+    /// Specifying this option will copy the selection to clipboard as soon as you select your first rectangle.
+    /// This is useful, since often times you may not want to make any modifications to your selection,
+    /// so this makes simple select and copy faster.
+    ///
+    /// When this is `true`, while you are selecting the first square pressing the Right mouse button just once will
+    /// cancel this effect and not instantly copy the screenshot.
+    instant: bool,
+    /// The default image service to use when uploading images to the internet.
+    /// We have multiple options because some of them can be down / unreliable etc.
+    ///
+    /// You may also get rate limited by the service if you send too many images, so you can try a different
+    /// one if that happens.
+    default_image_upload_provider: ImageUploadService,
+    /// Renders a size indicator in the bottom left corner.
+    /// It shows the current height and width of the selection.
+    ///
+    /// You can manually enter a value to change the selection by hand.
+    size_indicator: bool,
 }

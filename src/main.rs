@@ -1,25 +1,47 @@
 //! The ferrishot app
 
-use ferrishot::{App, CONFIG};
-use iced::Font;
+use miette::miette;
+use std::sync::LazyLock;
 
-/// Logo of ferrishot
-const LOGO: &[u8; 0x4000] = include_bytes!(concat!(env!("OUT_DIR"), "/logo.bin"));
+use ferrishot::{App, CLI};
+use iced::Font;
+use miette::IntoDiagnostic;
+
+/// RGBA bytes for the Logo of ferrishot. Generated with `build.rs`
+const LOGO: &[u8; 64 * 64 * 4] = include_bytes!(concat!(env!("OUT_DIR"), "/logo.bin"));
 
 fn main() -> miette::Result<()> {
-    let a = CONFIG.instant;
-    dbg!(&CONFIG);
+    // This will parse the command line arguments.
+    //
+    // Needs to come before the logging initialization because there
+    // is an argument to change the verbosity
+    LazyLock::force(&CLI);
 
-    Ok(())
-}
-
-fn maint() {
+    // Initialize logging
+    // TODO:
+    // - log to file.
+    // - add ways to increase logging with command line arguments. Currently you must use `RUST_LOG=info`
     env_logger::builder().init();
+
+    LazyLock::force(&ferrishot::CONFIG);
+
+    if CLI.dump_default_config {
+        std::fs::create_dir_all(
+            std::path::PathBuf::from(&CLI.config_file)
+                .parent()
+                .ok_or_else(|| miette!("Could not get parent path of {}", CLI.config_file))?,
+        )
+        .into_diagnostic()?;
+        std::fs::write(&CLI.config_file, ferrishot::DEFAULT_KDL_CONFIG_STR).into_diagnostic()?;
+
+        return Ok(());
+    }
 
     // tray icon for Mac / Windows
     #[cfg(not(target_os = "linux"))]
     {
-        let icon = tray_icon::Icon::from_rgba(LOGO.to_vec(), 64, 64).expect("Failed to open icon");
+        let icon =
+            tray_icon::Icon::from_rgba(LOGO.to_vec(), 64, 64).expect("Icon to be valid RGBA bytes");
 
         let _tray_icon = tray_icon::TrayIconBuilder::new()
             .with_title("ferrishot")
@@ -40,7 +62,7 @@ fn maint() {
             .is_some_and(|arg| arg == ferrishot::CLIPBOARD_DAEMON_ID)
         {
             ferrishot::run_clipboard_daemon().expect("Failed to run clipboard daemon");
-            return;
+            return Ok(());
         }
     }
 
@@ -50,26 +72,28 @@ fn maint() {
             fullscreen: true,
             icon: Some(
                 iced::window::icon::from_rgba(LOGO.to_vec(), 64, 64)
-                    .expect("logo.bin contains valid RGBA"),
+                    .expect("Icon to be valid RGBA bytes"),
             ),
             ..Default::default()
         })
         .title("ferrishot")
         .default_font(Font::MONOSPACE)
         .run()
-        .expect("Failed to start ferrishot");
+        .map_err(|err| miette!("Failed to start ferrishot: {err}"))?;
 
     // open file explorer to choose where to save the image
     if let Some(saved_image) = ferrishot::SAVED_IMAGE.get() {
-        // NOTE: The file dialog can be closed by the user, so it is
-        // not an error if we can't get the path for one reason or another
         if let Some(save_path) = rfd::FileDialog::new()
             .set_title("Save Screenshot")
             .save_file()
         {
             saved_image
                 .save(save_path)
-                .expect("Failed to save the image");
+                .map_err(|err| miette!("Failed to save the screenshot: {err}"))?;
+        } else {
+            log::info!("The file dialog was closed before a file was chosen");
         }
     }
+
+    Ok(())
 }

@@ -27,7 +27,6 @@ mod canvas;
 mod clipboard;
 mod config;
 mod corners;
-mod defaults;
 mod icons;
 mod image_upload;
 mod key;
@@ -43,5 +42,4 @@ pub use clipboard::{CLIPBOARD_DAEMON_ID, run_clipboard_daemon};
 
 pub use app::App;
 pub use app::SAVED_IMAGE;
-pub use config::CONFIG;
-pub use defaults::Config;
+pub use config::{CLI, CONFIG, Config, DEFAULT_KDL_CONFIG_STR};

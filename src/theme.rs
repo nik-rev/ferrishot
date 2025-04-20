@@ -33,7 +33,7 @@ pub fn foreground_for(color: iced::Color) -> iced::Color {
 }
 
 /// A wrapper for `iced::Color` to allow it to be used with `clap`
-#[derive(Clone, Debug, Copy, PartialEq)]
+#[derive(Clone, Debug, Copy, PartialEq, Default)]
 pub struct Color(pub iced::Color);
 
 /// Parsing hex color failed
