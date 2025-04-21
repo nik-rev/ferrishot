@@ -16,6 +16,6 @@
 
 # # format more things
 # format_strings = true
-# format_macro_bodies = true
-# format_macro_matchers = true
+format_macro_bodies = true
+format_macro_matchers = true
 # format_code_in_doc_comments = true

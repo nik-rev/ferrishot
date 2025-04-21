@@ -139,11 +139,7 @@ impl std::str::FromStr for KeySequence {
                     named_key_buf.push(ch);
                 }
             } else {
-                if ch.is_ascii_uppercase() {
-                    keys.push(IcedKey::Character(SmolStr::new(ch.to_string())));
-                } else {
-                    keys.push(IcedKey::Character(SmolStr::new(ch.to_string())));
-                }
+                keys.push(IcedKey::Character(SmolStr::new(ch.to_string())));
             }
         }
         let mut keys = keys.into_iter();
@@ -173,78 +169,47 @@ mod test {
 
     #[test]
     fn parse_key_sequence() {
-        use IcedKey::Character as Ch;
-        use IcedKey::Named;
-        use KeySequence as Seq;
+        macro_rules! assert_parsed_key_sequences {
+            ( $( $seq:literal -> $( $outcome:tt ),+ )* ) => {{
+                $(
+                    assert_eq!(
+                        $seq.parse::<KeySequence>(),
+                        assert_parsed_key_sequences!(@seq $($outcome),*),
+                        concat!("Failed to parse ", $seq)
+                    );
+                )*
+            }};
+            (@seq Err, $message:literal ) => { Err($message.to_string()) };
+            (@seq $first:expr) => { Ok(KeySequence((assert_parsed_key_sequences!(@key $first), None))) };
+            (@seq $first:tt, $second:tt) => {{
+                Ok(KeySequence((
+                    assert_parsed_key_sequences!(@key $first),
+                    Some(assert_parsed_key_sequences!(@key $second))
+                )))
+            }};
+            (@key $key:ident) => { IcedKey::Named(key::Named::$key) };
+            (@key $key:literal) => { IcedKey::Character(SmolStr::new($key)) };
+        }
 
-        assert_eq!(
-            "gh".parse::<Seq>(),
-            Ok(Seq((Ch(SmolStr::new("g")), Some(Ch(SmolStr::new("h"))))))
-        );
-        assert_eq!(
-            "ge".parse::<Seq>(),
-            Ok(Seq((Ch(SmolStr::new("g")), Some(Ch(SmolStr::new("e"))))))
-        );
-        assert_eq!("x".parse::<Seq>(), Ok(Seq((Ch(SmolStr::new("x")), None))));
-        assert_eq!(
-            "Lx".parse::<Seq>(),
-            Ok(Seq((Ch(SmolStr::new("L")), Some(Ch(SmolStr::new("x"))))))
-        );
-        assert_eq!(
-            "".parse::<Seq>(),
-            Err("Expected at least 1 key.".to_string())
-        );
-        assert_eq!(
-            "<space>x".parse::<Seq>(),
-            Ok(Seq((Named(key::Named::Space), Some(Ch(SmolStr::new("x"))))))
-        );
-        assert_eq!(
-            "<space><space>".parse::<Seq>(),
-            Ok(Seq((
-                Named(key::Named::Space),
-                Some(Named(key::Named::Space))
-            )))
-        );
-        assert_eq!(
-            "x<space>".parse::<Seq>(),
-            Ok(Seq((Ch(SmolStr::new("x")), Some(Named(key::Named::Space)))))
-        );
-        assert_eq!(
-            "<<".parse::<Seq>(),
-            Ok(Seq((Ch(SmolStr::new("<")), Some(Ch(SmolStr::new("<"))))))
-        );
-        assert_eq!(
-            "<>".parse::<Seq>(),
-            Ok(Seq((Ch(SmolStr::new("<")), Some(Ch(SmolStr::new(">"))))))
-        );
-        assert_eq!("<".parse::<Seq>(), Ok(Seq((Ch(SmolStr::new("<")), None))));
-        assert_eq!(
-            ">>".parse::<Seq>(),
-            Ok(Seq((Ch(SmolStr::new(">")), Some(Ch(SmolStr::new(">"))))))
-        );
-        assert_eq!(
-            "<<space>".parse::<Seq>(),
-            Ok(Seq((Ch(SmolStr::new("<")), Some(Named(key::Named::Space)))))
-        );
-        assert_eq!(
-            "<f32><f31>".parse::<Seq>(),
-            Ok(Seq((Named(key::Named::F32), Some(Named(key::Named::F31)))))
-        );
-        assert_eq!(
-            "><f32>".parse::<Seq>(),
-            Ok(Seq((Ch(SmolStr::new(">")), Some(Named(key::Named::F32)))))
-        );
-        assert_eq!(
-            "abc".parse::<Seq>(),
-            Err("At the moment, only up to 2 keys in a sequence are supported.".to_string())
-        );
-        assert_eq!(
-            "<f32>b<f16>".parse::<Seq>(),
-            Err("At the moment, only up to 2 keys in a sequence are supported.".to_string())
-        );
-        assert_eq!(
-            "<@>".parse::<Seq>(),
-            Err("Invalid key: <@>. Matching variant not found".to_string())
-        );
+        assert_parsed_key_sequences! {
+            "gh" -> "g", "h"
+            "ge" -> "g", "e"
+            "x" -> "x"
+            "Lx" -> "L", "x"
+            "" -> Err, "Expected at least 1 key."
+            "<space>x" -> Space, "x"
+            "x<space>" -> "x", Space
+            "<space><space>" -> Space, Space
+            "<<" -> "<", "<"
+            "<>" -> "<", ">"
+            "<" -> "<"
+            ">>" -> ">", ">"
+            "<<space>" -> "<", Space
+            "<f32><f31>" -> F32, F31
+            "><f32>" -> ">", F32
+            "abc" -> Err, "At the moment, only up to 2 keys in a sequence are supported."
+            "<f32>b<f16>" -> Err, "At the moment, only up to 2 keys in a sequence are supported."
+            "<@>" -> Err, "Invalid key: <@>. Matching variant not found"
+        }
     }
 }
