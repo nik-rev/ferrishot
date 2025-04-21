@@ -6,33 +6,8 @@ default-image-upload-provider the-null-pointer
 size-indicator #true
 instant #false
 
-theme {
-  selection-frame 0xab_61_37
-  
-  non-selected-region 0x00_00_00 opacity=0.5
-  
-  drop-shadow 0x00_00_00 opacity=0.5
-  
-  text-selection 0xab_61_37 opacity=0.3
-  
-  size-indicator-fg 0xff_ff_ff
-  size-indicator-bg 0x00_00_00 opacity=0.5
-  
-  tooltip-fg 0xff_ff_ff
-  tooltip-bg 0x00_00_00
-  
-  error-fg 0xff_ff_ff
-  error-bg 0xff_00_00 opacity=0.6
-  
-  info-box-fg 0xff_ff_ff
-  info-box-bg 0xab_61_37 opacity=0.95
-  
-  icon-fg 0xff_ff_ff
-  icon-bg 0xab_61_37
-}
-
 keys {
-  exit key=<escape>
+  exit key=<esc>
 
   copy-to-clipboard mod=ctrl key=c
   copy-to-clipboard key=<enter>
@@ -101,16 +76,38 @@ keys {
   shrink right 5 mod="ctrl + alt" key=l
   shrink right 5 mod="ctrl + alt" key=<right>
 
-  // "teleport" the selection to a place
-  goto left key=gh
-  goto bottom key=gj
-  goto top key=gk
-  goto right key=gl
-
-  goto center key=gc
-  goto top-left key=gg
-  goto top-right key=>
-  goto bottom-left key=<
-  goto bottom-right key=G
+  // move selection as far as it can go
+  move left #inf key=gh
+  move left #inf key=g<left>
+  move down #inf key=gj
+  move down #inf key=g<down>
+  move up #inf key=gk
+  move up #inf key=g<up>
+  move right #inf key=gl
+  move right #inf key=g<right>
 }
 
+theme {
+  selection-frame 0xab_61_37
+  
+  non-selected-region 0x00_00_00 opacity=0.5
+  
+  drop-shadow 0x00_00_00 opacity=0.5
+  
+  text-selection 0xab_61_37 opacity=0.3
+  
+  size-indicator-fg 0xff_ff_ff
+  size-indicator-bg 0x00_00_00 opacity=0.5
+  
+  tooltip-fg 0xff_ff_ff
+  tooltip-bg 0x00_00_00
+  
+  error-fg 0xff_ff_ff
+  error-bg 0xff_00_00 opacity=0.6
+  
+  info-box-fg 0xff_ff_ff
+  info-box-bg 0xab_61_37 opacity=0.95
+  
+  icon-fg 0xff_ff_ff
+  icon-bg 0xab_61_37
+}

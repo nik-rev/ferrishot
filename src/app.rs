@@ -17,7 +17,7 @@ use iced::widget::{self, Column, Space, Stack, canvas, column, container, row};
 use iced::{Background, Color, Element, Font, Length, Point, Rectangle, Size, Task};
 
 use crate::background_image::BackgroundImage;
-use crate::corners::{Corner, Direction, RectPlace, Side, SideOrCorner};
+use crate::corners::{Corner, Direction, Side, SideOrCorner};
 use crate::rectangle::RectangleExt;
 use crate::selection::{Selection, SelectionStatus};
 
@@ -334,48 +334,6 @@ impl App {
                     return Self::exit();
                 }
                 KeyAction::Exit => return Self::exit(),
-                KeyAction::Goto(rect_place) => {
-                    let Some(selection) = self.selection.as_mut() else {
-                        self.error("Nothing is selected.");
-                        return Task::none();
-                    };
-                    let sel = selection.norm();
-                    let (image_width, image_height, _) = self.screenshot.raw();
-                    let image_height = image_height as f32;
-                    let image_width = image_width as f32;
-
-                    *selection = match rect_place {
-                        RectPlace::SideOrCorner(SideOrCorner::Side(side)) => match side {
-                            Side::Top => sel
-                                .with_x(|_| image_width / 2.0 - sel.rect.width / 2.0)
-                                .with_y(|_| 0.0),
-                            Side::Right => sel
-                                .with_x(|_| image_width - sel.rect.width)
-                                .with_y(|_| image_height / 2.0 - sel.rect.height / 2.0),
-                            Side::Bottom => sel
-                                .with_x(|_| image_width / 2.0 - sel.rect.width / 2.0)
-                                .with_y(|_| image_height - sel.rect.height),
-                            Side::Left => sel
-                                .with_x(|_| 0.0)
-                                .with_y(|_| image_height / 2.0 - sel.rect.height / 2.0),
-                        },
-                        RectPlace::SideOrCorner(SideOrCorner::Corner(corner)) => match corner {
-                            Corner::TopLeft => sel.with_x(|_| 0.0).with_y(|_| 0.0),
-                            Corner::TopRight => {
-                                sel.with_x(|_| image_width - sel.rect.width).with_y(|_| 0.0)
-                            }
-                            Corner::BottomLeft => sel
-                                .with_x(|_| 0.0)
-                                .with_y(|_| image_height - sel.rect.height),
-                            Corner::BottomRight => sel
-                                .with_x(|_| image_width - sel.rect.width)
-                                .with_y(|_| image_height - sel.rect.height),
-                        },
-                        RectPlace::Center => sel
-                            .with_x(|_| image_width / 2.0 - sel.rect.width / 2.0)
-                            .with_y(|_| image_height / 2.0 - sel.rect.height / 2.0),
-                    };
-                }
                 KeyAction::Move(direction, amount) => {
                     println!("{direction:?}, {amount:?}");
                     let Some(selection) = self.selection.as_mut() else {

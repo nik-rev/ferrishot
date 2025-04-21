@@ -1,9 +1,10 @@
 //! A message represents some event in the app that mutates the state
 
-use iced::{Point, Rectangle, mouse::Cursor, wgpu::hal::DynPipelineCache};
+use iced::{Point, Rectangle, mouse::Cursor};
 
 use crate::{
-    corners::{Direction, RectPlace, SideOrCorner},
+    config::KeyAction,
+    corners::SideOrCorner,
     selection::{Selection, Speed, selection_lock::SelectionIsSome},
 };
 
@@ -80,5 +81,5 @@ pub enum Message {
         sel_is_some: SelectionIsSome,
     },
     /// An action can be triggered by a keybind
-    KeyBind(crate::config::KeyAction),
+    KeyBind(KeyAction),
 }

@@ -19,13 +19,12 @@ pub mod key;
 pub mod macros;
 pub mod named_key;
 
-/// The default configuration for ferrishot, to be *merged* with the user's config
-pub const DEFAULT_KDL_CONFIG_STR: &str = include_str!("../../default-config.kdl");
+/// The default configuration for ferrishot, to be merged with the user's config
+pub const DEFAULT_KDL_CONFIG_STR: &str = include_str!("../../default.kdl");
 
 use crate::config::key::KeyMap;
 use crate::config::macros::Color;
 use crate::corners::Direction;
-use crate::corners::RectPlace;
 use crate::image_upload::ImageUploadService;
 pub use cli::CLI;
 use std::fs;
@@ -62,11 +61,6 @@ crate::declare_key_options! {
     Exit,
     /// Set selection to encompass the entire screen
     SelectFullScreen,
-    /// Teleport the selection to the given area
-    Goto {
-        #[knus(str)]
-        place: RectPlace,
-    },
     /// Shift the selection in the given direction by pixels
     Move {
         direction: Direction,

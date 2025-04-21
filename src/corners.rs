@@ -123,34 +123,6 @@ impl FromStr for SideOrCorner {
 
 /// A named place of the rectangle
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
-pub enum RectPlace {
-    /// A side or a corner of the rectangle
-    SideOrCorner(SideOrCorner),
-    /// Center of the rectangle
-    Center,
-}
-
-impl FromStr for RectPlace {
-    type Err = String;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        s.parse::<SideOrCorner>().map_or_else(
-            |_| {
-                if s == "center" {
-                    Ok(Self::Center)
-                } else {
-                    Err(format!(
-                        "expected one of center, {}",
-                        SideOrCorner::variants()
-                    ))
-                }
-            },
-            |side_or_corner| Ok(Self::SideOrCorner(side_or_corner)),
-        )
-    }
-}
-
 impl Corner {
     /// # Arguments
     ///

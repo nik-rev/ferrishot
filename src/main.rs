@@ -33,6 +33,7 @@ fn main() -> miette::Result<()> {
         )
         .into_diagnostic()?;
         std::fs::write(&CLI.config_file, ferrishot::DEFAULT_KDL_CONFIG_STR).into_diagnostic()?;
+        println!("Success");
 
         return Ok(());
     }
