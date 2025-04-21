@@ -67,13 +67,17 @@ impl FromStr for KeyMods {
             return Ok(Self(Modifiers::empty()));
         }
         for modifier_str in s.split('+') {
-            let modifier = match modifier_str {
-                "shift" => Modifiers::SHIFT,
-                "ctrl" => Modifiers::CTRL,
-                "alt" => Modifiers::ALT,
-                "super" | "windows" | "command" => Modifiers::LOGO,
-                invalid => return Err(format!("Invalid modifier: {invalid}")),
-            };
+            let modifier =
+                match modifier_str {
+                    "ctrl" => Modifiers::CTRL,
+                    "alt" => Modifiers::ALT,
+                    "super" | "windows" | "command" => Modifiers::LOGO,
+                    "shift" => return Err(
+                        "The `shift` is not supported. Use `G` instead of `g + shift` for example (or `<` instead of `, + shift`)"
+                            .to_owned(),
+                    ),
+                    invalid => return Err(format!("Invalid modifier: {invalid}")),
+                };
             if mods.contains(modifier) {
                 return Err(format!("Duplicate modifier: {modifier_str}"));
             }
@@ -144,7 +148,11 @@ impl std::str::FromStr for KeySequence {
                     named_key_buf.push(ch);
                 }
             } else {
-                keys.push(IcedKey::Character(SmolStr::new(ch.to_string())));
+                if ch.is_ascii_uppercase() {
+                    keys.push(IcedKey::Character(SmolStr::new(ch.to_string())));
+                } else {
+                    keys.push(IcedKey::Character(SmolStr::new(ch.to_string())));
+                }
             }
         }
         let mut keys = keys.into_iter();

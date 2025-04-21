@@ -1,8 +1,10 @@
 //! The canvas handles drawing the selection frame
 use iced::Event::{Keyboard, Mouse};
+use iced::advanced::debug::core::SmolStr;
 use iced::keyboard::Event::KeyPressed;
 use iced::keyboard::Event::KeyReleased;
 use iced::keyboard::Key::{self, Character, Named};
+use iced::keyboard::Modifiers;
 use iced::keyboard::Modifiers as Mods;
 use iced::keyboard::key::Named::F11;
 use iced::keyboard::key::Named::{Enter, Escape, Shift};
@@ -108,12 +110,52 @@ impl canvas::Program<Message> for App {
         _bounds: Rectangle,
         cursor: iced::advanced::mouse::Cursor,
     ) -> Option<widget::Action<Message>> {
-        if let Keyboard(KeyPressed { key, modifiers, .. }) = event {
+        if let Keyboard(KeyPressed {
+            modifiers,
+            text,
+            key,
+            ..
+        }) = event
+        {
+            let mut modifiers = *modifiers;
+
+            // Shift key does not matter. For example:
+            // - pressing `<` and the `SHIFT` modifier will be pressed
+            // - `G` will also trigger the `SHIFT` modifier
+            modifiers.remove(Modifiers::SHIFT);
+
+            let key = if let Key::Named(name) = key {
+                // named key takes priority over anything.
+                //
+                // For example, if we input `Escape` it will send the `text`
+                // `\u{1b}` which won't match any of the keys that we have. So we must
+                // intercept before that happens
+                Key::Named(*name)
+            } else {
+                // if we input `G` for example, it actually sends:
+                // - modifier: `shift`
+                // - key: `g`
+                // - text: `G`
+                //
+                // if we input `<` it sends:
+                // - modifier: `shift`
+                // - key: `,`
+                // - text: `<`
+                //
+                // So `text` is our source of truth. However, sometimes it is not available.
+                // If `key != Key::Named` and `text == None` then we use the actual `key`
+                // as a fallback.
+                //
+                // It is unknown when this fallback might be used, but it is kept just in case.
+                text.as_ref()
+                    .map_or_else(|| key.clone(), |ch| Key::Character(ch.clone()))
+            };
             if let Some((_, action)) = CONFIG
                 .keys
                 .keys
                 // e.g. for instance keybind for `g` should take priority over `gg`
                 .get(&KeySequence((key.clone(), None)))
+                .filter(|(mods, _)| modifiers == mods.0)
                 // e.g. in this case we try the `gg` keybinding since `g` does not exist
                 .or_else(|| {
                     state
@@ -126,7 +168,7 @@ impl canvas::Program<Message> for App {
                                 .get(&KeySequence((last_key_pressed.clone(), Some(key.clone()))))
                         })
                 })
-                .filter(|(mods, _)| *modifiers == mods.0)
+                .filter(|(mods, _)| modifiers == mods.0)
             {
                 // the last key pressed needs to be reset for it to be
                 // correct in future invocations
@@ -140,7 +182,12 @@ impl canvas::Program<Message> for App {
                 return Some(Action::publish(Message::KeyBind(action.clone())));
             }
 
-            state.last_key_pressed = Some(key.clone());
+            // the "Shift" is already included in the modifiers
+            //
+            // This way pressing e.g. `G` would only set the last_key_pressed once
+            if key != Named(Shift) {
+                state.last_key_pressed = Some(key);
+            }
         }
 
         let message = match event {

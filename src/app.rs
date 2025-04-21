@@ -17,7 +17,7 @@ use iced::widget::{self, Column, Space, Stack, canvas, column, container, row};
 use iced::{Background, Color, Element, Font, Length, Point, Rectangle, Size, Task};
 
 use crate::background_image::BackgroundImage;
-use crate::corners::{Side, SideOrCorner};
+use crate::corners::{Corner, RectPlace, Side, SideOrCorner};
 use crate::rectangle::RectangleExt;
 use crate::selection::{Selection, SelectionStatus};
 
@@ -338,6 +338,41 @@ impl App {
                     let Some(selection) = self.selection.as_mut() else {
                         self.error("Nothing is selected.");
                         return Task::none();
+                    };
+                    let (image_width, image_height, _) = self.screenshot.raw();
+                    let image_height = image_height as f32;
+                    let image_width = image_width as f32;
+
+                    *selection = match rect_place {
+                        RectPlace::SideOrCorner(SideOrCorner::Side(side)) => match side {
+                            Side::Top => selection
+                                .with_x(|_| image_width / 2.0 - selection.rect.width / 2.0)
+                                .with_y(|_| 0.0),
+                            Side::Right => selection
+                                .with_x(|_| image_width - selection.rect.width)
+                                .with_y(|_| image_height / 2.0 - selection.rect.height / 2.0),
+                            Side::Bottom => selection
+                                .with_x(|_| image_width / 2.0 - selection.rect.width / 2.0)
+                                .with_y(|_| image_height - selection.rect.height),
+                            Side::Left => selection
+                                .with_x(|_| 0.0)
+                                .with_y(|_| image_height / 2.0 - selection.rect.height / 2.0),
+                        },
+                        RectPlace::SideOrCorner(SideOrCorner::Corner(corner)) => match corner {
+                            Corner::TopLeft => selection.with_x(|_| 0.0).with_y(|_| 0.0),
+                            Corner::TopRight => selection
+                                .with_x(|_| image_width - selection.rect.width)
+                                .with_y(|_| 0.0),
+                            Corner::BottomLeft => selection
+                                .with_x(|_| 0.0)
+                                .with_y(|_| image_height - selection.rect.height),
+                            Corner::BottomRight => selection
+                                .with_x(|_| image_width - selection.rect.width)
+                                .with_y(|_| image_height - selection.rect.height),
+                        },
+                        RectPlace::Center => selection
+                            .with_x(|_| image_width / 2.0 - selection.rect.width / 2.0)
+                            .with_y(|_| image_height / 2.0 - selection.rect.height / 2.0),
                     };
                 }
                 KeyAction::Move(direction, amount) => {
