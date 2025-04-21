@@ -59,7 +59,7 @@ impl FromStr for KeyMods {
         }
         for modifier_str in s.split('+') {
             let modifier =
-                match modifier_str {
+                match modifier_str.trim() {
                     "ctrl" => Modifiers::CTRL,
                     "alt" => Modifiers::ALT,
                     "super" | "windows" | "command" => Modifiers::LOGO,

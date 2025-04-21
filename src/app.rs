@@ -389,11 +389,11 @@ impl App {
                     let sel = selection.norm();
 
                     *selection = match direction {
-                        Direction::Up => sel.with_y(|y| (y - amount).min(0.0)),
+                        Direction::Up => sel.with_y(|y| (y - amount).max(0.0)),
                         Direction::Down => {
                             sel.with_y(|y| (y + amount).min(image_height - sel.rect.height))
                         }
-                        Direction::Left => sel.with_x(|x| (x - amount).min(0.0)),
+                        Direction::Left => sel.with_x(|x| dbg!(dbg!((dbg!(x) - amount)).max(0.0))),
                         Direction::Right => {
                             sel.with_x(|x| (x + amount).min(image_width - sel.rect.width))
                         }

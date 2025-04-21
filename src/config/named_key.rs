@@ -1,8 +1,11 @@
 //! Named keys
 
-/// Parse user key named keys. They are all
+/// Parse user key named keys.
+///
+/// Define an enum which maps to iced keys. Allows to rename
+/// some variants
 macro_rules! named_keys {
-    ($($Key:ident),* $(,)?) => {
+    ($($Key:ident $(= $renamed:literal)?),* $(,)?) => {
         #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, strum::EnumString, strum::EnumIter)]
         #[strum(serialize_all = "kebab-case")]
         #[expect(
@@ -12,6 +15,7 @@ macro_rules! named_keys {
         pub enum Named {
             $(
                 #[doc = concat!("The ", stringify!($Key), " key")]
+                $(#[strum(serialize = $renamed)])?
                 $Key
             ),*
         }
@@ -27,6 +31,10 @@ macro_rules! named_keys {
 }
 
 named_keys! {
+    ArrowDown = "down",
+    ArrowLeft = "left",
+    ArrowRight = "right",
+    ArrowUp = "up",
     Alt,
     AltGraph,
     CapsLock,
@@ -44,10 +52,6 @@ named_keys! {
     Enter,
     Tab,
     Space,
-    ArrowDown,
-    ArrowLeft,
-    ArrowRight,
-    ArrowUp,
     End,
     Home,
     PageDown,

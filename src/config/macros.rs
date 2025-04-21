@@ -260,7 +260,7 @@ macro_rules! declare_key_options {
                         #[knus(argument)] $Argument,
                     )*)?
                     #[knus(property(name = "key"), str)] $crate::config::key::KeySequence,
-                    #[knus(default, property(name = "mods"), str)] $crate::config::key::KeyMods,
+                    #[knus(default, property(name = "mod"), str)] $crate::config::key::KeyMods,
                 ),
             )*
         }

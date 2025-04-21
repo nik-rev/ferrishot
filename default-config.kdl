@@ -34,61 +34,83 @@ theme {
 keys {
   exit key=<escape>
 
-  copy-to-clipboard mods=ctrl key=c
+  copy-to-clipboard mod=ctrl key=c
   copy-to-clipboard key=<enter>
 
-  save-screenshot mods=ctrl key=s
+  save-screenshot mod=ctrl key=s
+
   select-full-screen key=<f11>
-  
-  // up movements
+
+  // move a side by 1px
+  move left 1 key=h
+  move left 1 key=<left>
+  move down 1 key=j
+  move down 1 key=<down>
+  move up 1 key=k
+  move up 1 key=<up>
+  move right 1 key=l
+  move right 1 key=<right>
+
+  // extend a side by 1px
+  extend left 1 key=H
+  extend left 1 key=<left>
+  extend down 1 key=J
+  extend down 1 key=<down>
+  extend up 1 key=K
+  extend up 1 key=<up>
+  extend right 1 key=L
+  extend right 1 key=<right>
+
+  // shrink a side by 1px
+  shrink left 1 mod=ctrl key=h
+  shrink left 1 mod=ctrl key=<left>
+  shrink down 1 mod=ctrl key=j
+  shrink down 1 mod=ctrl key=<down>
+  shrink up 1 mod=ctrl key=k
+  shrink up 1 mod=ctrl key=<up>
+  shrink right 1 mod=ctrl key=l
+  shrink right 1 mod=ctrl key=<right>
+
+  // move rectangle in direction by 5px
+  move left 5 mod=alt key=h
+  move left 5 mod=alt key=<left>
+  move down 5 mod=alt key=j
+  move down 5 mod=alt key=<down>
+  move up 5 mod=alt key=k
+  move up 5 mod=alt key=<up>
+  move right 5 mod=alt key=l
+  move right 5 mod=alt key=<right>
+
+  // extend a side by 5px
+  extend left 5 mod=alt key=H
+  extend left 5 mod=alt key=<left>
+  extend down 5 mod=alt key=J
+  extend down 5 mod=alt key=<down>
+  extend up 5 mod=alt key=K
+  extend up 5 mod=alt key=<up>
+  extend right 5 mod=alt key=L
+  extend right 5 mod=alt key=<right>
+
+  // shrink a side by 5px
+  shrink left 5 mod="ctrl + alt" key=h
+  shrink left 5 mod="ctrl + alt" key=<left>
+  shrink down 5 mod="ctrl + alt" key=j
+  shrink down 5 mod="ctrl + alt" key=<down>
+  shrink up 5 mod="ctrl + alt" key=k
+  shrink up 5 mod="ctrl + alt" key=<up>
+  shrink right 5 mod="ctrl + alt" key=l
+  shrink right 5 mod="ctrl + alt" key=<right>
+
+  // "teleport" the selection to a place
+  goto left key=gh
+  goto bottom key=gj
   goto top key=gk
-
-  move up 120 key=k
-  extend up 120 key=K
-  shrink up 120 mods=ctrl key=k
-
-  move up 600 key=w
-  extend up 600 key=W
-  shrink up 600 mods=ctrl key=w
-
-  // right movements
   goto right key=gl
 
-  move right 120 key=l
-  extend right 120 key=L
-  shrink right 120 mods=ctrl key=l
-
-  move right 600 key=e
-  extend right 600 key=E
-  shrink right 600 mods=ctrl key=e
-
-  // left movements
-  goto left key=gh  
-
-  move left 600 key=b
-  extend left 600 key=B
-  shrink left 600 mods=ctrl key=b
-
-  move left 120 key=h
-  extend left 120 key=H
-  shrink left 120 mods=ctrl key=h
-
-  // bottom movements
-  goto bottom key=gj
-
-  move down 120 key=j
-  extend down 120 key=J
-  shrink down 120 mods=ctrl key=j
-
-  move down 600 key=n
-  extend down 600 key=N
-  shrink down 600 mods=ctrl key=n
-
-  // place
-  goto bottom-left key=<
-  goto top-right key=>
   goto center key=gc
   goto top-left key=gg
-  goto bottom-right key=G
+  goto top-right key=>
   goto bottom-left key=<
+  goto bottom-right key=G
 }
+

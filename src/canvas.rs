@@ -151,8 +151,6 @@ impl canvas::Program<Message> for App {
                 text.as_ref()
                     .map_or_else(|| key.clone(), |ch| Key::Character(ch.clone()))
             };
-            println!("{key:?}");
-            println!("{:#?}", CONFIG.keys);
 
             if let Some(action) = CONFIG
                 .keys
