@@ -17,7 +17,7 @@ use iced::widget::{self, Column, Space, Stack, canvas, column, container, row};
 use iced::{Background, Color, Element, Font, Length, Point, Rectangle, Size, Task};
 
 use crate::background_image::BackgroundImage;
-use crate::corners::{Corner, RectPlace, Side, SideOrCorner};
+use crate::corners::{Corner, Direction, RectPlace, Side, SideOrCorner};
 use crate::rectangle::RectangleExt;
 use crate::selection::{Selection, SelectionStatus};
 
@@ -339,59 +339,95 @@ impl App {
                         self.error("Nothing is selected.");
                         return Task::none();
                     };
+                    let sel = selection.norm();
                     let (image_width, image_height, _) = self.screenshot.raw();
                     let image_height = image_height as f32;
                     let image_width = image_width as f32;
 
                     *selection = match rect_place {
                         RectPlace::SideOrCorner(SideOrCorner::Side(side)) => match side {
-                            Side::Top => selection
-                                .with_x(|_| image_width / 2.0 - selection.rect.width / 2.0)
+                            Side::Top => sel
+                                .with_x(|_| image_width / 2.0 - sel.rect.width / 2.0)
                                 .with_y(|_| 0.0),
-                            Side::Right => selection
-                                .with_x(|_| image_width - selection.rect.width)
-                                .with_y(|_| image_height / 2.0 - selection.rect.height / 2.0),
-                            Side::Bottom => selection
-                                .with_x(|_| image_width / 2.0 - selection.rect.width / 2.0)
-                                .with_y(|_| image_height - selection.rect.height),
-                            Side::Left => selection
+                            Side::Right => sel
+                                .with_x(|_| image_width - sel.rect.width)
+                                .with_y(|_| image_height / 2.0 - sel.rect.height / 2.0),
+                            Side::Bottom => sel
+                                .with_x(|_| image_width / 2.0 - sel.rect.width / 2.0)
+                                .with_y(|_| image_height - sel.rect.height),
+                            Side::Left => sel
                                 .with_x(|_| 0.0)
-                                .with_y(|_| image_height / 2.0 - selection.rect.height / 2.0),
+                                .with_y(|_| image_height / 2.0 - sel.rect.height / 2.0),
                         },
                         RectPlace::SideOrCorner(SideOrCorner::Corner(corner)) => match corner {
-                            Corner::TopLeft => selection.with_x(|_| 0.0).with_y(|_| 0.0),
-                            Corner::TopRight => selection
-                                .with_x(|_| image_width - selection.rect.width)
-                                .with_y(|_| 0.0),
-                            Corner::BottomLeft => selection
+                            Corner::TopLeft => sel.with_x(|_| 0.0).with_y(|_| 0.0),
+                            Corner::TopRight => {
+                                sel.with_x(|_| image_width - sel.rect.width).with_y(|_| 0.0)
+                            }
+                            Corner::BottomLeft => sel
                                 .with_x(|_| 0.0)
-                                .with_y(|_| image_height - selection.rect.height),
-                            Corner::BottomRight => selection
-                                .with_x(|_| image_width - selection.rect.width)
-                                .with_y(|_| image_height - selection.rect.height),
+                                .with_y(|_| image_height - sel.rect.height),
+                            Corner::BottomRight => sel
+                                .with_x(|_| image_width - sel.rect.width)
+                                .with_y(|_| image_height - sel.rect.height),
                         },
-                        RectPlace::Center => selection
-                            .with_x(|_| image_width / 2.0 - selection.rect.width / 2.0)
-                            .with_y(|_| image_height / 2.0 - selection.rect.height / 2.0),
+                        RectPlace::Center => sel
+                            .with_x(|_| image_width / 2.0 - sel.rect.width / 2.0)
+                            .with_y(|_| image_height / 2.0 - sel.rect.height / 2.0),
                     };
                 }
                 KeyAction::Move(direction, amount) => {
+                    println!("{direction:?}, {amount:?}");
                     let Some(selection) = self.selection.as_mut() else {
                         self.error("Nothing is selected.");
                         return Task::none();
                     };
+                    let (image_width, image_height, _) = self.screenshot.raw();
+                    let image_height = image_height as f32;
+                    let image_width = image_width as f32;
+                    let amount = amount as f32;
+                    let sel = selection.norm();
+
+                    *selection = match direction {
+                        Direction::Up => sel.with_y(|y| (y - amount).min(0.0)),
+                        Direction::Down => {
+                            sel.with_y(|y| (y + amount).min(image_height - sel.rect.height))
+                        }
+                        Direction::Left => sel.with_x(|x| (x - amount).min(0.0)),
+                        Direction::Right => {
+                            sel.with_x(|x| (x + amount).min(image_width - sel.rect.width))
+                        }
+                    }
                 }
                 KeyAction::Extend(direction, amount) => {
                     let Some(selection) = self.selection.as_mut() else {
                         self.error("Nothing is selected.");
                         return Task::none();
                     };
+                    let sel = selection.norm();
+                    let amount = amount as f32;
+
+                    *selection = match direction {
+                        Direction::Up => todo!(),
+                        Direction::Down => todo!(),
+                        Direction::Left => todo!(),
+                        Direction::Right => todo!(),
+                    }
                 }
                 KeyAction::Shrink(direction, amount) => {
                     let Some(selection) = self.selection.as_mut() else {
                         self.error("Nothing is selected.");
                         return Task::none();
                     };
+                    let sel = selection.norm();
+                    let amount = amount as f32;
+
+                    *selection = match direction {
+                        Direction::Up => todo!(),
+                        Direction::Down => todo!(),
+                        Direction::Left => todo!(),
+                        Direction::Right => todo!(),
+                    }
                 }
             },
             Message::ExtendNewSelection(new_mouse_position) => {

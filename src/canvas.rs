@@ -33,7 +33,7 @@ pub struct KeysState {
 
 use crate::CONFIG;
 use crate::config::KeyAction;
-use crate::config::key::KeySequence;
+use crate::config::key::{KeyMods, KeySequence};
 use crate::selection::Speed;
 use crate::{
     App,
@@ -110,6 +110,7 @@ impl canvas::Program<Message> for App {
         _bounds: Rectangle,
         cursor: iced::advanced::mouse::Cursor,
     ) -> Option<widget::Action<Message>> {
+        // handle keybindings first
         if let Keyboard(KeyPressed {
             modifiers,
             text,
@@ -150,25 +151,26 @@ impl canvas::Program<Message> for App {
                 text.as_ref()
                     .map_or_else(|| key.clone(), |ch| Key::Character(ch.clone()))
             };
-            if let Some((_, action)) = CONFIG
+            println!("{key:?}");
+            println!("{:#?}", CONFIG.keys);
+
+            if let Some(action) = CONFIG
                 .keys
                 .keys
                 // e.g. for instance keybind for `g` should take priority over `gg`
-                .get(&KeySequence((key.clone(), None)))
-                .filter(|(mods, _)| modifiers == mods.0)
+                .get(&(KeySequence((key.clone(), None)), KeyMods(modifiers)))
                 // e.g. in this case we try the `gg` keybinding since `g` does not exist
                 .or_else(|| {
                     state
                         .last_key_pressed
                         .as_ref()
                         .and_then(|last_key_pressed| {
-                            CONFIG
-                                .keys
-                                .keys
-                                .get(&KeySequence((last_key_pressed.clone(), Some(key.clone()))))
+                            CONFIG.keys.keys.get(&(
+                                KeySequence((last_key_pressed.clone(), Some(key.clone()))),
+                                KeyMods(modifiers),
+                            ))
                         })
                 })
-                .filter(|(mods, _)| modifiers == mods.0)
             {
                 // the last key pressed needs to be reset for it to be
                 // correct in future invocations
@@ -190,6 +192,7 @@ impl canvas::Program<Message> for App {
             }
         }
 
+        // other events
         let message = match event {
             Mouse(ButtonPressed(Left)) => {
                 state.is_left_down = true;

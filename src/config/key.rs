@@ -13,19 +13,10 @@ use crate::config::Key;
 use super::KeyAction;
 
 /// Represents the keybindings for ferrishot
-///
-/// # How to obtain the action for a specific key press
-///
-/// For any given `(previous_key_pressed, current_key_pressed)`:
-/// - if `(current_key_pressed, None)` is in the map and the modifiers match `KeyMods`,
-///   reset `previous_key_pressed = None` and invoke `Message`
-/// - else if `(previous_key_pressed, Some(current_key_pressed))` is in the map, and the modifiers
-///   match `KeyMods` invoke `Message` and reset `previous_key_pressed = None`
-/// - else update `previous_key_pressed = Some(current_key_pressed)`
 #[derive(Debug, Default)]
 pub struct KeyMap {
     /// Map of Key Pressed => Action when pressing that key
-    pub keys: HashMap<KeySequence, (KeyMods, KeyAction)>,
+    pub keys: HashMap<(KeySequence, KeyMods), KeyAction>,
 }
 
 /// Keybindings for ferrishot
@@ -55,7 +46,7 @@ impl FromIterator<Key> for KeyMap {
 pub struct KeySequence(pub (IcedKey, Option<IcedKey>));
 
 /// Modifier keys
-#[derive(Debug, Default, Clone)]
+#[derive(Debug, Default, Clone, Hash, Eq, PartialEq)]
 pub struct KeyMods(pub iced::keyboard::Modifiers);
 
 impl FromStr for KeyMods {

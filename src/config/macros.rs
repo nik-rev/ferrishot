@@ -268,11 +268,11 @@ macro_rules! declare_key_options {
         impl Key {
             /// Obtain the Action for this key. What will happen when the specific `KeySequence` is fired
             /// provided that the `KeyMods` match the current key modifiers.
-            pub fn action(self) -> ($crate::config::key::KeySequence, ($crate::config::key::KeyMods, KeyAction)) {
+            pub fn action(self) -> (($crate::config::key::KeySequence, $crate::config::key::KeyMods), KeyAction) {
                 match self {
                     $(
                         Self::$KeyOption($($($field,)*)? key_sequence, key_mods) => {
-                            (key_sequence, (key_mods, KeyAction::$KeyOption$(($($field),*))?))
+                            ((key_sequence, key_mods), KeyAction::$KeyOption$(($($field),*))?)
                         },
                     )*
                 }
