@@ -4,7 +4,7 @@ use iced::keyboard::Event::KeyPressed;
 use iced::keyboard::Event::KeyReleased;
 use iced::keyboard::Key::{self, Named};
 use iced::keyboard::Modifiers;
-use iced::keyboard::key::Named::Shift;
+use iced::keyboard::key::Named::{Alt, Control, Shift};
 use iced::mouse::Button::{Left, Right};
 use iced::mouse::Event::ButtonPressed;
 use iced::mouse::Event::ButtonReleased;
@@ -22,6 +22,10 @@ pub struct KeysState {
     is_left_down: bool,
     /// Left mouse click is currently being held down
     is_right_down: bool,
+    /// Alt key is currently being held down
+    is_alt_down: bool,
+    /// Ctrl key is currently being held down
+    is_ctrl_down: bool,
     /// Shift key is currently being held down
     is_shift_down: bool,
     /// The last key that was pressed
@@ -110,8 +114,7 @@ impl canvas::Program<Message> for App {
         // handle keybindings first
         if let Keyboard(KeyPressed {
             modifiers,
-            text,
-            key,
+            modified_key,
             ..
         }) = event
         {
@@ -122,38 +125,23 @@ impl canvas::Program<Message> for App {
             // - `G` will also trigger the `SHIFT` modifier
             modifiers.remove(Modifiers::SHIFT);
 
-            let key = if let Key::Named(name) = key {
-                // named key takes priority over anything.
-                //
-                // For example, if we input `Escape` it will send the `text`
-                // `\u{1b}` which won't match any of the keys that we have. So we must
-                // intercept before that happens
-                Key::Named(*name)
-            } else {
-                // if we input `G` for example, it actually sends:
-                // - modifier: `shift`
-                // - key: `g`
-                // - text: `G`
-                //
-                // if we input `<` it sends:
-                // - modifier: `shift`
-                // - key: `,`
-                // - text: `<`
-                //
-                // So `text` is our source of truth. However, sometimes it is not available.
-                // If `key != Key::Named` and `text == None` then we use the actual `key`
-                // as a fallback.
-                //
-                // It is unknown when this fallback might be used, but it is kept just in case.
-                text.as_ref()
-                    .map_or_else(|| key.clone(), |ch| Key::Character(ch.clone()))
-            };
+            // we have to do this because if you hold down these keys while
+            // pressing another key, it won't have them in the `modifiers` field
+            // if state.is_alt_down {
+            //     modifiers.insert(Modifiers::ALT);
+            // }
+            // if state.is_ctrl_down {
+            //     modifiers.insert(Modifiers::CTRL);
+            // }
 
             if let Some(action) = CONFIG
                 .keys
                 .keys
                 // e.g. for instance keybind for `g` should take priority over `gg`
-                .get(&(KeySequence((key.clone(), None)), KeyMods(modifiers)))
+                .get(&(
+                    KeySequence((modified_key.clone(), None)),
+                    KeyMods(modifiers),
+                ))
                 // e.g. in this case we try the `gg` keybinding since `g` does not exist
                 .or_else(|| {
                     state
@@ -161,7 +149,7 @@ impl canvas::Program<Message> for App {
                         .as_ref()
                         .and_then(|last_key_pressed| {
                             CONFIG.keys.keys.get(&(
-                                KeySequence((last_key_pressed.clone(), Some(key.clone()))),
+                                KeySequence((last_key_pressed.clone(), Some(modified_key.clone()))),
                                 KeyMods(modifiers),
                             ))
                         })
@@ -182,8 +170,8 @@ impl canvas::Program<Message> for App {
             // the "Shift" is already included in the modifiers
             //
             // This way pressing e.g. `G` would only set the last_key_pressed once
-            if key != Named(Shift) {
-                state.last_key_pressed = Some(key);
+            if *modified_key != Named(Shift) {
+                state.last_key_pressed = Some(modified_key.clone());
             }
         }
 
@@ -228,6 +216,32 @@ impl canvas::Program<Message> for App {
                 key: Named(Shift), ..
             }) => {
                 state.is_shift_down = false;
+                Message::NoOp
+            }
+            Keyboard(KeyPressed {
+                key: Named(Control),
+                ..
+            }) => {
+                state.is_ctrl_down = true;
+                Message::NoOp
+            }
+            Keyboard(KeyReleased {
+                key: Named(Control),
+                ..
+            }) => {
+                state.is_ctrl_down = false;
+                Message::NoOp
+            }
+            Keyboard(KeyPressed {
+                key: Named(Alt), ..
+            }) => {
+                state.is_alt_down = true;
+                Message::NoOp
+            }
+            Keyboard(KeyReleased {
+                key: Named(Alt), ..
+            }) => {
+                state.is_alt_down = false;
                 Message::NoOp
             }
             Keyboard(KeyPressed {

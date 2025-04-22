@@ -335,7 +335,6 @@ impl App {
                 }
                 KeyAction::Exit => return Self::exit(),
                 KeyAction::Move(direction, amount) => {
-                    println!("{direction:?}, {amount:?}");
                     let Some(selection) = self.selection.as_mut() else {
                         self.error("Nothing is selected.");
                         return Task::none();
@@ -388,17 +387,18 @@ impl App {
                         self.error("Nothing is selected.");
                         return Task::none();
                     };
-                    let (image_width, image_height, _) = self.screenshot.raw();
-                    let image_height = image_height as f32;
-                    let image_width = image_width as f32;
                     let sel = selection.norm();
                     let amount = amount as f32;
 
                     *selection = match direction {
-                        Direction::Up => todo!(),
-                        Direction::Down => todo!(),
-                        Direction::Left => todo!(),
-                        Direction::Right => todo!(),
+                        Direction::Up => sel
+                            .with_y(|y| (y + amount).min(sel.rect.y + sel.rect.height))
+                            .with_height(|h| (h - amount).max(0.0)),
+                        Direction::Down => sel.with_height(|h| (h - amount).max(0.0)),
+                        Direction::Left => sel
+                            .with_x(|x| (x + amount).min(sel.rect.x + sel.rect.width))
+                            .with_width(|w| (w - amount).max(0.0)),
+                        Direction::Right => sel.with_width(|w| (w - amount).max(0.0)),
                     }
                 }
             },

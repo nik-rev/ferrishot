@@ -46,35 +46,35 @@ keys {
   shrink right 1 mod=ctrl key=l
   shrink right 1 mod=ctrl key=<right>
 
-  // move rectangle in direction by 10px
-  move left 10 mod=alt key=h
-  move left 10 mod=alt key=<left>
-  move down 10 mod=alt key=j
-  move down 10 mod=alt key=<down>
-  move up 10 mod=alt key=k
-  move up 10 mod=alt key=<up>
-  move right 10 mod=alt key=l
-  move right 10 mod=alt key=<right>
+  // move rectangle in direction by 100px
+  move left 100 mod=alt key=h
+  move left 100 mod=alt key=<left>
+  move down 100 mod=alt key=j
+  move down 100 mod=alt key=<down>
+  move up 100 mod=alt key=k
+  move up 100 mod=alt key=<up>
+  move right 100 mod=alt key=l
+  move right 100 mod=alt key=<right>
 
-  // extend a side by 10px
-  extend left 10 mod=alt key=H
-  extend left 10 mod=alt key=<left>
-  extend down 10 mod=alt key=J
-  extend down 10 mod=alt key=<down>
-  extend up 10 mod=alt key=K
-  extend up 10 mod=alt key=<up>
-  extend right 10 mod=alt key=L
-  extend right 10 mod=alt key=<right>
+  // extend a side by 100px
+  extend left 100 mod=alt key=H
+  extend left 100 mod=alt key=<left>
+  extend down 100 mod=alt key=J
+  extend down 100 mod=alt key=<down>
+  extend up 100 mod=alt key=K
+  extend up 100 mod=alt key=<up>
+  extend right 100 mod=alt key=L
+  extend right 100 mod=alt key=<right>
 
-  // shrink a side by 10px
-  shrink left 10 mod=ctrl+alt key=h
-  shrink left 10 mod=ctrl+alt key=<left>
-  shrink down 10 mod=ctrl+alt key=j
-  shrink down 10 mod=ctrl+alt key=<down>
-  shrink up 10 mod=ctrl+alt key=k
-  shrink up 10 mod=ctrl+alt key=<up>
-  shrink right 10 mod=ctrl+alt key=l
-  shrink right 10 mod=ctrl+alt key=<right>
+  // shrink a side by 100px
+  shrink left 100 mod=ctrl+alt key=h
+  shrink left 100 mod=ctrl+alt key=<left>
+  shrink down 100 mod=ctrl+alt key=j
+  shrink down 100 mod=ctrl+alt key=<down>
+  shrink up 100 mod=ctrl+alt key=k
+  shrink up 100 mod=ctrl+alt key=<up>
+  shrink right 100 mod=ctrl+alt key=l
+  shrink right 100 mod=ctrl+alt key=<right>
 
   // move selection as far as it can go
   move left key=gh

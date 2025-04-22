@@ -126,9 +126,9 @@ pub static CONFIG: LazyLock<Config> = LazyLock::new(|| {
         let default_config =
             knus::parse::<DefaultKdlConfig>("<default-config>", DEFAULT_KDL_CONFIG_STR)?;
 
-        // if there is no config file, act as if it's simply empty
         let user_config = knus::parse::<UserKdlConfig>(
             &CLI.config_file,
+            // if there is no config file, act as if it's simply empty
             &fs::read_to_string(&config_file_path).unwrap_or_default(),
         )?;
 
