@@ -64,17 +64,17 @@ crate::declare_key_options! {
     /// Shift the selection in the given direction by pixels
     Move {
         direction: Direction,
-        amount: u32,
+        amount: u32 = u32::MAX,
     },
     /// Increase the size of the selection in the given direction by pixels
     Extend {
         direction: Direction,
-        amount: u32,
+        amount: u32 = u32::MAX,
     },
     /// Decrease the size of the selection in the given direction by pixels
     Shrink {
         direction: Direction,
-        amount: u32,
+        amount: u32 = u32::MAX,
     },
 }
 

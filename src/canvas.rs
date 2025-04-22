@@ -1,13 +1,10 @@
 //! The canvas handles drawing the selection frame
 use iced::Event::{Keyboard, Mouse};
-use iced::advanced::debug::core::SmolStr;
 use iced::keyboard::Event::KeyPressed;
 use iced::keyboard::Event::KeyReleased;
-use iced::keyboard::Key::{self, Character, Named};
+use iced::keyboard::Key::{self, Named};
 use iced::keyboard::Modifiers;
-use iced::keyboard::Modifiers as Mods;
-use iced::keyboard::key::Named::F11;
-use iced::keyboard::key::Named::{Enter, Escape, Shift};
+use iced::keyboard::key::Named::Shift;
 use iced::mouse::Button::{Left, Right};
 use iced::mouse::Event::ButtonPressed;
 use iced::mouse::Event::ButtonReleased;

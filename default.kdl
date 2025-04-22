@@ -16,7 +16,7 @@ keys {
 
   select-full-screen key=<f11>
 
-  // move a side by 1px
+  // move the selection in a direction by 1px
   move left 1 key=h
   move left 1 key=<left>
   move down 1 key=j
@@ -46,45 +46,45 @@ keys {
   shrink right 1 mod=ctrl key=l
   shrink right 1 mod=ctrl key=<right>
 
-  // move rectangle in direction by 5px
-  move left 5 mod=alt key=h
-  move left 5 mod=alt key=<left>
-  move down 5 mod=alt key=j
-  move down 5 mod=alt key=<down>
-  move up 5 mod=alt key=k
-  move up 5 mod=alt key=<up>
-  move right 5 mod=alt key=l
-  move right 5 mod=alt key=<right>
+  // move rectangle in direction by 10px
+  move left 10 mod=alt key=h
+  move left 10 mod=alt key=<left>
+  move down 10 mod=alt key=j
+  move down 10 mod=alt key=<down>
+  move up 10 mod=alt key=k
+  move up 10 mod=alt key=<up>
+  move right 10 mod=alt key=l
+  move right 10 mod=alt key=<right>
 
-  // extend a side by 5px
-  extend left 5 mod=alt key=H
-  extend left 5 mod=alt key=<left>
-  extend down 5 mod=alt key=J
-  extend down 5 mod=alt key=<down>
-  extend up 5 mod=alt key=K
-  extend up 5 mod=alt key=<up>
-  extend right 5 mod=alt key=L
-  extend right 5 mod=alt key=<right>
+  // extend a side by 10px
+  extend left 10 mod=alt key=H
+  extend left 10 mod=alt key=<left>
+  extend down 10 mod=alt key=J
+  extend down 10 mod=alt key=<down>
+  extend up 10 mod=alt key=K
+  extend up 10 mod=alt key=<up>
+  extend right 10 mod=alt key=L
+  extend right 10 mod=alt key=<right>
 
-  // shrink a side by 5px
-  shrink left 5 mod="ctrl + alt" key=h
-  shrink left 5 mod="ctrl + alt" key=<left>
-  shrink down 5 mod="ctrl + alt" key=j
-  shrink down 5 mod="ctrl + alt" key=<down>
-  shrink up 5 mod="ctrl + alt" key=k
-  shrink up 5 mod="ctrl + alt" key=<up>
-  shrink right 5 mod="ctrl + alt" key=l
-  shrink right 5 mod="ctrl + alt" key=<right>
+  // shrink a side by 10px
+  shrink left 10 mod=ctrl+alt key=h
+  shrink left 10 mod=ctrl+alt key=<left>
+  shrink down 10 mod=ctrl+alt key=j
+  shrink down 10 mod=ctrl+alt key=<down>
+  shrink up 10 mod=ctrl+alt key=k
+  shrink up 10 mod=ctrl+alt key=<up>
+  shrink right 10 mod=ctrl+alt key=l
+  shrink right 10 mod=ctrl+alt key=<right>
 
   // move selection as far as it can go
-  move left #inf key=gh
-  move left #inf key=g<left>
-  move down #inf key=gj
-  move down #inf key=g<down>
-  move up #inf key=gk
-  move up #inf key=g<up>
-  move right #inf key=gl
-  move right #inf key=g<right>
+  move left key=gh
+  move left key=g<left>
+  move down key=gj
+  move down key=g<down>
+  move up key=gk
+  move up key=g<up>
+  move right key=gl
+  move right key=g<right>
 }
 
 theme {

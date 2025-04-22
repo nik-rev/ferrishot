@@ -17,7 +17,7 @@ use iced::widget::{self, Column, Space, Stack, canvas, column, container, row};
 use iced::{Background, Color, Element, Font, Length, Point, Rectangle, Size, Task};
 
 use crate::background_image::BackgroundImage;
-use crate::corners::{Corner, Direction, Side, SideOrCorner};
+use crate::corners::{Direction, Side, SideOrCorner};
 use crate::rectangle::RectangleExt;
 use crate::selection::{Selection, SelectionStatus};
 
@@ -351,7 +351,7 @@ impl App {
                         Direction::Down => {
                             sel.with_y(|y| (y + amount).min(image_height - sel.rect.height))
                         }
-                        Direction::Left => sel.with_x(|x| dbg!(dbg!((dbg!(x) - amount)).max(0.0))),
+                        Direction::Left => sel.with_x(|x| (x - amount).max(0.0)),
                         Direction::Right => {
                             sel.with_x(|x| (x + amount).min(image_width - sel.rect.width))
                         }
@@ -362,14 +362,25 @@ impl App {
                         self.error("Nothing is selected.");
                         return Task::none();
                     };
+                    let (image_width, image_height, _) = self.screenshot.raw();
+                    let image_height = image_height as f32;
+                    let image_width = image_width as f32;
                     let sel = selection.norm();
                     let amount = amount as f32;
 
                     *selection = match direction {
-                        Direction::Up => todo!(),
-                        Direction::Down => todo!(),
-                        Direction::Left => todo!(),
-                        Direction::Right => todo!(),
+                        Direction::Up => sel
+                            .with_y(|y| (y - amount).max(0.0))
+                            .with_height(|h| (h + amount).min(sel.rect.y + sel.rect.height)),
+                        Direction::Down => {
+                            sel.with_height(|h| (h + amount).min(image_height - sel.rect.y))
+                        }
+                        Direction::Left => sel
+                            .with_x(|x| (x - amount).max(0.0))
+                            .with_width(|w| (w + amount).min(sel.rect.x + sel.rect.width)),
+                        Direction::Right => {
+                            sel.with_width(|w| (w + amount).min(image_width - sel.rect.x))
+                        }
                     }
                 }
                 KeyAction::Shrink(direction, amount) => {
@@ -377,6 +388,9 @@ impl App {
                         self.error("Nothing is selected.");
                         return Task::none();
                     };
+                    let (image_width, image_height, _) = self.screenshot.raw();
+                    let image_height = image_height as f32;
+                    let image_width = image_width as f32;
                     let sel = selection.norm();
                     let amount = amount as f32;
 

@@ -239,12 +239,10 @@ macro_rules! declare_key_options {
     (
         $(
             $(#[$doc:meta])*
-            $KeyOption:ident $({
-                $(
-                    $(#[$attr:meta])*
-                    $field:ident: $Argument:ty,
-                )+
-            })?
+            $KeyOption:ident $({$(
+                $(#[$attr:meta])*
+                $field:ident: $Argument:ty $(= $default:expr)?,
+            )+})?
         ),* $(,)?
     ) => {
         /// A list of keybindings which exist in the app
@@ -257,8 +255,8 @@ macro_rules! declare_key_options {
                 $KeyOption(
                     $($(
                         $(#[$attr])*
-                        #[knus(argument)] $Argument,
-                    )*)?
+                        #[knus(argument)] $(#[knus(default = $default)])? $Argument,
+                    )+)?
                     #[knus(property(name = "key"), str)] $crate::config::key::KeySequence,
                     #[knus(default, property(name = "mod"), str)] $crate::config::key::KeyMods,
                 ),
