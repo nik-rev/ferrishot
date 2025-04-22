@@ -27,6 +27,7 @@ use crate::config::macros::Color;
 use crate::corners::Direction;
 use crate::image_upload::ImageUploadService;
 pub use cli::CLI;
+use macros::Place;
 use std::fs;
 use std::path::PathBuf;
 use std::sync::LazyLock;
@@ -61,6 +62,8 @@ crate::declare_key_options! {
     Exit,
     /// Set selection to encompass the entire screen
     SelectFullScreen,
+    /// Remove the selection
+    ClearSelection,
     /// Shift the selection in the given direction by pixels
     Move {
         direction: Direction,
@@ -76,6 +79,10 @@ crate::declare_key_options! {
         direction: Direction,
         amount: u32 = u32::MAX,
     },
+    /// Move rectangle to a place
+    Goto {
+        place: Place,
+    }
 }
 
 crate::declare_theme_options! {

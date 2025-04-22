@@ -2,6 +2,7 @@
 
 use crate::CONFIG;
 use crate::config::KeyAction;
+use crate::config::macros::Place;
 use crate::selection::Speed;
 use std::borrow::Cow;
 use std::time::Instant;
@@ -265,6 +266,9 @@ impl App {
                 self.selection = Some(new_selection);
             }
             Message::KeyBind(keybind) => match keybind {
+                KeyAction::ClearSelection => {
+                    self.selection = None;
+                }
                 KeyAction::SelectFullScreen => {
                     let (width, height, _) = self.screenshot.raw();
                     {
@@ -334,6 +338,38 @@ impl App {
                     return Self::exit();
                 }
                 KeyAction::Exit => return Self::exit(),
+                KeyAction::Goto(place) => {
+                    let Some(selection) = self.selection.as_mut() else {
+                        self.error("Nothing is selected.");
+                        return Task::none();
+                    };
+                    let (image_width, image_height, _) = self.screenshot.raw();
+                    let image_height = image_height as f32;
+                    let image_width = image_width as f32;
+                    let sel = selection.norm();
+
+                    *selection = match place {
+                        Place::Center => sel
+                            .with_x(|_| (image_width - sel.rect.width) / 2.0)
+                            .with_y(|_| (image_height - sel.rect.height) / 2.0),
+                        Place::XCenter => sel.with_x(|_| (image_width - sel.rect.width) / 2.0),
+                        Place::YCenter => sel.with_y(|_| (image_height - sel.rect.height) / 2.0),
+                        Place::TopLeft => sel.with_x(|_| 0.0).with_y(|_| 0.0),
+                        Place::TopRight => {
+                            sel.with_x(|_| image_width - sel.rect.width).with_y(|_| 0.0)
+                        }
+                        Place::BottomLeft => sel
+                            .with_x(|_| 0.0)
+                            .with_y(|_| image_height - sel.rect.height),
+                        Place::BottomRight => sel
+                            .with_x(|_| image_width - sel.rect.width)
+                            .with_y(|_| image_height - sel.rect.height),
+                        Place::Top => sel.with_y(|_| 0.0),
+                        Place::Bottom => sel.with_y(|_| image_height - sel.rect.height),
+                        Place::Left => sel.with_x(|_| 0.0),
+                        Place::Right => sel.with_x(|_| image_width - sel.rect.width),
+                    }
+                }
                 KeyAction::Move(direction, amount) => {
                     let Some(selection) = self.selection.as_mut() else {
                         self.error("Nothing is selected.");

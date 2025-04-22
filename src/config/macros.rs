@@ -28,6 +28,33 @@ pub struct Color {
     pub opacity: f32,
 }
 
+/// A place on the rectangle
+#[derive(knus::DecodeScalar, Debug, Clone)]
+pub enum Place {
+    /// Center
+    Center,
+    /// Center on the x-axis
+    XCenter,
+    /// Center on the y-axis
+    YCenter,
+    /// Top-left corner
+    TopLeft,
+    /// Bottom-left corner
+    BottomLeft,
+    /// Bottom-right corner
+    BottomRight,
+    /// Top-right corner
+    TopRight,
+    /// Left side
+    Left,
+    /// Right side
+    Right,
+    /// Top side
+    Top,
+    /// Bottom side
+    Bottom,
+}
+
 /// Declare config options
 ///
 /// `UserKdlConfig` is merged into `DefaultKdlConfig` before being processed
