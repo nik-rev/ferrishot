@@ -22,10 +22,6 @@ pub struct KeysState {
     is_left_down: bool,
     /// Left mouse click is currently being held down
     is_right_down: bool,
-    /// Alt key is currently being held down
-    is_alt_down: bool,
-    /// Ctrl key is currently being held down
-    is_ctrl_down: bool,
     /// Shift key is currently being held down
     is_shift_down: bool,
     /// The last key that was pressed
@@ -123,37 +119,21 @@ impl canvas::Program<Message> for App {
             // Shift key does not matter. For example:
             // - pressing `<` and the `SHIFT` modifier will be pressed
             // - `G` will also trigger the `SHIFT` modifier
+            //
+            // We also forbid the user from specifying `shift` as a modifier in their `config.kdl`
             modifiers.remove(Modifiers::SHIFT);
 
-            // we have to do this because if you hold down these keys while
-            // pressing another key, it won't have them in the `modifiers` field
-            // if state.is_alt_down {
-            //     modifiers.insert(Modifiers::ALT);
-            // }
-            // if state.is_ctrl_down {
-            //     modifiers.insert(Modifiers::CTRL);
-            // }
-
-            if let Some(action) = CONFIG
-                .keys
-                .keys
-                // e.g. for instance keybind for `g` should take priority over `gg`
-                .get(&(
-                    KeySequence((modified_key.clone(), None)),
-                    KeyMods(modifiers),
-                ))
-                // e.g. in this case we try the `gg` keybinding since `g` does not exist
-                .or_else(|| {
-                    state
-                        .last_key_pressed
-                        .as_ref()
-                        .and_then(|last_key_pressed| {
-                            CONFIG.keys.keys.get(&(
-                                KeySequence((last_key_pressed.clone(), Some(modified_key.clone()))),
-                                KeyMods(modifiers),
-                            ))
-                        })
+            if let Some(action) = state
+                .last_key_pressed
+                .as_ref()
+                .and_then(|last_key_pressed| {
+                    CONFIG.keys.get(
+                        last_key_pressed.clone(),
+                        Some(modified_key.clone()),
+                        modifiers,
+                    )
                 })
+                .or_else(|| CONFIG.keys.get(modified_key.clone(), None, modifiers))
             {
                 // the last key pressed needs to be reset for it to be
                 // correct in future invocations
@@ -216,32 +196,6 @@ impl canvas::Program<Message> for App {
                 key: Named(Shift), ..
             }) => {
                 state.is_shift_down = false;
-                Message::NoOp
-            }
-            Keyboard(KeyPressed {
-                key: Named(Control),
-                ..
-            }) => {
-                state.is_ctrl_down = true;
-                Message::NoOp
-            }
-            Keyboard(KeyReleased {
-                key: Named(Control),
-                ..
-            }) => {
-                state.is_ctrl_down = false;
-                Message::NoOp
-            }
-            Keyboard(KeyPressed {
-                key: Named(Alt), ..
-            }) => {
-                state.is_alt_down = true;
-                Message::NoOp
-            }
-            Keyboard(KeyReleased {
-                key: Named(Alt), ..
-            }) => {
-                state.is_alt_down = false;
                 Message::NoOp
             }
             Keyboard(KeyPressed {

@@ -238,9 +238,9 @@ macro_rules! declare_theme_options {
 macro_rules! declare_key_options {
     (
         $(
-            $(#[$doc:meta])*
+            $(#[$key_attr:meta])*
             $KeyOption:ident $({$(
-                $(#[$attr:meta])*
+                $(#[$arg_attr:meta])*
                 $field:ident: $Argument:ty $(= $default:expr)?,
             )+})?
         ),* $(,)?
@@ -251,14 +251,18 @@ macro_rules! declare_key_options {
         #[derive(knus::Decode, Debug, Clone)]
         pub enum Key {
             $(
-                $(#[$doc])*
+                $(#[$key_attr])*
                 $KeyOption(
                     $($(
-                        $(#[$attr])*
-                        #[knus(argument)] $(#[knus(default = $default)])? $Argument,
+                        $(#[$arg_attr])*
+                        $(#[knus(default = $default)])?
+                        #[knus(argument)]
+                        $Argument,
                     )+)?
-                    #[knus(property(name = "key"), str)] $crate::config::key::KeySequence,
-                    #[knus(default, property(name = "mod"), str)] $crate::config::key::KeyMods,
+                    #[knus(property(name = "key"), str)]
+                    $crate::config::key::KeySequence,
+                    #[knus(default, property(name = "mod"), str)]
+                    $crate::config::key::KeyMods,
                 ),
             )*
         }
@@ -270,7 +274,10 @@ macro_rules! declare_key_options {
                 match self {
                     $(
                         Self::$KeyOption($($($field,)*)? key_sequence, key_mods) => {
-                            ((key_sequence, key_mods), KeyAction::$KeyOption$(($($field),*))?)
+                            (
+                                (key_sequence, key_mods),
+                                KeyAction::$KeyOption$(($($field),*))?
+                            )
                         },
                     )*
                 }
@@ -281,7 +288,7 @@ macro_rules! declare_key_options {
         #[derive(Debug, Clone)]
         pub enum KeyAction {
             $(
-                $(#[$doc])*
+                $(#[$key_attr])*
                 $KeyOption$(($($Argument,)*))?,
             )*
         }
