@@ -81,5 +81,10 @@ pub enum Message {
         sel_is_some: SelectionIsSome,
     },
     /// An action can be triggered by a keybind
-    KeyBind(KeyAction),
+    KeyBind {
+        /// What to do when this keybind is pressed
+        action: KeyAction,
+        /// How many times it was pressed
+        count: u32,
+    },
 }

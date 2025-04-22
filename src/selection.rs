@@ -308,25 +308,37 @@ impl Selection {
         let icons = vec![
             (
                 icon!(Fullscreen)
-                    .on_press(Message::KeyBind(KeyAction::SelectFullScreen))
+                    .on_press(Message::KeyBind {
+                        action: KeyAction::SelectFullScreen,
+                        count: 1,
+                    })
                     .into(),
                 "Select entire monitor (F11)",
             ),
             (
                 icon!(Clipboard)
-                    .on_press(Message::KeyBind(KeyAction::CopyToClipboard))
+                    .on_press(Message::KeyBind {
+                        action: KeyAction::CopyToClipboard,
+                        count: 1,
+                    })
                     .into(),
                 "Copy to Clipboard (Enter)",
             ),
             (
                 icon!(Save)
-                    .on_press(Message::KeyBind(KeyAction::SaveScreenshot))
+                    .on_press(Message::KeyBind {
+                        action: KeyAction::SaveScreenshot,
+                        count: 1,
+                    })
                     .into(),
                 "Save Screenshot (Ctrl + S)",
             ),
             (
                 icon!(Close)
-                    .on_press(Message::KeyBind(KeyAction::Exit))
+                    .on_press(Message::KeyBind {
+                        action: KeyAction::Exit,
+                        count: 1,
+                    })
                     .into(),
                 "Exit (Esc)",
             ),

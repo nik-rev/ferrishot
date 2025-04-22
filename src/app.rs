@@ -265,7 +265,7 @@ impl App {
 
                 self.selection = Some(new_selection);
             }
-            Message::KeyBind(keybind) => match keybind {
+            Message::KeyBind { action, count } => match action {
                 KeyAction::ClearSelection => {
                     self.selection = None;
                 }
@@ -378,7 +378,7 @@ impl App {
                     let (image_width, image_height, _) = self.screenshot.raw();
                     let image_height = image_height as f32;
                     let image_width = image_width as f32;
-                    let amount = amount as f32;
+                    let amount = amount as f32 * count as f32;
                     let sel = selection.norm();
 
                     *selection = match direction {
@@ -401,7 +401,7 @@ impl App {
                     let image_height = image_height as f32;
                     let image_width = image_width as f32;
                     let sel = selection.norm();
-                    let amount = amount as f32;
+                    let amount = amount as f32 * count as f32;
 
                     *selection = match direction {
                         Direction::Up => sel
@@ -424,7 +424,7 @@ impl App {
                         return Task::none();
                     };
                     let sel = selection.norm();
-                    let amount = amount as f32;
+                    let amount = amount as f32 * count as f32;
 
                     *selection = match direction {
                         Direction::Up => sel

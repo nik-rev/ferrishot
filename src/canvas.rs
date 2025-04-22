@@ -24,6 +24,8 @@ pub struct KeysState {
     is_right_down: bool,
     /// Shift key is currently being held down
     is_shift_down: bool,
+    /// How many times to execute the next motion
+    motion_count: Option<u32>,
     /// The last key that was pressed
     last_key_pressed: Option<Key>,
 }
@@ -107,6 +109,21 @@ impl canvas::Program<Message> for App {
         _bounds: Rectangle,
         cursor: iced::advanced::mouse::Cursor,
     ) -> Option<widget::Action<Message>> {
+        // handle the number pressed
+        if let Keyboard(KeyPressed {
+            key: Key::Character(ch),
+            ..
+        }) = event
+        {
+            if let Ok(number_pressed) = ch.parse::<u32>() {
+                if let Some(motion_count) = state.motion_count.as_mut() {
+                    *motion_count = *motion_count * 10 + number_pressed;
+                } else {
+                    state.motion_count = Some(number_pressed);
+                }
+            }
+        }
+
         // handle keybindings first
         if let Keyboard(KeyPressed {
             modifiers,
@@ -144,7 +161,12 @@ impl canvas::Program<Message> for App {
                 // If we did not reset, then `ggg` would trigger the `gg` keybindings
                 // twice
                 state.last_key_pressed = None;
-                return Some(Action::publish(Message::KeyBind(action.clone())));
+                let count = state.motion_count.unwrap_or(1);
+                state.motion_count = None;
+                return Some(Action::publish(Message::KeyBind {
+                    action: action.clone(),
+                    count,
+                }));
             }
 
             // the "Shift" is already included in the modifiers
@@ -187,7 +209,10 @@ impl canvas::Program<Message> for App {
                     // we have created 1 selections in total, (the current one),
                     // in which case we want to copy it to the clipboard as the
                     // --instant flag was provided
-                    Message::KeyBind(KeyAction::CopyToClipboard)
+                    Message::KeyBind {
+                        action: KeyAction::CopyToClipboard,
+                        count: 1,
+                    }
                 } else {
                     Message::EnterIdle
                 }
