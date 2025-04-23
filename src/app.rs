@@ -4,6 +4,8 @@ use crate::CONFIG;
 use crate::config::KeyAction;
 use crate::config::Place;
 use crate::selection::Speed;
+use crate::widget::Letters;
+use crate::widget::PickCorner;
 use std::borrow::Cow;
 use std::time::Instant;
 
@@ -90,6 +92,9 @@ pub struct App {
     pub selection: Option<Selection>,
     /// Errors to display to the user
     pub errors: Vec<ErrorMessage>,
+    /// Shows a grid of letters on the screen, pressing 3 letters in a row
+    /// allows accessing 25 * 25 * 25 = 15,625 different locations
+    pub letters: Option<Letters>,
 }
 
 impl Default for App {
@@ -102,6 +107,7 @@ impl Default for App {
             selection: None,
             selections_created: 0,
             errors: vec![],
+            letters: None,
         }
     }
 }
@@ -129,11 +135,8 @@ impl App {
                 let (image_width, image_height, _) = self.screenshot.raw();
                 sel.render_icons(image_width as f32, image_height as f32)
             }))
-            .push(
-                canvas(crate::widget::Letters)
-                    .width(Length::Fill)
-                    .height(Length::Fill),
-            )
+            // grid of letters to precisely choose a location
+            .push_maybe(self.letters.as_ref().map(|letters| letters.view()))
             // size indicator
             .push_maybe(
                 self.selection
@@ -155,6 +158,24 @@ impl App {
     /// Modifies the app's state
     pub fn update(&mut self, message: Message) -> Task<Message> {
         match message {
+            Message::LettersPick { point } => {
+                let sel = self.selection.map(Selection::norm).unwrap_or_default();
+                let x = point.x;
+                let y = point.y;
+                if let Some(Letters { pick_corner }) = self.letters {
+                    match pick_corner {
+                        PickCorner::TopLeft => {
+                            self.selection = Some(sel.with_x(|_| x).with_y(|_| y));
+                        }
+                        PickCorner::BottomRight => {
+                            self.selection = Some(
+                                sel.with_height(|_| y - sel.rect.y)
+                                    .with_width(|_| x - sel.rect.x),
+                            );
+                        }
+                    }
+                };
+            }
             Message::ResizeVertically {
                 new_height,
                 sel_is_some,
@@ -465,6 +486,12 @@ impl App {
                             .with_width(|w| (w - amount).max(0.0)),
                         Direction::Right => sel.with_width(|w| (w - amount).max(0.0)),
                     }
+                }
+                KeyAction::PickTopLeftCorner => {
+                    self.letters = Some(Letters::new(PickCorner::TopLeft));
+                }
+                KeyAction::PickBottomRightCorner => {
+                    self.letters = Some(Letters::new(PickCorner::BottomRight));
                 }
             },
             Message::ExtendNewSelection(new_mouse_position) => {

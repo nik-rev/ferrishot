@@ -10,7 +10,7 @@ mod size_indicator;
 
 pub use background_image::BackgroundImage;
 pub use icon::{icon, icon_tooltip};
-pub use letters::Letters;
+pub use letters::{Letters, PickCorner};
 pub use size_indicator::size_indicator;
 
 /// An extension trait to show a red border around an element and all children

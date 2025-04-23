@@ -1,11 +1,15 @@
 //! Render letters around the screen
 
-use std::iter;
+use std::{collections::HashMap, iter};
 
 use iced::{
-    Color, Font, Point,
+    Color, Element, Event, Font, Length, Point,
     font::Weight,
-    widget::canvas::{self, Path, Stroke},
+    keyboard::Key,
+    widget::{
+        Action, Canvas,
+        canvas::{self, Path, Stroke},
+    },
 };
 
 /// How many letters to draw vertically
@@ -16,6 +20,8 @@ const HORIZONTAL_COUNT: f32 = 5.0;
 const LINE_COLOR: Color = Color::WHITE;
 /// where does `a` start?
 const UNICODE_CODEPOINT_LOWERCASE_A_START: u32 = 97;
+/// A tiny error margin for doing less than / greater than calculations
+const ERROR_MARGIN: f32 = 0.001;
 
 /// How large the font should be
 #[derive(PartialEq, PartialOrd, Clone, Copy)]
@@ -46,12 +52,14 @@ fn draw_boxes(
     let box_height = height / VERTICAL_COUNT;
 
     for x in iter::successors(Some(x_start), |x| {
-        (*x < width - box_width).then_some(x + box_width)
+        (*x + ERROR_MARGIN < x_start + width - box_width).then_some(x + box_width)
     }) {
         for y in iter::successors(Some(y_start), |y| {
-            (*y < height - box_height).then_some(y + box_height)
+            (*y + ERROR_MARGIN < y_start + height - box_height).then_some(y + box_height)
         }) {
-            let boxes_drawn = (x / box_width).mul_add(HORIZONTAL_COUNT, y / box_height) as u32;
+            let boxes_drawn = ((x - x_start) / box_width)
+                .mul_add(HORIZONTAL_COUNT, (y - y_start) / box_height)
+                .round() as u32;
 
             frame.fill_text(iced::widget::canvas::Text {
                 content: char::from_u32(UNICODE_CODEPOINT_LOWERCASE_A_START + boxes_drawn)
@@ -80,11 +88,11 @@ fn draw_boxes(
             });
         }
 
-        // draw horizontal lines
+        // draw vertical lines
         frame.stroke(
             &Path::line(
                 Point::new(x + line_offset, y_start),
-                Point::new(x + line_offset, height),
+                Point::new(x + line_offset, y_start + height),
             ),
             Stroke {
                 style: LINE_COLOR.into(),
@@ -93,13 +101,17 @@ fn draw_boxes(
             },
         );
     }
+    dbg!(y_start, height);
 
-    // draw vertical lines
-    for y in iter::successors(Some(y_start), |y| (*y < height).then_some(y + box_height)) {
+    // draw horizontal lines
+    for y in iter::successors(Some(y_start), |y| {
+        (*y + ERROR_MARGIN < y_start + height).then_some(y + box_height)
+    }) {
+        dbg!(y);
         frame.stroke(
             &Path::line(
                 Point::new(x_start, y + line_offset),
-                Point::new(width, y + line_offset),
+                Point::new(x_start + width, y + line_offset),
             ),
             Stroke {
                 style: LINE_COLOR.into(),
@@ -111,10 +123,12 @@ fn draw_boxes(
 
     // draw 2 extra lines at the end of each axis, so we have
     // lines on each side of equal thickness and its nice and symmetrical
+
+    // horizontal line at the end
     frame.stroke(
         &Path::line(
-            Point::new(width - line_offset, y_start),
-            Point::new(width - line_offset, height),
+            Point::new(x_start + width - line_offset, y_start),
+            Point::new(x_start + width - line_offset, y_start + height),
         ),
         Stroke {
             style: LINE_COLOR.into(),
@@ -122,10 +136,11 @@ fn draw_boxes(
             ..Default::default()
         },
     );
+    // vertical line at the end
     frame.stroke(
         &Path::line(
-            Point::new(x_start, height - line_offset),
-            Point::new(width, height - line_offset),
+            Point::new(x_start, y_start + height - line_offset),
+            Point::new(x_start + width, y_start + height - line_offset),
         ),
         Stroke {
             style: LINE_COLOR.into(),
@@ -137,15 +152,80 @@ fn draw_boxes(
 
 use crate::message::Message;
 
+/// The letter grid consists of 3 "levels"
+///
+/// - Level 1: the entire screen is divided into 25 regions, a letter is assigned to each
+///   region. When we input a letter, 1 of the 25 regions is picked and we progress onto level 2.
+/// - Level 2: The region that we picked is further divided into 25 smaller regions. A single letter
+///   is assigned to each region once again. Inputting another letter progresses us to Level 3.
+/// - Level 3: The region picked in Level 2 is further divided into 25 even tinier regions. Now, once we
+///   pick any of the tiny regions the center of that region will be sent as a `Message` to the main
+///   `App`.
+///
+/// On the first level
+///
+/// Level of the letter grid.
+#[derive(PartialEq, Clone, Copy, Debug, Default)]
+pub enum LetterLevel {
+    /// First level
+    #[default]
+    First,
+    /// Second click on the letter grid
+    /// Choose a more precise location than the first
+    Second {
+        /// top left corner of the region clicked during `First`
+        point: Point,
+    },
+    /// Third click on the letter grid
+    /// Once we click this, it's finished and we will notify the `App`
+    Third {
+        /// top left corner of the region clicked during `Second`
+        point: Point,
+    },
+}
+
+/// Pick a position for a corner in the rectangle
+#[derive(PartialEq, Eq, PartialOrd, Clone, Copy, Debug)]
+pub enum PickCorner {
+    TopLeft,
+    BottomRight,
+}
+
 /// Letters
-pub struct Letters;
+#[derive(PartialEq, PartialOrd, Clone, Copy, Debug)]
+pub struct Letters {
+    /// Corner to pick the position for
+    pub pick_corner: PickCorner,
+}
+
+impl Letters {
+    /// Create a new grid of letters
+    pub const fn new(pick_corner: PickCorner) -> Self {
+        Self { pick_corner }
+    }
+
+    /// Render a grid of letters
+    pub fn view(&self) -> Element<Message> {
+        Canvas::new(self)
+            .width(Length::Fill)
+            .height(Length::Fill)
+            .into()
+    }
+}
+
+/// State of the letters
+#[derive(PartialEq, Clone, Default)]
+pub struct LettersState {
+    /// The level of selection for this letter
+    level: LetterLevel,
+}
 
 impl canvas::Program<Message> for Letters {
-    type State = ();
+    type State = LettersState;
 
     fn draw(
         &self,
-        _state: &Self::State,
+        state: &Self::State,
         renderer: &iced::Renderer,
         _theme: &iced::Theme,
         bounds: iced::Rectangle,
@@ -169,34 +249,82 @@ impl canvas::Program<Message> for Letters {
         let width = frame.width();
         let height = frame.height();
 
-        draw_boxes(
-            x_start,
-            y_start,
-            width,
-            height,
-            &mut frame,
-            FontSize::Fixed(48.0),
-            1.0,
-        );
-        draw_boxes(
-            x_start,
-            y_start,
-            width / 5.0,
-            height / 5.0,
-            &mut frame,
-            FontSize::Fixed(32.0),
-            1.0,
-        );
-        draw_boxes(
-            x_start,
-            y_start,
-            width / 25.0,
-            height / 25.0,
-            &mut frame,
-            FontSize::Fill,
-            0.2,
-        );
+        match state.level {
+            LetterLevel::First => draw_boxes(
+                x_start,
+                y_start,
+                width,
+                height,
+                &mut frame,
+                FontSize::Fixed(48.0),
+                1.0,
+            ),
+            LetterLevel::Second { point } => draw_boxes(
+                // 688.0,
+                // 40.0,
+                // 40.0,
+                // 25.0,
+                point.x,
+                point.y,
+                width / HORIZONTAL_COUNT,
+                height / VERTICAL_COUNT,
+                &mut frame,
+                FontSize::Fixed(32.0),
+                1.0,
+            ),
+            LetterLevel::Third { point } => draw_boxes(
+                point.x,
+                point.y,
+                width / HORIZONTAL_COUNT.powi(2),
+                height / VERTICAL_COUNT.powi(2),
+                &mut frame,
+                FontSize::Fill,
+                0.2,
+            ),
+        };
 
         vec![frame.into_geometry()]
+    }
+
+    fn update(
+        &self,
+        state: &mut Self::State,
+        event: &Event,
+        bounds: iced::Rectangle,
+        _cursor: iced::advanced::mouse::Cursor,
+    ) -> Option<canvas::Action<Message>> {
+        if let Event::Keyboard(iced::keyboard::Event::KeyPressed {
+            modified_key: Key::Character(input),
+            ..
+        }) = event
+        {
+            if let Some(ch) = input.chars().next() {
+                let ch = ch as u32 - UNICODE_CODEPOINT_LOWERCASE_A_START;
+                match state.level {
+                    LetterLevel::First => {
+                        let vertical_steps = ch % VERTICAL_COUNT as u32;
+                        let horizontal_steps = ch / HORIZONTAL_COUNT as u32;
+                        let point = Point {
+                            x: horizontal_steps as f32 * (bounds.width / HORIZONTAL_COUNT),
+                            y: vertical_steps as f32 * (bounds.height / VERTICAL_COUNT),
+                        };
+                        dbg!(vertical_steps, horizontal_steps, point, bounds);
+                        state.level = LetterLevel::Second { point };
+                        return Some(Action::request_redraw());
+                    }
+                    LetterLevel::Second { point } => {
+                        unreachable!();
+                        state.level = LetterLevel::Third { point };
+                        return Some(Action::request_redraw());
+                    }
+                    LetterLevel::Third { point } => {
+                        unreachable!();
+                        return Some(Action::publish(Message::LettersPick { point }));
+                    }
+                }
+            }
+        }
+
+        None
     }
 }

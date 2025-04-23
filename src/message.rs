@@ -11,6 +11,13 @@ use crate::{
 /// Represents an action happening in the application
 #[derive(Debug, Clone)]
 pub enum Message {
+    /// A region was picked using `Letters` widget
+    ///
+    /// See `LetterLevel` for more info on "level" and "region"
+    LettersPick {
+        /// the center of the region clicked on the 3rd level of `Letters`
+        point: Point,
+    },
     /// Do nothing
     NoOp,
     /// Upload screenshot to the internet
