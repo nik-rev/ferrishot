@@ -4,7 +4,7 @@ use iced::keyboard::Event::KeyPressed;
 use iced::keyboard::Event::KeyReleased;
 use iced::keyboard::Key::{self, Named};
 use iced::keyboard::Modifiers;
-use iced::keyboard::key::Named::{Alt, Control, Shift};
+use iced::keyboard::key::Named::Shift;
 use iced::mouse::Button::{Left, Right};
 use iced::mouse::Event::ButtonPressed;
 use iced::mouse::Event::ButtonReleased;
@@ -32,7 +32,6 @@ pub struct KeysState {
 
 use crate::CONFIG;
 use crate::config::KeyAction;
-use crate::config::key::{KeyMods, KeySequence};
 use crate::selection::Speed;
 use crate::{
     App,

@@ -338,6 +338,28 @@ impl App {
                     return Self::exit();
                 }
                 KeyAction::Exit => return Self::exit(),
+                KeyAction::SetWidth => {
+                    let Some(selection) = self.selection.as_mut() else {
+                        self.error("Nothing is selected.");
+                        return Task::none();
+                    };
+                    let (image_width, _, _) = self.screenshot.raw();
+                    let image_width = image_width as f32;
+                    let sel = selection.norm();
+
+                    *selection = sel.with_width(|_| (count as f32).min(image_width - sel.rect.x));
+                }
+                KeyAction::SetHeight => {
+                    let Some(selection) = self.selection.as_mut() else {
+                        self.error("Nothing is selected.");
+                        return Task::none();
+                    };
+                    let (_, image_height, _) = self.screenshot.raw();
+                    let image_height = image_height as f32;
+                    let sel = selection.norm();
+
+                    *selection = sel.with_height(|_| (count as f32).min(image_height - sel.rect.y));
+                }
                 KeyAction::Goto(place) => {
                     let Some(selection) = self.selection.as_mut() else {
                         self.error("Nothing is selected.");

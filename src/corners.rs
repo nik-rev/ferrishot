@@ -122,7 +122,6 @@ impl FromStr for SideOrCorner {
 }
 
 /// A named place of the rectangle
-
 impl Corner {
     /// # Arguments
     ///

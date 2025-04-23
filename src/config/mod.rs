@@ -9,10 +9,6 @@
 //! - Converting the list of keybindings into a structured `KeyMap` which can be indexed `O(1)` to
 //!   obtain the `Message` to execute for that action.
 //! - Adding opacity to colors
-//!
-//! ---
-//!
-//! When modifying the config options, make sure to update the `default-config.kdl` file
 
 pub mod cli;
 pub mod key;
@@ -20,6 +16,8 @@ pub mod macros;
 pub mod named_key;
 
 /// The default configuration for ferrishot, to be merged with the user's config
+///
+/// When modifying any of the config options, this will also need to be updated
 pub const DEFAULT_KDL_CONFIG_STR: &str = include_str!("../../default.kdl");
 
 use crate::config::key::KeyMap;
@@ -58,6 +56,10 @@ crate::declare_key_options! {
     CopyToClipboard,
     /// Save the screenshot as a path
     SaveScreenshot,
+    /// Set the width to whatever number is currently pressed
+    SetWidth,
+    /// Set the height to whatever number is currently pressed
+    SetHeight,
     /// Exit the application
     Exit,
     /// Set selection to encompass the entire screen

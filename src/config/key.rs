@@ -25,8 +25,10 @@ impl KeyMap {
     /// So why do we need owned values here? `.get()` methods returning a reference usually
     /// do not require owned values
     ///
-    /// We have a `&A` and `&B` and we want to turn that into an `&(A, B)` in order to
-    /// index the hashmap. This is a well-known problem in Rust: <https://stackoverflow.com/questions/45786717/how-to-get-value-from-hashmap-with-two-keys-via-references-to-both-keys/45795699#45795699>
+    /// If we had an `&IcedKey` and an `Option<&IcedKey>` we won't be able to turn that into
+    /// an `&KeySequence` without cloning unfortunately.
+    ///
+    /// This is a well-known problem in Rust: <https://stackoverflow.com/questions/45786717/how-to-get-value-from-hashmap-with-two-keys-via-references-to-both-keys/45795699#45795699>
     ///
     /// The solution outlined in the Stack Overflow post, while fun, is not zero-cost and
     /// adds too much unnecessary complexity whilst probably being slower. (We have to go

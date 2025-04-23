@@ -18,6 +18,11 @@ keys {
 
   clear-selection mod=ctrl key=x
 
+  // Set width/height to whatever is the current count.
+  // You can change the count by just writing numbers. e.g. type `100`
+  set-width key=X
+  set-height key=Y
+
   // move the selection in a direction by 1px
   move left 1 key=h
   move left 1 key=<left>
@@ -91,7 +96,6 @@ keys {
   // teleport the selection to a place
   goto top-left key=gg
   goto bottom-right key=G
-
   goto center key=gc
   goto x-center key=gx
   goto y-center key=gy
