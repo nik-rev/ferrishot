@@ -131,8 +131,7 @@ crate::declare_theme_options! {
 /// Configuration of the app
 ///
 /// Static as it will never change once the app is launched.
-/// It also makes it easy to get the config values anywhere from the app, even where we don't have access to
-/// the `App`.
+/// It also makes it easy to get the config values anywhere from the app, even where we don't have access to the `App`.
 pub static CONFIG: LazyLock<Config> = LazyLock::new(|| {
     let kdl_config = (|| -> miette::Result<DefaultKdlConfig> {
         let config_file = CLI.config_file.as_str();

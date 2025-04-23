@@ -6,8 +6,8 @@ Some pointers:
 
 - `app.rs` holds the `App` struct which contains all information about the program.
 - `App::view` is the entry point for rendering of all the elements.
-- `message.rs` holds `Message` enum which defines all events that can happen which mutate the `App`'s state.
-- `App::update` responds to a `Message` and mutates state.
+- `message.rs` holds `Message` enum which defines all events that can happen which mutate the `App`'s state. `App::update` responds to this.
+- `config/mod.rs` defines each config option. Make sure to also update `default.kdl` when modifying the config.
 
 100% of the code is documented. To take advantage of that you can use `cargo doc --document-private-items --open`.
 
