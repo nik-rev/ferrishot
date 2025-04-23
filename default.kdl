@@ -18,6 +18,9 @@ keys {
 
   clear-selection mod=ctrl key=x
 
+  pick-top-left-corner key=t
+  pick-bottom-right-corner key=b
+
   // Set width/height to whatever is the current count.
   // You can change the count by just writing numbers. e.g. type `100`
   set-width key=X

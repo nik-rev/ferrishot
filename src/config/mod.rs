@@ -58,6 +58,10 @@ crate::declare_config_options! {
 }
 
 crate::declare_key_options! {
+    /// Open a grid of letters to pick the top left corner in 3 keystrokes
+    PickTopLeftCorner,
+    /// Open a grid of letters to pick the bottom right corner in 3 keystrokes
+    PickBottomRightCorner,
     /// Copy the selected region as a screenshot to the clipboard
     CopyToClipboard,
     /// Save the screenshot as a path
