@@ -1,6 +1,6 @@
 //! Render letters around the screen
 
-use std::{collections::HashMap, iter};
+use std::iter;
 
 use iced::{
     Color, Element, Event, Font, Length, Point,
@@ -101,13 +101,11 @@ fn draw_boxes(
             },
         );
     }
-    dbg!(y_start, height);
 
     // draw horizontal lines
     for y in iter::successors(Some(y_start), |y| {
         (*y + ERROR_MARGIN < y_start + height).then_some(y + box_height)
     }) {
-        dbg!(y);
         frame.stroke(
             &Path::line(
                 Point::new(x_start, y + line_offset),
@@ -260,10 +258,6 @@ impl canvas::Program<Message> for Letters {
                 1.0,
             ),
             LetterLevel::Second { point } => draw_boxes(
-                // 688.0,
-                // 40.0,
-                // 40.0,
-                // 25.0,
                 point.x,
                 point.y,
                 width / HORIZONTAL_COUNT,
@@ -300,31 +294,58 @@ impl canvas::Program<Message> for Letters {
         {
             if let Some(ch) = input.chars().next() {
                 let ch = ch as u32 - UNICODE_CODEPOINT_LOWERCASE_A_START;
+                let vertical_steps = (ch % VERTICAL_COUNT as u32) as f32;
+                let horizontal_steps = (ch / HORIZONTAL_COUNT as u32) as f32;
                 match state.level {
                     LetterLevel::First => {
-                        let vertical_steps = ch % VERTICAL_COUNT as u32;
-                        let horizontal_steps = ch / HORIZONTAL_COUNT as u32;
-                        let point = Point {
-                            x: horizontal_steps as f32 * (bounds.width / HORIZONTAL_COUNT),
-                            y: vertical_steps as f32 * (bounds.height / VERTICAL_COUNT),
+                        let box_width = bounds.width / HORIZONTAL_COUNT;
+                        let box_height = bounds.height / VERTICAL_COUNT;
+
+                        state.level = LetterLevel::Second {
+                            point: Point {
+                                x: horizontal_steps * box_width,
+                                y: vertical_steps * box_height,
+                            },
                         };
-                        dbg!(vertical_steps, horizontal_steps, point, bounds);
-                        state.level = LetterLevel::Second { point };
+
                         return Some(Action::request_redraw());
                     }
                     LetterLevel::Second { point } => {
-                        unreachable!();
-                        state.level = LetterLevel::Third { point };
+                        let box_width = bounds.width / HORIZONTAL_COUNT.powi(2);
+                        let box_height = bounds.height / VERTICAL_COUNT.powi(2);
+
+                        state.level = LetterLevel::Third {
+                            point: Point {
+                                x: horizontal_steps.mul_add(box_width, point.x),
+                                y: vertical_steps.mul_add(box_height, point.y),
+                            },
+                        };
+
                         return Some(Action::request_redraw());
                     }
                     LetterLevel::Third { point } => {
-                        unreachable!();
-                        return Some(Action::publish(Message::LettersPick { point }));
+                        let box_width = bounds.width / HORIZONTAL_COUNT.powi(3);
+                        let box_height = bounds.height / VERTICAL_COUNT.powi(3);
+
+                        return Some(Action::publish(Message::LettersPick {
+                            // INFO: We want the point to be in the center, unlike in the previous levels where
+                            // we wanted the top-left corner
+                            point: Point {
+                                x: horizontal_steps.mul_add(box_width, point.x) + box_width / 2.0,
+                                y: vertical_steps.mul_add(box_height, point.y) + box_height / 2.0,
+                            },
+                        }));
                     }
                 }
             }
+        } else if let Event::Keyboard(iced::keyboard::Event::KeyPressed {
+            key: iced::keyboard::Key::Named(iced::keyboard::key::Named::Escape),
+            ..
+        }) = event
+        {
+            return Some(Action::publish(Message::LettersAbort));
         }
 
-        None
+        Some(Action::capture())
     }
 }

@@ -11,6 +11,8 @@ use crate::{
 /// Represents an action happening in the application
 #[derive(Debug, Clone)]
 pub enum Message {
+    /// Abort selecting a letter
+    LettersAbort,
     /// A region was picked using `Letters` widget
     ///
     /// See `LetterLevel` for more info on "level" and "region"

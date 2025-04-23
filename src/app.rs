@@ -158,6 +158,9 @@ impl App {
     /// Modifies the app's state
     pub fn update(&mut self, message: Message) -> Task<Message> {
         match message {
+            Message::LettersAbort => {
+                self.letters = None;
+            }
             Message::LettersPick { point } => {
                 let sel = self.selection.map(Selection::norm).unwrap_or_default();
                 let x = point.x;
@@ -175,6 +178,7 @@ impl App {
                         }
                     }
                 };
+                self.letters = None;
             }
             Message::ResizeVertically {
                 new_height,
@@ -791,7 +795,6 @@ impl App {
             .rev()
             .map_while(|err| {
                 let time_passed = now - err.timestamp;
-                log::error!("{:#?}, {:#?}", now, err.timestamp);
                 (time_passed <= ERROR_TIMEOUT).then_some(err.message.to_string())
             })
             .collect()
