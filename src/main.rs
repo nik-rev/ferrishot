@@ -38,19 +38,6 @@ fn main() -> miette::Result<()> {
         return Ok(());
     }
 
-    // tray icon for Mac / Windows
-    #[cfg(not(target_os = "linux"))]
-    {
-        let icon =
-            tray_icon::Icon::from_rgba(LOGO.to_vec(), 64, 64).expect("Icon to be valid RGBA bytes");
-
-        let _tray_icon = tray_icon::TrayIconBuilder::new()
-            .with_title("ferrishot")
-            .with_tooltip("Take a screenshot using ferrishot")
-            .with_icon(icon)
-            .build();
-    }
-
     // On linux, a daemon is required to provide clipboard access even when
     // the process dies.
     //
