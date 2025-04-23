@@ -205,11 +205,7 @@ impl Corners {
     }
 
     /// Render the circles for each side
-    pub fn render_circles(
-        &self,
-        frame: &mut iced::widget::canvas::Frame,
-        accent_color: iced::Color,
-    ) {
+    pub fn draw_circles(&self, frame: &mut iced::widget::canvas::Frame, accent_color: iced::Color) {
         /// Radius of each of the 4 corner circles in the frame drawn around the selection
         const FRAME_CIRCLE_RADIUS: f32 = 6.0;
 

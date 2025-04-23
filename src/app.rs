@@ -122,12 +122,18 @@ impl App {
                     .is_none()
                     .then(|| self.render_welcome_message()),
             )
+            // errors
             .push(self.render_errors())
             // icons around the selection
             .push_maybe(self.selection.filter(|sel| sel.is_idle()).map(|sel| {
                 let (image_width, image_height, _) = self.screenshot.raw();
                 sel.render_icons(image_width as f32, image_height as f32)
             }))
+            .push(
+                canvas(crate::widget::Letters)
+                    .width(Length::Fill)
+                    .height(Length::Fill),
+            )
             // size indicator
             .push_maybe(
                 self.selection
@@ -561,7 +567,7 @@ impl App {
     }
 
     /// Renders the black tint on regions that are not selected
-    pub fn render_shade(&self, frame: &mut canvas::Frame, bounds: Rectangle) {
+    pub fn draw_shade(&self, frame: &mut canvas::Frame, bounds: Rectangle) {
         let Some(selection) = self.selection.map(Selection::norm) else {
             // fill the entire screen in non-selected
             frame.fill_rectangle(

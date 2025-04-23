@@ -53,13 +53,13 @@ impl canvas::Program<Message> for App {
     ) -> Vec<canvas::Geometry> {
         let mut frame = canvas::Frame::new(renderer, bounds.size());
 
-        self.render_shade(&mut frame, bounds);
+        self.draw_shade(&mut frame, bounds);
 
         if let Some(selection) = self.selection.map(Selection::norm) {
-            selection.render_border(&mut frame, CONFIG.theme.selection_frame);
+            selection.draw_border(&mut frame, CONFIG.theme.selection_frame);
             selection
                 .corners()
-                .render_circles(&mut frame, CONFIG.theme.selection_frame);
+                .draw_circles(&mut frame, CONFIG.theme.selection_frame);
         }
 
         vec![frame.into_geometry()]

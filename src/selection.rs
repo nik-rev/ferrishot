@@ -126,7 +126,8 @@ pub mod selection_lock {
 }
 
 impl Selection {
-    /// Processes an image
+    /// Convert the image into its final form, with crop (and in the future will also have
+    /// "decorations" such as arrow, circle, square)
     pub fn process_image(&self, width: u32, height: u32, pixels: &[u8]) -> image::DynamicImage {
         #[expect(clippy::cast_possible_truncation, reason = "pixels must be integer")]
         #[expect(
@@ -146,7 +147,7 @@ impl Selection {
     }
 
     /// Renders border of the selection
-    pub fn render_border(&self, frame: &mut iced::widget::canvas::Frame, color: iced::Color) {
+    pub fn draw_border(&self, frame: &mut iced::widget::canvas::Frame, color: iced::Color) {
         // Render the rectangle around the selection (the sides)
         frame.stroke_rectangle(
             self.pos(),
