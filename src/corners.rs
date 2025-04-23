@@ -229,7 +229,7 @@ impl Corners {
     pub fn side_at(&self, point: Point) -> Option<SideOrCorner> {
         /// Shadow to apply to elements
         /// The area around each side of the frame which allows that side to be hovered over and resized
-        pub const FRAME_INTERACTION_AREA: f32 = 35.0;
+        const FRAME_INTERACTION_AREA: f32 = 35.0;
         let top = Rectangle {
             x: self.top_left.x,
             y: self.top_left.y - FRAME_INTERACTION_AREA / 2.,

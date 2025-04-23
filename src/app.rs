@@ -2,7 +2,7 @@
 
 use crate::CONFIG;
 use crate::config::KeyAction;
-use crate::config::macros::Place;
+use crate::config::Place;
 use crate::selection::Speed;
 use std::borrow::Cow;
 use std::time::Instant;
@@ -17,7 +17,6 @@ use iced::widget::text::Shaping;
 use iced::widget::{self, Column, Space, Stack, canvas, column, container, row};
 use iced::{Background, Color, Element, Font, Length, Point, Rectangle, Size, Task};
 
-use crate::background_image::BackgroundImage;
 use crate::corners::{Direction, Side, SideOrCorner};
 use crate::rectangle::RectangleExt;
 use crate::selection::{Selection, SelectionStatus};
@@ -112,7 +111,9 @@ impl App {
     pub fn view(&self) -> iced::Element<Message> {
         Stack::new()
             // taken screenshot in the background
-            .push(BackgroundImage::new(self.screenshot.clone().into()))
+            .push(crate::widget::BackgroundImage::new(
+                self.screenshot.clone().into(),
+            ))
             // border around the selection
             .push(canvas(self).width(Length::Fill).height(Length::Fill))
             // information popup, when there is no selection
@@ -134,7 +135,7 @@ impl App {
                     .get()
                     .map(|(sel, key)| {
                         let (image_width, image_height, _) = self.screenshot.raw();
-                        crate::widgets::size_indicator(
+                        crate::widget::size_indicator(
                             image_height,
                             image_width,
                             sel.norm().rect,

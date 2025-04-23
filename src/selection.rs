@@ -244,7 +244,7 @@ impl Selection {
             while icons.len() < MIN_ELEMENTS {
                 if let Some((next, tooltip_str)) = iter.by_ref().next() {
                     icons.push(
-                        crate::widgets::icon_tooltip(next, tooltip_str, tooltip_position).into(),
+                        crate::widget::icon_tooltip(next, tooltip_str, tooltip_position).into(),
                     );
                     *total_icons_positioned += 1;
                     padding -= PX_PER_ICON / 2.0;
@@ -273,7 +273,7 @@ impl Selection {
             for _ in 0..icons_rendered_here {
                 if let Some((icon, tooltip_str)) = icons_iter.by_ref().next() {
                     icons.push(
-                        crate::widgets::icon_tooltip(icon, tooltip_str, tooltip_position).into(),
+                        crate::widget::icon_tooltip(icon, tooltip_str, tooltip_position).into(),
                     );
                 }
             }
@@ -535,11 +535,6 @@ impl Selection {
                 )
             },
         );
-
-        // debug_assert!(
-        //     icons_iter.as_slice().is_empty(),
-        //     "all icons have been rendered"
-        // );
 
         let right_icons = right_icons.map(|(right_icons, right_padding)| {
             Column::from_vec(right_icons)

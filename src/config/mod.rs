@@ -3,32 +3,38 @@
 //! Uses KDL as the configuration language <https://kdl.dev/>
 //!
 //! The user's config (`UserKdlConfig`) is merged into the default Kdl configuration
-//! (`DefaultKdlConfig`). This is then transformed into a `Config` by doing a little bit of
+//! (`DefaultKdlConfig`). Both of these structs and more are created in this file using
+//! macros found in `macros.rs`. The macros are necessary to avoid a lot of boilerplate.
+//!
+//! The `DefaultKdlConfig` is then transformed into a `Config` by doing a little bit of
 //! extra processing for things that could not be trivially determined during deserialization.
+//!
 //! Such as:
 //! - Converting the list of keybindings into a structured `KeyMap` which can be indexed `O(1)` to
 //!   obtain the `Message` to execute for that action.
 //! - Adding opacity to colors
 
-pub mod cli;
-pub mod key;
-pub mod macros;
-pub mod named_key;
-
-/// The default configuration for ferrishot, to be merged with the user's config
-///
-/// When modifying any of the config options, this will also need to be updated
-pub const DEFAULT_KDL_CONFIG_STR: &str = include_str!("../../default.kdl");
+mod cli;
+mod key;
+mod macros;
+mod named_key;
 
 use crate::config::key::KeyMap;
 use crate::config::macros::Color;
 use crate::corners::Direction;
 use crate::image_upload::ImageUploadService;
-pub use cli::CLI;
-use macros::Place;
+
 use std::fs;
 use std::path::PathBuf;
 use std::sync::LazyLock;
+
+pub use cli::CLI;
+pub use macros::Place;
+
+/// The default configuration for ferrishot, to be merged with the user's config
+///
+/// When modifying any of the config options, this will also need to be updated
+pub const DEFAULT_KDL_CONFIG_STR: &str = include_str!("../../default.kdl");
 
 crate::declare_config_options! {
     /// Specifying this option will copy the selection to clipboard as soon as you select your first rectangle.
