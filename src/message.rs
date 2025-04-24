@@ -4,7 +4,7 @@ use iced::{Point, Rectangle, mouse::Cursor};
 
 use crate::{
     config::KeyAction,
-    corners::SideOrCorner,
+    rect::SideOrCorner,
     widget::selection::{Selection, SelectionIsSome, Speed},
 };
 

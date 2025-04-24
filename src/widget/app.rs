@@ -16,13 +16,13 @@ use iced::{
 };
 
 use crate::message::Message;
-use crate::screenshot::RgbaHandle;
+use crate::screenshot::Screenshot;
 // use crate::widget::selection::selection_lock::OptionalSelectionExt;
 use iced::widget::Stack;
 use iced::{Point, Size, Task};
 
-use crate::corners::{Direction, Side, SideOrCorner};
-use crate::rectangle::RectangleExt;
+use crate::rect::RectangleExt;
+use crate::rect::{Direction, Side, SideOrCorner};
 use crate::widget::selection::{Selection, SelectionStatus};
 
 use super::Errors;
@@ -73,7 +73,7 @@ pub struct App {
     /// We then create a window spanning the entire monitor, with this
     /// screenshot as background, with a canvas rendered on top - giving the
     /// illusion that we are drawing shapes on top of the screen.
-    pub image: RgbaHandle,
+    pub image: Screenshot,
     /// Area of the screen that is selected for capture
     pub selection: Option<Selection>,
     /// Errors to display to the user
@@ -117,7 +117,7 @@ impl App {
         Stack::new()
             // taken screenshot in the background
             .push(super::BackgroundImage {
-                image_handle: RgbaHandle::clone(&self.image).into(),
+                image_handle: Screenshot::clone(&self.image).into(),
             })
             // event handler + shade in the background if no selection
             .push(Canvas::new(self).width(Length::Fill).height(Length::Fill))
@@ -135,7 +135,7 @@ impl App {
             .push(self.errors.view(self.image.width()))
             // icons around the selection
             .push_maybe(self.selection.filter(|sel| sel.is_idle()).map(|sel| {
-                super::Icons {
+                super::SelectionIcons {
                     image_width: self.image.width() as f32,
                     image_height: self.image.height() as f32,
                     selection_rect: sel.rect.norm(),

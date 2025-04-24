@@ -6,11 +6,10 @@ static CLIENT: std::sync::LazyLock<reqwest::Client> =
 
 mod clipboard;
 mod config;
-mod corners;
 mod icons;
 mod image_upload;
 mod message;
-mod rectangle;
+mod rect;
 mod screenshot;
 mod widget;
 

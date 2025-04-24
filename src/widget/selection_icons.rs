@@ -5,6 +5,16 @@ use iced::{
     widget::{Column, Row, Space, row, tooltip},
 };
 
+use crate::{CONFIG, widget::selection::ICON_BUTTON_SIZE};
+use crate::{config::KeyAction, icon, message::Message, widget::selection::FRAME_WIDTH};
+use iced::{Background, Border, Shadow, widget};
+
+/// Helper to create a styled button with an icon
+#[macro_export]
+macro_rules! icon {
+    ($icon:ident) => {{ icon($crate::icons::Icon::$icon) }};
+}
+
 // Here is the behaviour that we want
 //
 // We have a list of icons we want to render.
@@ -26,16 +36,53 @@ const MIN_SIDE_ICONS: usize = 1;
 /// Space in-between each icon
 const SPACE_BETWEEN_ICONS: f32 = 2.0;
 
-use crate::{
-    config::KeyAction,
-    icon,
-    message::Message,
-    widget::selection::{FRAME_WIDTH, ICON_BUTTON_SIZE},
-};
+/// Create a tooltip for an icon
+pub fn icon_tooltip<'a, Message>(
+    content: impl Into<Element<'a, Message>>,
+    tooltip: impl Into<Element<'a, Message>>,
+    position: widget::tooltip::Position,
+) -> widget::Tooltip<'a, Message> {
+    widget::Tooltip::new(content, tooltip, position)
+        .style(|_| widget::container::Style {
+            text_color: Some(CONFIG.theme.tooltip_fg),
+            background: Some(Background::Color(CONFIG.theme.tooltip_bg)),
+            border: Border::default(),
+            shadow: Shadow::default(),
+        })
+        .gap(10.0)
+}
+
+/// Styled icon as a button
+pub fn icon<'a, Message>(icon: crate::icons::Icon) -> widget::Button<'a, Message> {
+    /// Width and height for icons *inside* of buttons
+    const ICON_SIZE: f32 = 32.0;
+
+    widget::button(
+        widget::Svg::new(icon.svg())
+            .style(|_, _| widget::svg::Style {
+                color: Some(CONFIG.theme.icon_fg),
+            })
+            .width(Length::Fixed(ICON_SIZE))
+            .height(Length::Fixed(ICON_SIZE)),
+    )
+    .width(Length::Fixed(ICON_BUTTON_SIZE))
+    .height(Length::Fixed(ICON_BUTTON_SIZE))
+    .style(move |_, _| {
+        let mut style = widget::button::Style::default().with_background(CONFIG.theme.icon_bg);
+        style.shadow = Shadow {
+            color: CONFIG.theme.drop_shadow,
+            blur_radius: 3.0,
+            offset: iced::Vector { x: 0.0, y: 0.0 },
+        };
+        style.border = iced::Border::default()
+            .rounded(iced::border::Radius::new(iced::Pixels::from(f32::INFINITY)));
+        style
+    })
+}
 
 /// Icons around the selection
 #[derive(Debug, Copy, Clone, PartialEq)]
-pub struct Icons {
+pub struct SelectionIcons {
     /// Width of the container which contains `inner_rect`
     pub image_width: f32,
     /// Height of the container which contains `inner_rect`
@@ -55,7 +102,7 @@ fn add_icons_until_there_is_at_least_n_of_them<'a, const MIN_ELEMENTS: usize>(
 ) -> (Vec<Element<'a, Message>>, f32) {
     while icons.len() < MIN_ELEMENTS {
         if let Some((next, tooltip_str)) = iter.by_ref().next() {
-            icons.push(crate::widget::icon_tooltip(next, tooltip_str, tooltip_position).into());
+            icons.push(icon_tooltip(next, tooltip_str, tooltip_position).into());
             *total_icons_positioned += 1;
             padding -= PX_PER_ICON / 2.0;
         } else {
@@ -83,7 +130,7 @@ fn position_icons_in_line<'a>(
     let mut icons = Vec::with_capacity(icons_rendered_here);
     for _ in 0..icons_rendered_here {
         if let Some((icon, tooltip_str)) = icons_iter.by_ref().next() {
-            icons.push(crate::widget::icon_tooltip(icon, tooltip_str, tooltip_position).into());
+            icons.push(icon_tooltip(icon, tooltip_str, tooltip_position).into());
         }
     }
 
@@ -98,7 +145,7 @@ fn position_icons_in_line<'a>(
     (icons, padding)
 }
 
-impl Icons {
+impl SelectionIcons {
     /// Render icons around the selection border
     // TODO: Currently, this function does not handle the case where the selection has the
     // same size as the entire screen - so no icons can be rendered at all.

@@ -1,9 +1,9 @@
 //! A `Selection` is the structure representing a selected area in the background image
 use crate::CONFIG;
-use crate::corners::Corners;
-use crate::corners::SideOrCorner;
+use crate::rect::Corners;
+use crate::rect::SideOrCorner;
 use crate::message::Message;
-use crate::rectangle::RectangleExt;
+use crate::rect::RectangleExt;
 use delegate::delegate;
 use iced::Element;
 use iced::Length;

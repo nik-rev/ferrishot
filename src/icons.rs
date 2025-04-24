@@ -4,14 +4,8 @@
 //! Icons are declared at the invocation of the `icons!` macro.
 //! Each `Icon` must have a corresponding `icons/Icon.svg` file.
 
-/// Helper to create a styled button with an icon
-#[macro_export]
-macro_rules! icon {
-    ($icon:ident) => {{ $crate::widget::icon($crate::icons::Icon::$icon) }};
-}
-
 /// Generates handles for macros and automatically includes all the icons
-macro_rules! icons {
+macro_rules! load_icons {
     (
         $(
             #[$doc:meta]
@@ -54,7 +48,7 @@ macro_rules! icons {
     }
 }
 
-icons! {
+load_icons! {
     /// Save the image to a path by opening the file dialog
     Save,
     /// Drawing a circle

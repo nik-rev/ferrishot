@@ -1,8 +1,8 @@
 //! Declare config options
 
 use crate::config::Place;
-use crate::corners::Direction;
 use crate::image_upload::ImageUploadService;
+use crate::rect::Direction;
 
 crate::declare_config_options! {
     /// Specifying this option will copy the selection to clipboard as soon as you select your first rectangle.
