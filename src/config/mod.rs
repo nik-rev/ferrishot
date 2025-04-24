@@ -29,7 +29,7 @@ use std::sync::LazyLock;
 
 use options::{DefaultKdlConfig, UserKdlConfig};
 
-pub use cli::CLI;
+pub use cli::{CLI, DEFAULT_LOG_FILE_PATH};
 pub use macros::Place;
 pub use options::{Config, Key, KeyAction};
 

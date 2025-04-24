@@ -8,6 +8,7 @@ mod clipboard;
 mod config;
 mod icons;
 mod image_upload;
+pub mod logging;
 mod message;
 mod rect;
 mod screenshot;

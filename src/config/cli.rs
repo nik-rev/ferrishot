@@ -18,6 +18,20 @@ pub struct Cli {
         default_value_t = DEFAULT_CONFIG_FILE_PATH.to_string_lossy().to_string()
     )]
     pub config_file: String,
+
+    // Logging
+    /// Choose a minumum level at which to log
+    #[arg(group = "Logging", long, hide = true, default_value_t = log::LevelFilter::Error)]
+    pub log_level: log::LevelFilter,
+    /// Log to stdout instead of file
+    #[arg(group = "Logging", long, hide = true)]
+    pub log_stdout: bool,
+    /// Print the path of the log file
+    #[arg(group = "Logging",long, hide = true, default_value_t = DEFAULT_LOG_FILE_PATH.to_string_lossy().to_string())]
+    pub log_file: String,
+    /// Output the path to the log file
+    #[arg(group = "Logging", long, hide = true)]
+    pub print_log_file_path: bool,
 }
 
 /// Represents the default location of the config file
@@ -28,6 +42,17 @@ static DEFAULT_CONFIG_FILE_PATH: LazyLock<PathBuf> = LazyLock::new(|| {
             PathBuf::from("ferrishot.kdl")
         },
         |strategy| strategy.config_dir().join("ferrishot.kdl"),
+    )
+});
+
+/// Represents the default location of the config file
+pub static DEFAULT_LOG_FILE_PATH: LazyLock<PathBuf> = LazyLock::new(|| {
+    etcetera::choose_base_strategy().map_or_else(
+        |err| {
+            log::warn!("Could not determine the config directory: {err}");
+            PathBuf::from("ferrishot.log")
+        },
+        |strategy| strategy.cache_dir().join("ferrishot.log"),
     )
 });
 

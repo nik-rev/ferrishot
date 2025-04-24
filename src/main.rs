@@ -1,11 +1,10 @@
 //! The ferrishot app
 
+use miette::IntoDiagnostic as _;
 use miette::miette;
-use std::sync::LazyLock;
 
 use ferrishot::{App, CLI};
-use iced::Font;
-use miette::IntoDiagnostic;
+use std::sync::LazyLock;
 
 /// RGBA bytes for the Logo of ferrishot. Generated with `build.rs`
 const LOGO: &[u8; 64 * 64 * 4] = include_bytes!(concat!(env!("OUT_DIR"), "/logo.bin"));
@@ -27,34 +26,15 @@ fn main() -> miette::Result<()> {
         }
     }
 
-    // This will parse the command line arguments.
-    //
-    // Needs to come before the logging initialization because there
-    // is an argument to change the verbosity
+    // Parse the command line arguments
     LazyLock::force(&CLI);
 
-    // env_logger::Builder::new()
-    //     .format(|buf, record| {
-    //         writeln!(
-    //             buf,
-    //             "{}:{} {} [{}] - {}",
-    //             record.file().unwrap_or("unknown"),
-    //             record.line().unwrap_or(0),
-    //             chrono::Local::now().format("%Y-%m-%dT%H:%M:%S%.3f"),
-    //             record.level(),
-    //             record.args()
-    //         )
-    //     })
-    //     .target(env_logger::Target::Pipe(target))
-    //     .filter(None, log::LevelFilter::Error)
-    //     .init();
+    // Setup logging
+    if ferrishot::logging::initialize() {
+        return Ok(());
+    };
 
-    // Initialize logging
-    // TODO:
-    // - log to file.
-    // - add ways to increase logging with command line arguments. Currently you must use `RUST_LOG=info`
-    // env_logger::builder().init();
-
+    // Read the user's config, merging it with the default
     LazyLock::force(&ferrishot::CONFIG);
 
     if CLI.dump_default_config {
@@ -64,12 +44,15 @@ fn main() -> miette::Result<()> {
                 .ok_or_else(|| miette!("Could not get parent path of {}", CLI.config_file))?,
         )
         .into_diagnostic()?;
+
         std::fs::write(&CLI.config_file, ferrishot::DEFAULT_KDL_CONFIG_STR).into_diagnostic()?;
-        println!("Success");
+
+        println!("Wrote the default config file to {}", CLI.config_file);
 
         return Ok(());
     }
 
+    // Launch ferrishot
     iced::application(App::default, App::update, App::view)
         .window(iced::window::Settings {
             level: iced::window::Level::Normal,
@@ -81,12 +64,13 @@ fn main() -> miette::Result<()> {
             ..Default::default()
         })
         .title("ferrishot")
-        .default_font(Font::MONOSPACE)
+        .default_font(iced::Font::MONOSPACE)
         .run()
         .map_err(|err| miette!("Failed to start ferrishot: {err}"))?;
 
-    // open file explorer to choose where to save the image
     if let Some(saved_image) = ferrishot::SAVED_IMAGE.get() {
+        // Open file explorer to choose where to save the image
+
         if let Some(save_path) = rfd::FileDialog::new()
             .set_title("Save Screenshot")
             .save_file()

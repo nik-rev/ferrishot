@@ -31,7 +31,19 @@ To run:
 cargo run
 ```
 
+## Debugging
+
+- Use `F12` to toggle the debug overlay which contains shows information about the state of ferrishot.
+- The `.explain()` method on `Element` provided by the `Explainer` trait will show a red border around an element and all of its children.
+
+## Logging
+
+- The default log level is `error`. You can set a different log level using `--log-level=<level>` or by specifying the `RUST_LOG=<level>` env variable.
+  - Levels: `error`, `warn`, `info`, `debug`, `trace`, `off`.
+- The logs get written into a file. You can see where with `ferrishot --print-log-file-path` or choose a custom one with `ferrishot --log-file`.
+- To write the logs to standard output use the `--log-stdout` argument.
+
 ## Website
 
-- `index.html` is the landing page and served at `ferrishot.com`. You can just open this file in the browser
-- `docs` is built using `mdbook serve`. It is served at `ferrishot.com/docs`
+- `index.html` is the landing page and served at `ferrishot.com`. You can just open this file in the browser>
+- `docs` is built using `mdbook serve`. It is served at `ferrishot.com/docs`.
