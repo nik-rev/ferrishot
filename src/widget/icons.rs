@@ -16,9 +16,14 @@ use iced::{
 //
 // But then we may have a small selection which doesn't manage to render all of the icons,
 // so we deal with that by rendering a couple extra rows on top and bottom
+
+/// Height and width of each icon
 const PX_PER_ICON: f32 = SPACE_BETWEEN_ICONS + ICON_BUTTON_SIZE;
+/// The minimum amount of icons to render at the top
 const MIN_TOP_BOTTOM_ICONS: usize = 3;
+/// The minimum amount of icons to render on the sides
 const MIN_SIDE_ICONS: usize = 1;
+/// Space in-between each icon
 const SPACE_BETWEEN_ICONS: f32 = 2.0;
 
 use crate::{
@@ -28,6 +33,7 @@ use crate::{
     selection::{FRAME_WIDTH, ICON_BUTTON_SIZE},
 };
 
+/// Icons around the selection
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct Icons {
     /// Width of the container which contains `inner_rect`
@@ -39,6 +45,7 @@ pub struct Icons {
     pub selection_rect: Rectangle,
 }
 
+/// Add icons to the side until the amount of them reaches the minimum required
 fn add_icons_until_there_is_at_least_n_of_them<'a, const MIN_ELEMENTS: usize>(
     mut icons: Vec<Element<'a, Message>>,
     mut iter: impl Iterator<Item = (Element<'a, Message>, &'static str)>,
@@ -58,6 +65,7 @@ fn add_icons_until_there_is_at_least_n_of_them<'a, const MIN_ELEMENTS: usize>(
     (icons, padding)
 }
 
+/// Position icons until we reach an adequate amount of them
 fn position_icons_in_line<'a>(
     space_available: f32,
     tooltip_position: tooltip::Position,
@@ -92,14 +100,6 @@ fn position_icons_in_line<'a>(
 
 impl Icons {
     /// Render icons around the selection border
-    #[expect(
-        clippy::cast_possible_truncation,
-        reason = "we only care about the amount of items we can render at most"
-    )]
-    #[expect(
-        clippy::cast_sign_loss,
-        reason = "normalized, so width nor height will be negative"
-    )]
     // TODO: Currently, this function does not handle the case where the selection has the
     // same size as the entire screen - so no icons can be rendered at all.
     //

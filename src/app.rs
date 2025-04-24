@@ -4,21 +4,17 @@ use crate::CONFIG;
 use crate::config::KeyAction;
 use crate::config::Place;
 use crate::selection::Speed;
-use crate::widget::Letters;
 use crate::widget::PickCorner;
-use crate::widget::WelcomeMessage;
 use std::borrow::Cow;
 use std::time::Instant;
 
 use crate::message::Message;
 use crate::screenshot::RgbaHandle;
 use crate::selection::selection_lock::OptionalSelectionExt;
-use iced::alignment::Vertical;
 use iced::mouse::Cursor;
 use iced::widget::canvas::Path;
-use iced::widget::text::Shaping;
-use iced::widget::{self, Column, Space, Stack, canvas, column, container, row};
-use iced::{Background, Color, Element, Font, Length, Point, Rectangle, Size, Task};
+use iced::widget::{self, Column, Space, Stack, canvas, container, row};
+use iced::{Background, Length, Point, Rectangle, Size, Task};
 
 use crate::corners::{Direction, Side, SideOrCorner};
 use crate::rectangle::RectangleExt;
@@ -137,28 +133,26 @@ impl App {
             // errors
             .push(self.render_errors())
             // icons around the selection
-            .push_maybe(self.selection.filter(|sel| sel.is_idle()).map(|selection| {
+            .push_maybe(self.selection.filter(|sel| sel.is_idle()).map(|sel| {
                 crate::widget::Icons {
                     image_width: self.image.width() as f32,
                     image_height: self.image.height() as f32,
-                    selection_rect: selection.rect.norm(),
+                    selection_rect: sel.rect.norm(),
                 }
                 .view()
             }))
             // grid of letters to precisely choose a location
-            .push_maybe(self.picking_corner.as_ref().map(|letters| {
-                crate::widget::Letters {
-                    pick_corner: *letters,
-                }
-                .view()
-            }))
+            .push_maybe(
+                self.picking_corner
+                    .map(|pick_corner| crate::widget::Letters { pick_corner }.view()),
+            )
             // size indicator
             .push_maybe(self.selection.filter(|_| CONFIG.size_indicator).get().map(
                 |(sel, sel_is_some)| {
                     crate::widget::SizeIndicator {
                         image_height: self.image.height(),
                         image_width: self.image.width(),
-                        selection_rect: sel.norm().rect,
+                        selection_rect: sel.rect.norm(),
                         sel_is_some,
                     }
                     .view()
@@ -267,7 +261,6 @@ impl App {
                 initial_rect_pos,
                 speed,
             } => {
-                let (image_width, image_height, _) = self.image.raw();
                 let mut new_selection = current_selection.with_pos(|_| {
                     initial_rect_pos + ((current_cursor_pos - initial_cursor_pos) * speed.speed())
                 });
@@ -280,13 +273,13 @@ impl App {
                 new_selection.rect.x = new_selection
                     .rect
                     .x
-                    .min(image_width as f32 - new_selection.rect.width)
+                    .min(self.image.width() as f32 - new_selection.rect.width)
                     .max(0.0);
 
                 new_selection.rect.y = new_selection
                     .rect
                     .y
-                    .min(image_height as f32 - new_selection.rect.height)
+                    .min(self.image.height() as f32 - new_selection.rect.height)
                     .max(0.0);
 
                 if new_selection.rect.y as u32 != old_y || new_selection.rect.x as u32 != old_x {
@@ -314,15 +307,12 @@ impl App {
                     self.selection = None;
                 }
                 KeyAction::SelectFullScreen => {
-                    let (width, height, _) = self.image.raw();
-                    {
-                        self.selection = Some(Selection::new(Point { x: 0.0, y: 0.0 }).with_size(
-                            |_| Size {
-                                width: width as f32,
-                                height: height as f32,
-                            },
-                        ));
-                    }
+                    self.selection = Some(Selection::new(Point { x: 0.0, y: 0.0 }).with_size(
+                        |_| Size {
+                            width: self.image.width() as f32,
+                            height: self.image.height() as f32,
+                        },
+                    ));
                 }
                 KeyAction::CopyToClipboard => {
                     let Some(selection) = self.selection.map(Selection::norm) else {
@@ -330,9 +320,11 @@ impl App {
                         return Task::none();
                     };
 
-                    let (width, height, pixels) = self.image.raw();
-
-                    let cropped_image = selection.process_image(width, height, pixels);
+                    let cropped_image = selection.process_image(
+                        self.image.width(),
+                        self.image.height(),
+                        self.image.bytes(),
+                    );
 
                     let image_data = arboard::ImageData {
                         width: cropped_image.width() as usize,
@@ -351,7 +343,9 @@ impl App {
                             let mut notify = notify_rust::Notification::new();
 
                             notify.summary(&format!(
-                                "Copied image to clipboard {width}px * {height}px"
+                                "Copied image to clipboard {w}px * {h}px",
+                                w = cropped_image.width(),
+                                h = cropped_image.height()
                             ));
 
                             // images are not supported on macos
@@ -374,8 +368,11 @@ impl App {
                         return Task::none();
                     };
 
-                    let (width, height, pixels) = self.image.raw();
-                    let cropped_image = selection.process_image(width, height, pixels);
+                    let cropped_image = selection.process_image(
+                        self.image.width(),
+                        self.image.height(),
+                        self.image.bytes(),
+                    );
 
                     let _ = SAVED_IMAGE.set(cropped_image);
 
@@ -387,8 +384,7 @@ impl App {
                         self.error("Nothing is selected.");
                         return Task::none();
                     };
-                    let (image_width, _, _) = self.image.raw();
-                    let image_width = image_width as f32;
+                    let image_width = self.image.width() as f32;
                     let sel = selection.norm();
 
                     *selection = sel.with_width(|_| (count as f32).min(image_width - sel.rect.x));
@@ -398,8 +394,7 @@ impl App {
                         self.error("Nothing is selected.");
                         return Task::none();
                     };
-                    let (_, image_height, _) = self.image.raw();
-                    let image_height = image_height as f32;
+                    let image_height = self.image.height() as f32;
                     let sel = selection.norm();
 
                     *selection = sel.with_height(|_| (count as f32).min(image_height - sel.rect.y));
@@ -409,9 +404,8 @@ impl App {
                         self.error("Nothing is selected.");
                         return Task::none();
                     };
-                    let (image_width, image_height, _) = self.image.raw();
-                    let image_height = image_height as f32;
-                    let image_width = image_width as f32;
+                    let image_height = self.image.height() as f32;
+                    let image_width = self.image.width() as f32;
                     let sel = selection.norm();
 
                     *selection = match place {
@@ -441,9 +435,8 @@ impl App {
                         self.error("Nothing is selected.");
                         return Task::none();
                     };
-                    let (image_width, image_height, _) = self.image.raw();
-                    let image_height = image_height as f32;
-                    let image_width = image_width as f32;
+                    let image_width = self.image.width() as f32;
+                    let image_height = self.image.height() as f32;
                     let amount = amount as f32 * count as f32;
                     let sel = selection.norm();
 
@@ -463,9 +456,8 @@ impl App {
                         self.error("Nothing is selected.");
                         return Task::none();
                     };
-                    let (image_width, image_height, _) = self.image.raw();
-                    let image_height = image_height as f32;
-                    let image_width = image_width as f32;
+                    let image_height = self.image.height() as f32;
+                    let image_width = self.image.width() as f32;
                     let sel = selection.norm();
                     let amount = amount as f32 * count as f32;
 
@@ -520,8 +512,12 @@ impl App {
                     return Task::none();
                 };
 
-                let (width, height, pixels) = self.image.raw();
-                let cropped_image = selection.process_image(width, height, pixels);
+                let cropped_image = selection.process_image(
+                    self.image.width(),
+                    self.image.height(),
+                    self.image.bytes(),
+                );
+
                 let tempfile = match tempfile::TempDir::new() {
                     Ok(tempdir) => tempdir.into_path().join("ferrishot-screenshot.png"),
                     Err(err) => {
@@ -677,9 +673,7 @@ impl App {
             .width(ERROR_WIDTH)
             .spacing(30);
 
-        let (image_width, _, _) = self.image.raw();
-
-        row![Space::with_width(image_width - ERROR_WIDTH), errors].into()
+        row![Space::with_width(self.image.width() - ERROR_WIDTH), errors].into()
     }
 
     /// If the given cursor intersects the selected region, give the region and

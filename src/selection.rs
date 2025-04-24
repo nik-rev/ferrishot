@@ -1,15 +1,10 @@
 //! A `Selection` is the structure representing a selected area in the background image
-use delegate::delegate;
-use iced::widget::{Column, Row, Space, row, tooltip};
-use iced::{Element, Length, Padding};
-use iced::{Point, Rectangle, Size};
-
-use crate::config::KeyAction;
+use crate::CONFIG;
 use crate::corners::Corners;
 use crate::corners::SideOrCorner;
-use crate::message::Message;
 use crate::rectangle::RectangleExt;
-use crate::{CONFIG, icon};
+use delegate::delegate;
+use iced::{Point, Rectangle, Size};
 
 /// The size of the lines of the frame of the selection
 pub const FRAME_WIDTH: f32 = 2.0;

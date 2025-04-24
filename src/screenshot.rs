@@ -14,20 +14,23 @@ impl RgbaHandle {
         Self(Handle::from_rgba(width, height, pixels.into()))
     }
 
+    /// Height of the image
     pub fn height(&self) -> u32 {
         self.raw().0
     }
 
+    /// Width of the image
     pub fn width(&self) -> u32 {
         self.raw().1
     }
 
-    pub fn bytes(&self) -> u32 {
-        self.raw().1
+    /// RGBA bytes of the image
+    pub fn bytes(&self) -> &Bytes {
+        self.raw().2
     }
 
     /// Returns the width, height and RGBA pixels
-    pub fn raw(&self) -> (u32, u32, &Bytes) {
+    fn raw(&self) -> (u32, u32, &Bytes) {
         let Handle::Rgba {
             width,
             height,

@@ -185,23 +185,20 @@ pub enum LetterLevel {
 /// Pick a position for a corner in the rectangle
 #[derive(PartialEq, Eq, PartialOrd, Clone, Copy, Debug)]
 pub enum PickCorner {
+    /// Picking position of the top-left corner of the selection
     TopLeft,
+    /// Picking position for the bottom-right corner of the selection
     BottomRight,
 }
 
 /// Letters
-#[derive(PartialEq, PartialOrd, Clone, Copy, Debug)]
+#[derive(Eq, PartialEq, PartialOrd, Clone, Copy, Debug)]
 pub struct Letters {
     /// Corner to pick the position for
     pub pick_corner: PickCorner,
 }
 
 impl Letters {
-    /// Create a new grid of letters
-    pub const fn new(pick_corner: PickCorner) -> Self {
-        Self { pick_corner }
-    }
-
     /// Render a grid of letters
     pub fn view(self) -> Element<'static, Message> {
         Canvas::new(self)

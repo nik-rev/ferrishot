@@ -10,13 +10,19 @@ use crate::{
     selection::selection_lock::SelectionIsSome,
 };
 
+/// Shows the width and height of the image
 pub struct SizeIndicator {
+    /// Height of the image
     pub image_height: u32,
+    /// Width of the image
     pub image_width: u32,
+    /// Selection area
     pub selection_rect: Rectangle,
+    /// A key to guarantee that `Selection.is_some()`
     pub sel_is_some: SelectionIsSome,
 }
 
+/// Renders the indicator for a single dimension (e.g. width or height)
 fn dimension_indicator<'a>(
     value: u32,
     on_change: impl Fn(u32) -> Message + 'a,
