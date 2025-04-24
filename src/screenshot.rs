@@ -14,13 +14,13 @@ impl RgbaHandle {
         Self(Handle::from_rgba(width, height, pixels.into()))
     }
 
-    /// Height of the image
-    pub fn height(&self) -> u32 {
+    /// Width of the image
+    pub fn width(&self) -> u32 {
         self.raw().0
     }
 
-    /// Width of the image
-    pub fn width(&self) -> u32 {
+    /// Height of the image
+    pub fn height(&self) -> u32 {
         self.raw().1
     }
 
