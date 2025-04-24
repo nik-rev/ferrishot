@@ -102,6 +102,9 @@ keys {
   goto center key=gc
   goto x-center key=gx
   goto y-center key=gy
+
+  // for debugging / development
+  toggle-debug-overlay key=<f12>
 }
 
 theme {

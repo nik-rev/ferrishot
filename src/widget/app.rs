@@ -17,7 +17,6 @@ use iced::{
 
 use crate::message::Message;
 use crate::screenshot::Screenshot;
-// use crate::widget::selection::selection_lock::OptionalSelectionExt;
 use iced::widget::Stack;
 use iced::{Point, Size, Task};
 
@@ -83,6 +82,8 @@ pub struct App {
     pub picking_corner: Option<PickCorner>,
     /// A link to the uploaded image
     pub uploaded_url: Option<String>,
+    /// Whether to show an overlay with additional information (for debugging purposes)
+    pub show_debug_overlay: bool,
 }
 
 impl App {
@@ -159,6 +160,11 @@ impl App {
                     .view()
                 },
             ))
+            // debug overlay
+            .push_maybe(
+                self.show_debug_overlay
+                    .then(|| super::DebugOverlay { app: self }.view()),
+            )
             .into()
     }
 
@@ -313,6 +319,9 @@ impl App {
                 self.selection = Some(new_selection);
             }
             Message::KeyBind { action, count } => match action {
+                KeyAction::ToggleDebugOverlay => {
+                    self.show_debug_overlay = !self.show_debug_overlay;
+                }
                 KeyAction::ClearSelection => {
                     self.selection = None;
                 }

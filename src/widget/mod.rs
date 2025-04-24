@@ -4,6 +4,7 @@ use iced::Element;
 
 mod app;
 mod background_image;
+mod debug_overlay;
 mod errors;
 mod letters;
 pub mod selection;
@@ -13,6 +14,7 @@ mod welcome_message;
 
 pub use app::{App, SAVED_IMAGE};
 pub use background_image::BackgroundImage;
+pub use debug_overlay::DebugOverlay;
 pub use errors::Errors;
 pub use letters::{Letters, PickCorner};
 pub use selection_icons::SelectionIcons;
