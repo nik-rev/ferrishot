@@ -1,9 +1,9 @@
 //! A `Selection` is the structure representing a selected area in the background image
 use crate::CONFIG;
-use crate::rect::Corners;
-use crate::rect::SideOrCorner;
 use crate::message::Message;
+use crate::rect::Corners;
 use crate::rect::RectangleExt;
+use crate::rect::SideOrCorner;
 use delegate::delegate;
 use iced::Element;
 use iced::Length;
@@ -137,11 +137,6 @@ impl Selection {
     /// Convert the image into its final form, with crop (and in the future will also have
     /// "decorations" such as arrow, circle, square)
     pub fn process_image(&self, width: u32, height: u32, pixels: &[u8]) -> image::DynamicImage {
-        #[expect(clippy::cast_possible_truncation, reason = "pixels must be integer")]
-        #[expect(
-            clippy::cast_sign_loss,
-            reason = "selection has been normalized so height and width will be positive"
-        )]
         image::DynamicImage::from(
             image::RgbaImage::from_raw(width, height, pixels.to_vec())
                 .expect("Image handle stores a valid image"),
