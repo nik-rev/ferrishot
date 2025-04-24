@@ -64,7 +64,7 @@ pub fn set_image(
             .arg(clipboard_buffer_path.path())
             .stdin(process::Stdio::null())
             .stdout(process::Stdio::null())
-            .stderr(process::Stdio::null())
+            .stderr(process::Stdio::inherit())
             .current_dir("/")
             .spawn()?;
     }

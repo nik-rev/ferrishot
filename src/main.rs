@@ -11,33 +11,6 @@ use miette::IntoDiagnostic;
 const LOGO: &[u8; 64 * 64 * 4] = include_bytes!(concat!(env!("OUT_DIR"), "/logo.bin"));
 
 fn main() -> miette::Result<()> {
-    // This will parse the command line arguments.
-    //
-    // Needs to come before the logging initialization because there
-    // is an argument to change the verbosity
-    LazyLock::force(&CLI);
-
-    // Initialize logging
-    // TODO:
-    // - log to file.
-    // - add ways to increase logging with command line arguments. Currently you must use `RUST_LOG=info`
-    env_logger::builder().init();
-
-    LazyLock::force(&ferrishot::CONFIG);
-
-    if CLI.dump_default_config {
-        std::fs::create_dir_all(
-            std::path::PathBuf::from(&CLI.config_file)
-                .parent()
-                .ok_or_else(|| miette!("Could not get parent path of {}", CLI.config_file))?,
-        )
-        .into_diagnostic()?;
-        std::fs::write(&CLI.config_file, ferrishot::DEFAULT_KDL_CONFIG_STR).into_diagnostic()?;
-        println!("Success");
-
-        return Ok(());
-    }
-
     // On linux, a daemon is required to provide clipboard access even when
     // the process dies.
     //
@@ -52,6 +25,49 @@ fn main() -> miette::Result<()> {
             ferrishot::run_clipboard_daemon().expect("Failed to run clipboard daemon");
             return Ok(());
         }
+    }
+
+    // This will parse the command line arguments.
+    //
+    // Needs to come before the logging initialization because there
+    // is an argument to change the verbosity
+    LazyLock::force(&CLI);
+
+    // env_logger::Builder::new()
+    //     .format(|buf, record| {
+    //         writeln!(
+    //             buf,
+    //             "{}:{} {} [{}] - {}",
+    //             record.file().unwrap_or("unknown"),
+    //             record.line().unwrap_or(0),
+    //             chrono::Local::now().format("%Y-%m-%dT%H:%M:%S%.3f"),
+    //             record.level(),
+    //             record.args()
+    //         )
+    //     })
+    //     .target(env_logger::Target::Pipe(target))
+    //     .filter(None, log::LevelFilter::Error)
+    //     .init();
+
+    // Initialize logging
+    // TODO:
+    // - log to file.
+    // - add ways to increase logging with command line arguments. Currently you must use `RUST_LOG=info`
+    // env_logger::builder().init();
+
+    LazyLock::force(&ferrishot::CONFIG);
+
+    if CLI.dump_default_config {
+        std::fs::create_dir_all(
+            std::path::PathBuf::from(&CLI.config_file)
+                .parent()
+                .ok_or_else(|| miette!("Could not get parent path of {}", CLI.config_file))?,
+        )
+        .into_diagnostic()?;
+        std::fs::write(&CLI.config_file, ferrishot::DEFAULT_KDL_CONFIG_STR).into_diagnostic()?;
+        println!("Success");
+
+        return Ok(());
     }
 
     iced::application(App::default, App::update, App::view)
