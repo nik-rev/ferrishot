@@ -203,7 +203,7 @@ impl Letters {
     }
 
     /// Render a grid of letters
-    pub fn view(&self) -> Element<Message> {
+    pub fn view(self) -> Element<'static, Message> {
         Canvas::new(self)
             .width(Length::Fill)
             .height(Length::Fill)

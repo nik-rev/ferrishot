@@ -6,6 +6,7 @@ use crate::config::Place;
 use crate::selection::Speed;
 use crate::widget::Letters;
 use crate::widget::PickCorner;
+use crate::widget::WelcomeMessage;
 use std::borrow::Cow;
 use std::time::Instant;
 
@@ -87,14 +88,16 @@ pub struct App {
     /// We then create a window spanning the entire monitor, with this
     /// screenshot as background, with a canvas rendered on top - giving the
     /// illusion that we are drawing shapes on top of the screen.
-    pub screenshot: RgbaHandle,
+    pub image: RgbaHandle,
     /// Area of the screen that is selected for capture
     pub selection: Option<Selection>,
     /// Errors to display to the user
     pub errors: Vec<ErrorMessage>,
     /// Shows a grid of letters on the screen, pressing 3 letters in a row
     /// allows accessing 25 * 25 * 25 = 15,625 different locations
-    pub letters: Option<Letters>,
+    pub picking_corner: Option<PickCorner>,
+    /// A link to the uploaded image
+    pub uploaded_url: Option<String>,
 }
 
 impl Default for App {
@@ -103,11 +106,12 @@ impl Default for App {
             crate::screenshot::screenshot().expect("Failed to take a screenshot of the desktop");
 
         Self {
-            screenshot,
+            image: screenshot,
             selection: None,
             selections_created: 0,
             errors: vec![],
-            letters: None,
+            picking_corner: None,
+            uploaded_url: None,
         }
     }
 }
@@ -117,41 +121,49 @@ impl App {
     pub fn view(&self) -> iced::Element<Message> {
         Stack::new()
             // taken screenshot in the background
-            .push(crate::widget::BackgroundImage::new(
-                self.screenshot.clone().into(),
-            ))
+            .push(crate::widget::BackgroundImage {
+                image_handle: RgbaHandle::clone(&self.image).into(),
+            })
             // border around the selection
             .push(canvas(self).width(Length::Fill).height(Length::Fill))
             // information popup, when there is no selection
-            .push_maybe(
-                self.selection
-                    .is_none()
-                    .then(|| self.render_welcome_message()),
-            )
+            .push_maybe(self.selection.is_none().then(|| {
+                crate::widget::WelcomeMessage {
+                    image_width: self.image.width(),
+                    image_height: self.image.height(),
+                }
+                .view()
+            }))
             // errors
             .push(self.render_errors())
             // icons around the selection
-            .push_maybe(self.selection.filter(|sel| sel.is_idle()).map(|sel| {
-                let (image_width, image_height, _) = self.screenshot.raw();
-                sel.render_icons(image_width as f32, image_height as f32)
+            .push_maybe(self.selection.filter(|sel| sel.is_idle()).map(|selection| {
+                crate::widget::Icons {
+                    image_width: self.image.width() as f32,
+                    image_height: self.image.height() as f32,
+                    selection_rect: selection.rect.norm(),
+                }
+                .view()
             }))
             // grid of letters to precisely choose a location
-            .push_maybe(self.letters.as_ref().map(|letters| letters.view()))
+            .push_maybe(self.picking_corner.as_ref().map(|letters| {
+                crate::widget::Letters {
+                    pick_corner: *letters,
+                }
+                .view()
+            }))
             // size indicator
-            .push_maybe(
-                self.selection
-                    .filter(|_| CONFIG.size_indicator)
-                    .get()
-                    .map(|(sel, key)| {
-                        let (image_width, image_height, _) = self.screenshot.raw();
-                        crate::widget::size_indicator(
-                            image_height,
-                            image_width,
-                            sel.norm().rect,
-                            key,
-                        )
-                    }),
-            )
+            .push_maybe(self.selection.filter(|_| CONFIG.size_indicator).get().map(
+                |(sel, sel_is_some)| {
+                    crate::widget::SizeIndicator {
+                        image_height: self.image.height(),
+                        image_width: self.image.width(),
+                        selection_rect: sel.norm().rect,
+                        sel_is_some,
+                    }
+                    .view()
+                },
+            ))
             .into()
     }
 
@@ -159,13 +171,13 @@ impl App {
     pub fn update(&mut self, message: Message) -> Task<Message> {
         match message {
             Message::LettersAbort => {
-                self.letters = None;
+                self.picking_corner = None;
             }
             Message::LettersPick { point } => {
                 let sel = self.selection.map(Selection::norm).unwrap_or_default();
                 let x = point.x;
                 let y = point.y;
-                if let Some(Letters { pick_corner }) = self.letters {
+                if let Some(pick_corner) = self.picking_corner {
                     match pick_corner {
                         PickCorner::TopLeft => {
                             self.selection = Some(sel.with_x(|_| x).with_y(|_| y));
@@ -178,7 +190,7 @@ impl App {
                         }
                     }
                 };
-                self.letters = None;
+                self.picking_corner = None;
             }
             Message::ResizeVertically {
                 new_height,
@@ -255,7 +267,7 @@ impl App {
                 initial_rect_pos,
                 speed,
             } => {
-                let (image_width, image_height, _) = self.screenshot.raw();
+                let (image_width, image_height, _) = self.image.raw();
                 let mut new_selection = current_selection.with_pos(|_| {
                     initial_rect_pos + ((current_cursor_pos - initial_cursor_pos) * speed.speed())
                 });
@@ -302,7 +314,7 @@ impl App {
                     self.selection = None;
                 }
                 KeyAction::SelectFullScreen => {
-                    let (width, height, _) = self.screenshot.raw();
+                    let (width, height, _) = self.image.raw();
                     {
                         self.selection = Some(Selection::new(Point { x: 0.0, y: 0.0 }).with_size(
                             |_| Size {
@@ -318,7 +330,7 @@ impl App {
                         return Task::none();
                     };
 
-                    let (width, height, pixels) = self.screenshot.raw();
+                    let (width, height, pixels) = self.image.raw();
 
                     let cropped_image = selection.process_image(width, height, pixels);
 
@@ -362,7 +374,7 @@ impl App {
                         return Task::none();
                     };
 
-                    let (width, height, pixels) = self.screenshot.raw();
+                    let (width, height, pixels) = self.image.raw();
                     let cropped_image = selection.process_image(width, height, pixels);
 
                     let _ = SAVED_IMAGE.set(cropped_image);
@@ -375,7 +387,7 @@ impl App {
                         self.error("Nothing is selected.");
                         return Task::none();
                     };
-                    let (image_width, _, _) = self.screenshot.raw();
+                    let (image_width, _, _) = self.image.raw();
                     let image_width = image_width as f32;
                     let sel = selection.norm();
 
@@ -386,7 +398,7 @@ impl App {
                         self.error("Nothing is selected.");
                         return Task::none();
                     };
-                    let (_, image_height, _) = self.screenshot.raw();
+                    let (_, image_height, _) = self.image.raw();
                     let image_height = image_height as f32;
                     let sel = selection.norm();
 
@@ -397,7 +409,7 @@ impl App {
                         self.error("Nothing is selected.");
                         return Task::none();
                     };
-                    let (image_width, image_height, _) = self.screenshot.raw();
+                    let (image_width, image_height, _) = self.image.raw();
                     let image_height = image_height as f32;
                     let image_width = image_width as f32;
                     let sel = selection.norm();
@@ -429,7 +441,7 @@ impl App {
                         self.error("Nothing is selected.");
                         return Task::none();
                     };
-                    let (image_width, image_height, _) = self.screenshot.raw();
+                    let (image_width, image_height, _) = self.image.raw();
                     let image_height = image_height as f32;
                     let image_width = image_width as f32;
                     let amount = amount as f32 * count as f32;
@@ -451,7 +463,7 @@ impl App {
                         self.error("Nothing is selected.");
                         return Task::none();
                     };
-                    let (image_width, image_height, _) = self.screenshot.raw();
+                    let (image_width, image_height, _) = self.image.raw();
                     let image_height = image_height as f32;
                     let image_width = image_width as f32;
                     let sel = selection.norm();
@@ -492,10 +504,10 @@ impl App {
                     }
                 }
                 KeyAction::PickTopLeftCorner => {
-                    self.letters = Some(Letters::new(PickCorner::TopLeft));
+                    self.picking_corner = Some(PickCorner::TopLeft);
                 }
                 KeyAction::PickBottomRightCorner => {
-                    self.letters = Some(Letters::new(PickCorner::BottomRight));
+                    self.picking_corner = Some(PickCorner::BottomRight);
                 }
             },
             Message::ExtendNewSelection(new_mouse_position) => {
@@ -508,7 +520,7 @@ impl App {
                     return Task::none();
                 };
 
-                let (width, height, pixels) = self.screenshot.raw();
+                let (width, height, pixels) = self.image.raw();
                 let cropped_image = selection.process_image(width, height, pixels);
                 let tempfile = match tempfile::TempDir::new() {
                     Ok(tempdir) => tempdir.into_path().join("ferrishot-screenshot.png"),
@@ -526,15 +538,24 @@ impl App {
                 return Task::future(async move {
                     {
                         let file = tempfile;
-                        let _response = CONFIG
+                        let response = CONFIG
                             .default_image_upload_provider
                             .upload_image(&file)
                             .await;
 
-                        Message::NoOp
+                        match response {
+                            Ok(url) => Message::ImageUploaded { url },
+                            Err(err) => Message::Error(err.to_string()),
+                        }
                     }
-                })
-                .chain(Self::exit());
+                });
+            }
+            Message::ImageUploaded { url } => {
+                self.uploaded_url = Some(url);
+            }
+            Message::ExitImageUploadMenu => self.uploaded_url = None,
+            Message::Error(err) => {
+                self.error(err);
             }
             Message::Resize {
                 current_cursor_pos,
@@ -626,65 +647,6 @@ impl App {
         frame.fill(&outside, CONFIG.theme.non_selected_region);
     }
 
-    /// Renders the welcome message that the user sees when they first launch the program
-    fn render_welcome_message<'a>(&self) -> Element<'a, Message> {
-        use iced::widget::text;
-        const WIDTH: u32 = 380;
-        const HEIGHT: u32 = 160;
-        const FONT_SIZE: f32 = 13.0;
-
-        let (width, height, _) = self.screenshot.raw();
-        let vertical_space = Space::with_height(height / 2 - HEIGHT / 2);
-        let horizontal_space = Space::with_width(width / 2 - WIDTH / 2);
-
-        let bold = Font {
-            weight: iced::font::Weight::Bold,
-            ..Font::default()
-        };
-
-        let keys = |key: &'static str, action: &'static str| {
-            row![
-                row![
-                    Space::with_width(Length::Fill),
-                    text(key)
-                        .size(FONT_SIZE)
-                        .font(bold)
-                        .shaping(Shaping::Advanced)
-                        .align_y(Vertical::Bottom)
-                ]
-                .width(100.0),
-                Space::with_width(Length::Fixed(20.0)),
-                text(action).size(FONT_SIZE).align_y(Vertical::Bottom),
-            ]
-        };
-
-        let stuff = iced::widget::container(
-            column![
-                keys("Mouse", "Select screenshot area"),
-                keys("Ctrl + S", "Save screenshot to a file"),
-                keys("Enter", "Copy screenshot to clipboard"),
-                keys("Right Click", "Snap closest corner to mouse"),
-                keys("Shift + Mouse", "Slowly resize / move area"),
-                keys("Esc", "Exit"),
-            ]
-            .spacing(8.0)
-            .height(HEIGHT)
-            .width(WIDTH)
-            .padding(10.0),
-        )
-        .style(|_| iced::widget::container::Style {
-            text_color: Some(CONFIG.theme.info_box_fg),
-            background: Some(Background::Color(CONFIG.theme.info_box_bg)),
-            border: iced::Border::default()
-                .color(Color::WHITE)
-                .rounded(6.0)
-                .width(1.5),
-            shadow: iced::Shadow::default(),
-        });
-
-        column![vertical_space, row![horizontal_space, stuff]].into()
-    }
-
     /// Shows up to 3 of the most recent errors in the UI
     fn render_errors(&self) -> iced::Element<Message> {
         const ERROR_WIDTH: u32 = 300;
@@ -715,7 +677,7 @@ impl App {
             .width(ERROR_WIDTH)
             .spacing(30);
 
-        let (image_width, _, _) = self.screenshot.raw();
+        let (image_width, _, _) = self.image.raw();
 
         row![Space::with_width(image_width - ERROR_WIDTH), errors].into()
     }

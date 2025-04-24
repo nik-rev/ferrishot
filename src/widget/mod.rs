@@ -5,13 +5,17 @@ use iced::Element;
 mod app;
 mod background_image;
 mod icon;
+mod icons;
 mod letters;
 mod size_indicator;
+mod welcome_message;
 
 pub use background_image::BackgroundImage;
 pub use icon::{icon, icon_tooltip};
+pub use icons::Icons;
 pub use letters::{Letters, PickCorner};
-pub use size_indicator::size_indicator;
+pub use size_indicator::SizeIndicator;
+pub use welcome_message::WelcomeMessage;
 
 /// An extension trait to show a red border around an element and all children
 #[easy_ext::ext(Explainer)]

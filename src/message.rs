@@ -11,6 +11,15 @@ use crate::{
 /// Represents an action happening in the application
 #[derive(Debug, Clone)]
 pub enum Message {
+    /// Click "close" on the image upload menu
+    ExitImageUploadMenu,
+    /// The image was uploaded to the internet
+    ImageUploaded {
+        /// link to the uploaded image
+        url: String,
+    },
+    /// An error occured, display to the user
+    Error(String),
     /// Abort selecting a letter
     LettersAbort,
     /// A region was picked using `Letters` widget

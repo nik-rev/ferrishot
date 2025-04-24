@@ -8,14 +8,7 @@ use iced::{Element, Length, Rectangle, Size, Theme, mouse, widget};
 /// A widget that draws an image on the entire screen
 pub struct BackgroundImage {
     /// Image handle of the full-desktop screenshot
-    image_handle: widget::image::Handle,
-}
-
-impl BackgroundImage {
-    /// Create a new `BackgroundImage`
-    pub const fn new(image_handle: widget::image::Handle) -> Self {
-        Self { image_handle }
-    }
+    pub image_handle: widget::image::Handle,
 }
 
 impl<Message, Renderer> Widget<Message, Theme, Renderer> for BackgroundImage
