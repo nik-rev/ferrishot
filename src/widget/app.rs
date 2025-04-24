@@ -65,6 +65,8 @@ pub static SAVED_IMAGE: std::sync::OnceLock<image::DynamicImage> = std::sync::On
 /// Holds the state for ferrishot
 #[derive(Debug, Default)]
 pub struct App {
+    /// A list of messages which obtained while the debug overlay is active
+    pub logged_messages: Vec<Message>,
     /// How many selections were created throughout the
     /// lifetime of the App
     pub selections_created: usize,
@@ -170,6 +172,9 @@ impl App {
 
     /// Modifies the app's state
     pub fn update(&mut self, message: Message) -> Task<Message> {
+        if self.show_debug_overlay {
+            self.logged_messages.push(message.clone());
+        }
         match message {
             Message::LettersAbort => {
                 self.picking_corner = None;

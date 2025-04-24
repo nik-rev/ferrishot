@@ -100,4 +100,10 @@ crate::declare_theme_options! {
     icon_bg,
     /// Color of icons around the selection
     icon_fg,
+    /// Color of the labels in the debug menu (F12)
+    debug_label,
+    /// Foreground color of debug menu (F12)
+    debug_fg,
+    /// Background color of debug menu (F12)
+    debug_bg,
 }

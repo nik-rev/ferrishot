@@ -130,4 +130,9 @@ theme {
   
   icon-fg 0xff_ff_ff
   icon-bg 0xab_61_37
+
+  // debug menu (F12)
+  debug-fg 0xff_ff_ff
+  debug-label 0xff_00_00
+  debug-bg 0x00_00_00 opacity=0.9
 }
