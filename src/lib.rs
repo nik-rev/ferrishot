@@ -4,7 +4,6 @@
 static CLIENT: std::sync::LazyLock<reqwest::Client> =
     std::sync::LazyLock::new(reqwest::Client::new);
 
-mod app;
 mod clipboard;
 mod config;
 mod corners;
@@ -13,12 +12,10 @@ mod image_upload;
 mod message;
 mod rectangle;
 mod screenshot;
-mod selection;
 mod widget;
 
 #[cfg(target_os = "linux")]
 pub use clipboard::{CLIPBOARD_DAEMON_ID, run_clipboard_daemon};
 
-pub use app::App;
-pub use app::SAVED_IMAGE;
 pub use config::{CLI, CONFIG, Config, DEFAULT_KDL_CONFIG_STR};
+pub use widget::{App, SAVED_IMAGE};

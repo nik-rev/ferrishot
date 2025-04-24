@@ -57,8 +57,8 @@ where
             iced::ContentFit::Contain,
             iced::widget::image::FilterMethod::Nearest,
             iced::Rotation::Solid(0.into()),
-            1.,
-            1.,
+            1.0,
+            1.0,
         );
     }
 }

@@ -4,13 +4,17 @@ use iced::Element;
 
 mod app;
 mod background_image;
+mod errors;
 mod icon;
 mod icons;
 mod letters;
+pub mod selection;
 mod size_indicator;
 mod welcome_message;
 
+pub use app::{App, SAVED_IMAGE};
 pub use background_image::BackgroundImage;
+pub use errors::Errors;
 pub use icon::{icon, icon_tooltip};
 pub use icons::Icons;
 pub use letters::{Letters, PickCorner};

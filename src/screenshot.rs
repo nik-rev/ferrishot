@@ -8,6 +8,12 @@ use iced::{advanced::image::Bytes, widget::image::Handle};
 #[derive(Debug, Clone)]
 pub struct RgbaHandle(Handle);
 
+impl Default for RgbaHandle {
+    fn default() -> Self {
+        screenshot().expect("Failed to take a screenshot of the desktop")
+    }
+}
+
 impl RgbaHandle {
     /// Create handle to an image represented in RGBA format
     pub fn new(width: u32, height: u32, pixels: impl Into<Bytes>) -> Self {

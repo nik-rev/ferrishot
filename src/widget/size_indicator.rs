@@ -6,8 +6,7 @@ use iced::{
 };
 
 use crate::{
-    CONFIG, message::Message, rectangle::RectangleExt as _,
-    selection::selection_lock::SelectionIsSome,
+    CONFIG, message::Message, rectangle::RectangleExt as _, widget::selection::SelectionIsSome,
 };
 
 /// Shows the width and height of the image

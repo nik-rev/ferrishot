@@ -5,7 +5,7 @@ use iced::{Point, Rectangle, mouse::Cursor};
 use crate::{
     config::KeyAction,
     corners::SideOrCorner,
-    selection::{Selection, Speed, selection_lock::SelectionIsSome},
+    widget::selection::{Selection, SelectionIsSome, Speed},
 };
 
 /// Represents an action happening in the application

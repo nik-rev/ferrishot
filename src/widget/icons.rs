@@ -30,7 +30,7 @@ use crate::{
     config::KeyAction,
     icon,
     message::Message,
-    selection::{FRAME_WIDTH, ICON_BUTTON_SIZE},
+    widget::selection::{FRAME_WIDTH, ICON_BUTTON_SIZE},
 };
 
 /// Icons around the selection

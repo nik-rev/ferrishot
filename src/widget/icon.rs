@@ -2,7 +2,7 @@
 
 use iced::{Background, Border, Element, Length, Shadow, widget};
 
-use crate::{CONFIG, selection::ICON_BUTTON_SIZE};
+use crate::{CONFIG, widget::selection::ICON_BUTTON_SIZE};
 
 /// Create a tooltip for an icon
 pub fn icon_tooltip<'a, Message>(
