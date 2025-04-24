@@ -6,20 +6,23 @@ mod app;
 mod background_image;
 mod debug_overlay;
 mod errors;
+mod image_uploaded;
 mod letters;
 pub mod selection;
 mod selection_icons;
 mod size_indicator;
 mod welcome_message;
 
+use background_image::BackgroundImage;
+use debug_overlay::DebugOverlay;
+use errors::Errors;
+use image_uploaded::ImageUploaded;
+use letters::{Letters, PickCorner};
+use selection_icons::SelectionIcons;
+use size_indicator::SizeIndicator;
+use welcome_message::WelcomeMessage;
+
 pub use app::{App, SAVED_IMAGE};
-pub use background_image::BackgroundImage;
-pub use debug_overlay::DebugOverlay;
-pub use errors::Errors;
-pub use letters::{Letters, PickCorner};
-pub use selection_icons::SelectionIcons;
-pub use size_indicator::SizeIndicator;
-pub use welcome_message::WelcomeMessage;
 
 /// An extension trait to show a red border around an element and all children
 #[easy_ext::ext(Explainer)]

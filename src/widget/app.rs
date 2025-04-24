@@ -10,6 +10,7 @@ use iced::Renderer;
 use iced::Theme;
 use iced::mouse::Interaction;
 use iced::widget::Canvas;
+use iced::widget::qr_code;
 use iced::{
     Rectangle,
     widget::{Action, canvas},
@@ -83,8 +84,8 @@ pub struct App {
     /// allows accessing 25 * 25 * 25 = 15,625 different locations
     pub picking_corner: Option<PickCorner>,
     /// A link to the uploaded image
-    pub uploaded_url: Option<String>,
-    /// Whether to show an overlay with additional information (for debugging purposes)
+    pub uploaded_url: Option<qr_code::Data>,
+    /// Whether to show an overlay with additional information (F12)
     pub show_debug_overlay: bool,
 }
 
@@ -134,6 +135,11 @@ impl App {
                 }
                 .view()
             }))
+            .push_maybe(
+                self.uploaded_url
+                    .as_ref()
+                    .map(|url| super::ImageUploaded { qr_code_data: url }.view()),
+            )
             // errors
             .push(self.errors.view(self.image.width()))
             // icons around the selection
@@ -148,7 +154,7 @@ impl App {
             // grid of letters to precisely choose a location
             .push_maybe(
                 self.picking_corner
-                    .map(|pick_corner| crate::widget::Letters { pick_corner }.view()),
+                    .map(|pick_corner| super::Letters { pick_corner }.view()),
             )
             // size indicator
             .push_maybe(self.selection.filter(|_| CONFIG.size_indicator).get().map(
@@ -573,7 +579,7 @@ impl App {
                 });
             }
             Message::ImageUploaded { url } => {
-                self.uploaded_url = Some(url);
+                self.uploaded_url = Some(iced::widget::qr_code::Data::new(url).unwrap());
             }
             Message::ExitImageUploadMenu => self.uploaded_url = None,
             Message::Error(err) => {

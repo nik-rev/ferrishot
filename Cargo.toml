@@ -27,6 +27,7 @@ iced = { package = "ferrishot_iced", version = "0.14.1", features = [
   "svg",
   "wgpu",
   "tokio",
+  "qr_code",
 ] }
 image = "0.25.6"
 thiserror = "2.0.12"
