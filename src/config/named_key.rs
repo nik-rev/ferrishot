@@ -2,8 +2,8 @@
 
 /// Parse user key named keys.
 ///
-/// Define an enum which maps to iced keys. Allows to rename
-/// some variants
+/// Define an enum which maps to iced keys. Allows to change
+/// how certain variants serialize
 macro_rules! named_keys {
     ($($Key:ident $(= $renamed:literal)?),* $(,)?) => {
         #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, strum::EnumString, strum::EnumIter)]

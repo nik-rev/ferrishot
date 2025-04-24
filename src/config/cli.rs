@@ -31,7 +31,7 @@ static DEFAULT_CONFIG_FILE_PATH: LazyLock<PathBuf> = LazyLock::new(|| {
     )
 });
 
-/// Command line arguments to this program
+/// Command line arguments passed to ferrishot
 ///
 /// It is a static because it is needed by the `CONFIG` static, in order to
 /// read config from the correct place
