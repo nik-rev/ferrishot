@@ -5,19 +5,25 @@ use iced::{Point, Rectangle, mouse::Cursor};
 use crate::{
     config::KeyAction,
     rect::SideOrCorner,
-    widget::selection::{Selection, SelectionIsSome, Speed},
+    ui::{
+        self,
+        selection::{Selection, SelectionIsSome, Speed},
+    },
 };
+
+/// Handle the message
+pub trait Handler {
+    /// Handle the message
+    fn handle(self, app: &mut crate::App);
+}
 
 /// Represents an action happening in the application
 #[derive(Debug, Clone)]
 pub enum Message {
-    /// Click "close" on the image upload menu
-    ExitImageUploadMenu,
-    /// The image was uploaded to the internet
-    ImageUploaded {
-        /// link to the uploaded image
-        url: String,
-    },
+    /// Copy text to clipboard
+    CopyTextToClipboard(String),
+    /// Image uploaded message
+    ImageUploaded(ui::image_uploaded::Message),
     /// An error occured, display to the user
     Error(String),
     /// Abort selecting a letter

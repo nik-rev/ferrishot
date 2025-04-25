@@ -5,14 +5,14 @@ use iced::{
     widget::{Column, Row, Space, row, tooltip},
 };
 
-use crate::{CONFIG, widget::selection::ICON_BUTTON_SIZE};
-use crate::{config::KeyAction, icon, message::Message, widget::selection::FRAME_WIDTH};
+use crate::{CONFIG, ui::selection::ICON_BUTTON_SIZE};
+use crate::{config::KeyAction, icon, message::Message, ui::selection::FRAME_WIDTH};
 use iced::{Background, Border, Shadow, widget};
 
 /// Helper to create a styled button with an icon
 #[macro_export]
 macro_rules! icon {
-    ($icon:ident) => {{ icon($crate::icons::Icon::$icon) }};
+    ($icon:ident) => {{ iced::widget::svg($crate::icons::Icon::$icon.svg()) }};
 }
 
 // Here is the behaviour that we want
@@ -53,17 +53,16 @@ pub fn icon_tooltip<'a, Message>(
 }
 
 /// Styled icon as a button
-pub fn icon<'a, Message>(icon: crate::icons::Icon) -> widget::Button<'a, Message> {
+pub fn selection_icon<Message>(icon: widget::Svg) -> widget::Button<Message> {
     /// Width and height for icons *inside* of buttons
     const ICON_SIZE: f32 = 32.0;
 
     widget::button(
-        widget::Svg::new(icon.svg())
-            .style(|_, _| widget::svg::Style {
-                color: Some(CONFIG.theme.icon_fg),
-            })
-            .width(Length::Fixed(ICON_SIZE))
-            .height(Length::Fixed(ICON_SIZE)),
+        icon.style(|_, _| widget::svg::Style {
+            color: Some(CONFIG.theme.icon_fg),
+        })
+        .width(Length::Fixed(ICON_SIZE))
+        .height(Length::Fixed(ICON_SIZE)),
     )
     .width(Length::Fixed(ICON_BUTTON_SIZE))
     .height(Length::Fixed(ICON_BUTTON_SIZE))
@@ -154,7 +153,7 @@ impl SelectionIcons {
     pub fn view(self) -> Element<'static, Message> {
         let icons = vec![
             (
-                icon!(Fullscreen)
+                selection_icon(icon!(Fullscreen))
                     .on_press(Message::KeyBind {
                         action: KeyAction::SelectFullScreen,
                         count: 1,
@@ -163,7 +162,7 @@ impl SelectionIcons {
                 "Select entire monitor (F11)",
             ),
             (
-                icon!(Clipboard)
+                selection_icon(icon!(Clipboard))
                     .on_press(Message::KeyBind {
                         action: KeyAction::CopyToClipboard,
                         count: 1,
@@ -172,7 +171,7 @@ impl SelectionIcons {
                 "Copy to Clipboard (Enter)",
             ),
             (
-                icon!(Save)
+                selection_icon(icon!(Save))
                     .on_press(Message::KeyBind {
                         action: KeyAction::SaveScreenshot,
                         count: 1,
@@ -181,7 +180,7 @@ impl SelectionIcons {
                 "Save Screenshot (Ctrl + S)",
             ),
             (
-                icon!(Close)
+                selection_icon(icon!(Close))
                     .on_press(Message::KeyBind {
                         action: KeyAction::Exit,
                         count: 1,
@@ -190,7 +189,9 @@ impl SelectionIcons {
                 "Exit (Esc)",
             ),
             (
-                icon!(Upload).on_press(Message::Upload).into(),
+                selection_icon(icon!(Upload))
+                    .on_press(Message::Upload)
+                    .into(),
                 "Upload screenshot online",
             ),
         ];

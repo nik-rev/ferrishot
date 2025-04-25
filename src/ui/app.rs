@@ -3,8 +3,8 @@
 use crate::CONFIG;
 use crate::config::KeyAction;
 use crate::config::Place;
-use crate::widget::PickCorner;
-use crate::widget::selection::Speed;
+use crate::ui::PickCorner;
+use crate::ui::selection::Speed;
 use iced::Length;
 use iced::Renderer;
 use iced::Theme;
@@ -23,7 +23,7 @@ use iced::{Point, Size, Task};
 
 use crate::rect::RectangleExt;
 use crate::rect::{Direction, Side, SideOrCorner};
-use crate::widget::selection::{Selection, SelectionStatus};
+use crate::ui::selection::{Selection, SelectionStatus};
 
 use super::Errors;
 use super::selection::OptionalSelectionExt as _;
@@ -84,7 +84,7 @@ pub struct App {
     /// allows accessing 25 * 25 * 25 = 15,625 different locations
     pub picking_corner: Option<PickCorner>,
     /// A link to the uploaded image
-    pub uploaded_url: Option<qr_code::Data>,
+    pub uploaded_url: Option<(qr_code::Data, iced::widget::image::Handle, String)>,
     /// Whether to show an overlay with additional information (F12)
     pub show_debug_overlay: bool,
 }
@@ -135,11 +135,6 @@ impl App {
                 }
                 .view()
             }))
-            .push_maybe(
-                self.uploaded_url
-                    .as_ref()
-                    .map(|url| super::ImageUploaded { qr_code_data: url }.view()),
-            )
             // errors
             .push(self.errors.view(self.image.width()))
             // icons around the selection
@@ -168,6 +163,19 @@ impl App {
                     .view()
                 },
             ))
+            // output when uploading image
+            .push_maybe(
+                self.uploaded_url
+                    .as_ref()
+                    .map(|(qr_code_data, image_handle, url)| {
+                        super::ImageUploaded {
+                            qr_code_data,
+                            url,
+                            image_handle,
+                        }
+                        .view()
+                    }),
+            )
             // debug overlay
             .push_maybe(
                 self.show_debug_overlay
@@ -178,10 +186,19 @@ impl App {
 
     /// Modifies the app's state
     pub fn update(&mut self, message: Message) -> Task<Message> {
+        use crate::message::Handler as _;
+
         if self.show_debug_overlay {
             self.logged_messages.push(message.clone());
         }
+
         match message {
+            Message::ImageUploaded(image_uploaded) => image_uploaded.handle(self),
+            Message::CopyTextToClipboard(text) => {
+                if let Err(err) = crate::clipboard::set_text(&text) {
+                    self.errors.push(err.to_string());
+                }
+            }
             Message::LettersAbort => {
                 self.picking_corner = None;
             }
@@ -572,16 +589,17 @@ impl App {
                             .await;
 
                         match response {
-                            Ok(url) => Message::ImageUploaded { url },
+                            Ok(url) => Message::ImageUploaded(
+                                super::image_uploaded::Message::ImageUploaded {
+                                    url,
+                                    uploaded_image: iced::widget::image::Handle::from_path(&file),
+                                },
+                            ),
                             Err(err) => Message::Error(err.to_string()),
                         }
                     }
                 });
             }
-            Message::ImageUploaded { url } => {
-                self.uploaded_url = Some(iced::widget::qr_code::Data::new(url).unwrap());
-            }
-            Message::ExitImageUploadMenu => self.uploaded_url = None,
             Message::Error(err) => {
                 self.errors.push(err);
             }

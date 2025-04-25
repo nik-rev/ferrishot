@@ -12,10 +12,12 @@ pub mod logging;
 mod message;
 mod rect;
 mod screenshot;
-mod widget;
+mod ui;
+
+use message::Message;
 
 #[cfg(target_os = "linux")]
 pub use clipboard::{CLIPBOARD_DAEMON_ID, run_clipboard_daemon};
 
 pub use config::{CLI, CONFIG, Config, DEFAULT_KDL_CONFIG_STR};
-pub use widget::{App, SAVED_IMAGE};
+pub use ui::{App, SAVED_IMAGE};

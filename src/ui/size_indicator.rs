@@ -5,9 +5,7 @@ use iced::{
     widget::{self, Space, column, row, text::Shaping},
 };
 
-use crate::{
-    CONFIG, message::Message, rect::RectangleExt as _, widget::selection::SelectionIsSome,
-};
+use crate::{CONFIG, message::Message, rect::RectangleExt as _, ui::selection::SelectionIsSome};
 
 /// Shows the width and height of the image
 pub struct SizeIndicator {
