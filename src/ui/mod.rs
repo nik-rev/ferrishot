@@ -6,9 +6,10 @@ mod app;
 mod background_image;
 mod debug_overlay;
 mod errors;
-pub mod selection;
 mod selection_icons;
 mod welcome_message;
+
+pub mod selection;
 
 use background_image::BackgroundImage;
 use debug_overlay::DebugOverlay;

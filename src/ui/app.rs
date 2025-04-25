@@ -3,8 +3,8 @@
 use crate::CONFIG;
 use crate::config::KeyAction;
 use crate::config::Place;
+use crate::ui;
 use crate::ui::PickCorner;
-use crate::ui::selection::Speed;
 use iced::Length;
 use iced::Renderer;
 use iced::Theme;
@@ -21,8 +21,8 @@ use crate::screenshot::Screenshot;
 use iced::widget::Stack;
 use iced::{Point, Size, Task};
 
+use crate::rect::Direction;
 use crate::rect::RectangleExt;
-use crate::rect::{Direction, Side, SideOrCorner};
 use crate::ui::selection::{Selection, SelectionStatus};
 
 use super::Errors;
@@ -189,99 +189,11 @@ impl App {
         use crate::message::Handler as _;
 
         match message {
+            Message::Selection(selection) => selection.handle(self),
             Message::SizeIndicator(size_indicator) => size_indicator.handle(self),
             Message::ImageUploaded(image_uploaded) => image_uploaded.handle(self),
             Message::Letters(letters) => letters.handle(self),
             Message::NoOp => (),
-            Message::LeftMouseDown(cursor) => {
-                if let Some((cursor, side, rect)) = cursor.position().and_then(|cursor_pos| {
-                    self.selection.as_mut().and_then(|selected_region| {
-                        selected_region
-                            .corners()
-                            .side_at(cursor_pos)
-                            .map(|l| (cursor_pos, l, selected_region))
-                    })
-                }) {
-                    // Resize selection
-
-                    rect.status = SelectionStatus::Resize {
-                        initial_rect: rect.norm().rect,
-                        initial_cursor_pos: cursor,
-                        resize_side: side,
-                    };
-                } else if let Some((cursor, selected_region)) = self
-                    .selection
-                    .as_mut()
-                    .and_then(|sel| sel.cursor_in_selection_mut(cursor))
-                {
-                    // Move selection
-
-                    selected_region.status = SelectionStatus::Move {
-                        initial_rect_pos: selected_region.norm().pos(),
-                        initial_cursor_pos: cursor,
-                    };
-                } else if let Some(cursor_position) = cursor.position() {
-                    // Create selection
-
-                    self.selection =
-                        Some(Selection::new(cursor_position).with_status(SelectionStatus::Create));
-
-                    self.selections_created += 1;
-                }
-            }
-            Message::EnterIdle => {
-                if let Some(selection) = self.selection.as_mut() {
-                    selection.status = SelectionStatus::Idle;
-                }
-            }
-            Message::MoveSelection {
-                current_cursor_pos,
-                initial_cursor_pos,
-                current_selection,
-                initial_rect_pos,
-                speed,
-            } => {
-                let mut new_selection = current_selection.with_pos(|_| {
-                    initial_rect_pos + ((current_cursor_pos - initial_cursor_pos) * speed.speed())
-                });
-
-                let old_x = new_selection.rect.x as u32;
-                let old_y = new_selection.rect.y as u32;
-
-                // if any of these actually get changed we are going to set the new selection status.
-
-                new_selection.rect.x = new_selection
-                    .rect
-                    .x
-                    .min(self.image.width() as f32 - new_selection.rect.width)
-                    .max(0.0);
-
-                new_selection.rect.y = new_selection
-                    .rect
-                    .y
-                    .min(self.image.height() as f32 - new_selection.rect.height)
-                    .max(0.0);
-
-                if new_selection.rect.y as u32 != old_y || new_selection.rect.x as u32 != old_x {
-                    new_selection.status = SelectionStatus::Move {
-                        initial_rect_pos: new_selection.pos(),
-                        initial_cursor_pos: current_cursor_pos,
-                    }
-                }
-
-                if speed
-                    == (Speed::Slow {
-                        has_speed_changed: true,
-                    })
-                {
-                    new_selection.status = SelectionStatus::Move {
-                        initial_rect_pos: current_selection.pos(),
-                        initial_cursor_pos: current_cursor_pos,
-                    }
-                }
-
-                self.selection = Some(new_selection);
-            }
             Message::KeyBind { action, count } => match action {
                 KeyAction::CopyToClipboard => {
                     let Some(selection) = self.selection.map(Selection::norm) else {
@@ -486,9 +398,6 @@ impl App {
                     self.picking_corner = Some(PickCorner::BottomRight);
                 }
             },
-            Message::ExtendNewSelection(new_mouse_position) => {
-                self.update_selection(new_mouse_position);
-            }
             Message::Upload => {
                 let Some(selection) = self.selection.as_ref().map(|sel| Selection::norm(*sel))
                 else {
@@ -538,62 +447,6 @@ impl App {
             }
             Message::Error(err) => {
                 self.errors.push(err);
-            }
-            Message::Resize {
-                current_cursor_pos,
-                initial_cursor_pos,
-                resize_side,
-                initial_rect,
-                sel_is_some,
-                speed,
-            } => {
-                let selected_region = self.selection.unlock(sel_is_some);
-                let resize_speed = speed.speed();
-
-                let dy = (current_cursor_pos.y - initial_cursor_pos.y) * resize_speed;
-                let dx = (current_cursor_pos.x - initial_cursor_pos.x) * resize_speed;
-
-                selected_region.rect = match resize_side {
-                    SideOrCorner::Side(side) => match side {
-                        Side::Top => initial_rect.with_height(|h| h - dy).with_y(|y| y + dy),
-                        Side::Right => initial_rect.with_width(|w| w + dx),
-                        Side::Bottom => initial_rect.with_height(|h| h + dy),
-                        Side::Left => initial_rect.with_width(|w| w - dx).with_x(|x| x + dx),
-                    },
-                    SideOrCorner::Corner(corner) => corner.resize_rect(initial_rect, dy, dx),
-                };
-
-                if speed
-                    == (Speed::Slow {
-                        has_speed_changed: true,
-                    })
-                {
-                    selected_region.status = SelectionStatus::Resize {
-                        initial_rect: selected_region.rect,
-                        initial_cursor_pos: current_cursor_pos,
-                        resize_side,
-                    }
-                }
-            }
-            Message::ResizeToCursor {
-                cursor_pos,
-                selection,
-                sel_is_some,
-            } => {
-                let (corner_point, corners) = selection.corners().nearest_corner(cursor_pos);
-                let sel = self.selection.unlock(sel_is_some);
-
-                sel.rect = corners.resize_rect(
-                    selection.rect,
-                    cursor_pos.y - corner_point.y,
-                    cursor_pos.x - corner_point.x,
-                );
-
-                sel.status = SelectionStatus::Resize {
-                    initial_rect: sel.rect,
-                    initial_cursor_pos: cursor_pos,
-                    resize_side: SideOrCorner::Corner(corners),
-                };
             }
         }
 
@@ -734,7 +587,7 @@ impl canvas::Program<Message> for App {
         let message = match event {
             Mouse(ButtonPressed(Left)) => {
                 state.is_left_down = true;
-                Message::LeftMouseDown(cursor)
+                Message::Selection(ui::selection::Message::CreateSelection(cursor.position()?))
             }
             Mouse(ButtonReleased(Left)) => {
                 state.is_left_down = false;
@@ -747,7 +600,7 @@ impl canvas::Program<Message> for App {
                     }
                 } else {
                     // stop the creating of the initial selection
-                    Message::EnterIdle
+                    Message::Selection(ui::selection::Message::EnterIdle)
                 }
             }
             _ => return None,

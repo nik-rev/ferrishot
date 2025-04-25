@@ -1,8 +1,8 @@
 //! A `Selection` is the structure representing a selected area in the background image
 use crate::CONFIG;
-use crate::message::Message;
 use crate::rect::Corners;
 use crate::rect::RectangleExt;
+use crate::rect::Side;
 use crate::rect::SideOrCorner;
 use delegate::delegate;
 use iced::Element;
@@ -15,6 +15,189 @@ use iced::widget::Action;
 use iced::widget::Canvas;
 use iced::widget::canvas;
 use iced::{Point, Rectangle, Size};
+
+/// Message for a selection
+#[derive(Clone, Debug)]
+pub enum Message {
+    /// The selection is currently being resized
+    Resize {
+        /// Current position of the cursor
+        current_cursor_pos: Point,
+        /// Initial position of the cursor
+        initial_cursor_pos: Point,
+        /// Which side we are currently resizing
+        resize_side: SideOrCorner,
+        /// Selection rectangle as it looked like when we just started resizing
+        initial_rect: Rectangle,
+        /// A key to obtain `&mut Selection` from `Option<Selection>` with a guarantee that it will
+        /// always be there (to bypass the limitation that we cannot pass `&mut Selection` in a `Message`)
+        sel_is_some: SelectionIsSome,
+        /// Multiplier for how fast we are resizing.
+        speed: Speed,
+    },
+    /// Update status of existing selection
+    UpdateStatus(SelectionStatus, SelectionIsSome),
+    /// Create a zero size selection
+    CreateSelection(Point),
+    /// Left mouse is held down and dragged
+    ///
+    /// Contains the new point of the mouse
+    MoveSelection {
+        /// Current position of the cursor
+        current_cursor_pos: Point,
+        /// Position of the cursor when we first started moving the selection
+        initial_cursor_pos: Point,
+        /// Current selection
+        current_selection: Selection,
+        /// Top-left corner of the selection before we started moving it
+        initial_rect_pos: Point,
+        /// How fast the selection should move
+        speed: Speed,
+    },
+    /// Enter idle mode
+    EnterIdle,
+    /// When we have not yet released the left mouse button
+    /// and are dragging the selection to extend it
+    ExtendNewSelection(Point),
+    /// Holding right-click, the selection will move the
+    /// nearest corner to the cursor
+    ResizeToCursor {
+        /// Current position of the cursor
+        cursor_pos: Point,
+        /// Current selection
+        selection: Selection,
+        /// A key to obtain `&mut Selection` from `Option<Selection>` with a guarantee that it will
+        /// always be there (to bypass the limitation that we cannot pass `&mut Selection` in a `Message`)
+        sel_is_some: SelectionIsSome,
+    },
+}
+
+impl crate::message::Handler for Message {
+    fn handle(self, app: &mut crate::App) {
+        match self {
+            Self::CreateSelection(point) => {
+                app.selection = Some(Selection::new(point).with_status(SelectionStatus::Create));
+                app.selections_created += 1;
+            }
+            Self::UpdateStatus(status, sel_is_some) => {
+                let sel = app.selection.unlock(sel_is_some);
+                sel.status = status;
+            }
+            Self::EnterIdle => {
+                if let Some(selection) = app.selection.as_mut() {
+                    selection.status = SelectionStatus::Idle;
+                }
+            }
+            Self::ExtendNewSelection(new_mouse_position) => {
+                app.update_selection(new_mouse_position);
+            }
+            Self::ResizeToCursor {
+                cursor_pos,
+                selection,
+                sel_is_some,
+            } => {
+                let (corner_point, corners) = selection.corners().nearest_corner(cursor_pos);
+                let sel = app.selection.unlock(sel_is_some);
+
+                sel.rect = corners.resize_rect(
+                    selection.rect,
+                    cursor_pos.y - corner_point.y,
+                    cursor_pos.x - corner_point.x,
+                );
+
+                sel.status = SelectionStatus::Resize {
+                    initial_rect: sel.rect,
+                    initial_cursor_pos: cursor_pos,
+                    resize_side: SideOrCorner::Corner(corners),
+                };
+            }
+            Self::Resize {
+                current_cursor_pos,
+                initial_cursor_pos,
+                resize_side,
+                initial_rect,
+                sel_is_some,
+                speed,
+            } => {
+                let selected_region = app.selection.unlock(sel_is_some);
+                let resize_speed = speed.speed();
+
+                let dy = (current_cursor_pos.y - initial_cursor_pos.y) * resize_speed;
+                let dx = (current_cursor_pos.x - initial_cursor_pos.x) * resize_speed;
+
+                selected_region.rect = match resize_side {
+                    SideOrCorner::Side(side) => match side {
+                        Side::Top => initial_rect.with_height(|h| h - dy).with_y(|y| y + dy),
+                        Side::Right => initial_rect.with_width(|w| w + dx),
+                        Side::Bottom => initial_rect.with_height(|h| h + dy),
+                        Side::Left => initial_rect.with_width(|w| w - dx).with_x(|x| x + dx),
+                    },
+                    SideOrCorner::Corner(corner) => corner.resize_rect(initial_rect, dy, dx),
+                };
+
+                if speed
+                    == (Speed::Slow {
+                        has_speed_changed: true,
+                    })
+                {
+                    selected_region.status = SelectionStatus::Resize {
+                        initial_rect: selected_region.rect,
+                        initial_cursor_pos: current_cursor_pos,
+                        resize_side,
+                    }
+                }
+            }
+            Self::MoveSelection {
+                current_cursor_pos,
+                initial_cursor_pos,
+                current_selection,
+                initial_rect_pos,
+                speed,
+            } => {
+                let mut new_selection = current_selection.with_pos(|_| {
+                    initial_rect_pos + ((current_cursor_pos - initial_cursor_pos) * speed.speed())
+                });
+
+                let old_x = new_selection.rect.x as u32;
+                let old_y = new_selection.rect.y as u32;
+
+                // if any of these actually get changed we are going to set the new selection status.
+
+                new_selection.rect.x = new_selection
+                    .rect
+                    .x
+                    .min(app.image.width() as f32 - new_selection.rect.width)
+                    .max(0.0);
+
+                new_selection.rect.y = new_selection
+                    .rect
+                    .y
+                    .min(app.image.height() as f32 - new_selection.rect.height)
+                    .max(0.0);
+
+                if new_selection.rect.y as u32 != old_y || new_selection.rect.x as u32 != old_x {
+                    new_selection.status = SelectionStatus::Move {
+                        initial_rect_pos: new_selection.pos(),
+                        initial_cursor_pos: current_cursor_pos,
+                    }
+                }
+
+                if speed
+                    == (Speed::Slow {
+                        has_speed_changed: true,
+                    })
+                {
+                    new_selection.status = SelectionStatus::Move {
+                        initial_rect_pos: current_selection.pos(),
+                        initial_cursor_pos: current_cursor_pos,
+                    }
+                }
+
+                app.selection = Some(new_selection);
+            }
+        }
+    }
+}
 
 /// The size of the lines of the frame of the selection
 pub const FRAME_WIDTH: f32 = 2.0;
@@ -87,9 +270,9 @@ pub enum SelectionStatus {
 /// The existance of this struct guarantees that an `Option<Selection>` is always `Some`.
 ///
 /// We have this because very often in the app we want to pass the knowledge that our `Selection`
-/// exists through a `Message`, however it is not possible to do that
+/// exists through a `crate::Message`, however it is not possible to do that
 ///
-/// For example, we send `Message::Foo` from `<App as canvas::Program<Message>>::update` if, and only if `App.selection.is_some()`.
+/// For example, we send `crate::Message::Foo` from `<App as canvas::Program<crate::Message>>::update` if, and only if `App.selection.is_some()`.
 ///
 /// Inside of `App::update` we receive this message and we have access to a `&mut App`. We need to
 /// modify the selection and we are certain that it exists. Yet we must still use an `unwrap`.
@@ -127,7 +310,7 @@ pub impl Option<Selection> {
 
 impl Selection {
     /// Render the selection
-    pub fn view(&self) -> Element<Message> {
+    pub fn view(&self) -> Element<crate::Message> {
         Canvas::new(self)
             .width(Length::Fill)
             .height(Length::Fill)
@@ -303,7 +486,7 @@ pub struct SelectionKeysState {
     pub is_shift_down: bool,
 }
 
-impl canvas::Program<Message> for Selection {
+impl canvas::Program<crate::Message> for Selection {
     type State = SelectionKeysState;
 
     fn draw(
@@ -364,7 +547,7 @@ impl canvas::Program<Message> for Selection {
         event: &iced::Event,
         _bounds: Rectangle,
         cursor: iced::advanced::mouse::Cursor,
-    ) -> Option<Action<Message>> {
+    ) -> Option<Action<crate::Message>> {
         use iced::Event::{Keyboard, Mouse};
         use iced::keyboard::Event::KeyPressed;
         use iced::keyboard::Event::KeyReleased;
@@ -379,12 +562,40 @@ impl canvas::Program<Message> for Selection {
             Mouse(ButtonPressed(Left)) => {
                 state.is_left_down = true;
 
-                Message::LeftMouseDown(cursor)
+                if let Some((cursor, side)) = cursor.position().and_then(|cursor_pos| {
+                    self.corners()
+                        .side_at(cursor_pos)
+                        .map(|side| (cursor_pos, side))
+                }) {
+                    // Left click on corners = Start resizing selection
+                    crate::Message::Selection(Message::UpdateStatus(
+                        SelectionStatus::Resize {
+                            initial_rect: self.rect.norm(),
+                            initial_cursor_pos: cursor,
+                            resize_side: side,
+                        },
+                        SelectionIsSome { _private: () },
+                    ))
+                } else if let Some((cursor, selected_region)) = self.cursor_in_selection(cursor) {
+                    // Left click on selection = Move selection
+                    crate::Message::Selection(Message::UpdateStatus(
+                        SelectionStatus::Move {
+                            initial_rect_pos: selected_region.norm().pos(),
+                            initial_cursor_pos: cursor,
+                        },
+                        SelectionIsSome { _private: () },
+                    ))
+                } else if let Some(cursor_position) = cursor.position() {
+                    // Left click outside of selection = Create new selection
+                    crate::Message::Selection(Message::CreateSelection(cursor_position))
+                } else {
+                    return None;
+                }
             }
             Mouse(ButtonReleased(Left)) => {
                 state.is_left_down = false;
 
-                Message::EnterIdle
+                crate::Message::Selection(Message::EnterIdle)
             }
             Keyboard(KeyReleased {
                 key: Named(Shift), ..
@@ -403,7 +614,7 @@ impl canvas::Program<Message> for Selection {
                     unreachable!("has `.is_some_and(is_resized)` guard");
                 };
 
-                Message::Resize {
+                crate::Message::Selection(Message::Resize {
                     current_cursor_pos: *position,
                     resize_side,
                     initial_cursor_pos,
@@ -416,7 +627,7 @@ impl canvas::Program<Message> for Selection {
                     } else {
                         Speed::Regular
                     },
-                }
+                })
             }
             Keyboard(KeyPressed {
                 key: Named(Shift), ..
@@ -429,27 +640,31 @@ impl canvas::Program<Message> for Selection {
                 // want to act as if we just started resizing from this point again
                 // so we do not get a surprising jump
                 match self.status {
-                    SelectionStatus::Resize { resize_side, .. } => Message::Resize {
-                        resize_side,
-                        // start resizing from this point on
-                        current_cursor_pos,
-                        initial_cursor_pos: current_cursor_pos,
-                        // the current selection becomes the new starting point
-                        initial_rect: self.rect,
-                        sel_is_some: SelectionIsSome { _private: () },
-                        speed: Speed::Slow {
-                            has_speed_changed: true,
-                        },
-                    },
-                    SelectionStatus::Move { .. } => Message::MoveSelection {
-                        current_cursor_pos,
-                        initial_cursor_pos: current_cursor_pos,
-                        current_selection: *self,
-                        initial_rect_pos: self.pos(),
-                        speed: Speed::Slow {
-                            has_speed_changed: true,
-                        },
-                    },
+                    SelectionStatus::Resize { resize_side, .. } => {
+                        crate::Message::Selection(Message::Resize {
+                            resize_side,
+                            // start resizing from this point on
+                            current_cursor_pos,
+                            initial_cursor_pos: current_cursor_pos,
+                            // the current selection becomes the new starting point
+                            initial_rect: self.rect,
+                            sel_is_some: SelectionIsSome { _private: () },
+                            speed: Speed::Slow {
+                                has_speed_changed: true,
+                            },
+                        })
+                    }
+                    SelectionStatus::Move { .. } => {
+                        crate::Message::Selection(Message::MoveSelection {
+                            current_cursor_pos,
+                            initial_cursor_pos: current_cursor_pos,
+                            current_selection: *self,
+                            initial_rect_pos: self.pos(),
+                            speed: Speed::Slow {
+                                has_speed_changed: true,
+                            },
+                        })
+                    }
                     _ => return None,
                 }
             }
@@ -465,7 +680,7 @@ impl canvas::Program<Message> for Selection {
                     unreachable!();
                 };
 
-                Message::MoveSelection {
+                crate::Message::Selection(Message::MoveSelection {
                     current_cursor_pos: *position,
                     initial_cursor_pos,
                     current_selection,
@@ -477,24 +692,24 @@ impl canvas::Program<Message> for Selection {
                     } else {
                         Speed::Regular
                     },
-                }
+                })
             }
             Mouse(ButtonPressed(Right)) => {
                 state.is_right_down = true;
 
-                Message::ResizeToCursor {
+                crate::Message::Selection(Message::ResizeToCursor {
                     cursor_pos: cursor.position()?,
                     selection: self.norm(),
                     sel_is_some: SelectionIsSome { _private: () },
-                }
+                })
             }
             Mouse(ButtonReleased(Right)) => {
                 state.is_right_down = false;
 
-                Message::EnterIdle
+                crate::Message::Selection(Message::EnterIdle)
             }
             Mouse(CursorMoved { position }) if self.is_create() => {
-                Message::ExtendNewSelection(*position)
+                crate::Message::Selection(Message::ExtendNewSelection(*position))
             }
             _ => return None,
         };
