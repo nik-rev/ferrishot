@@ -1,11 +1,75 @@
 //! Renders a tiny numeric input which shows a dimension of the rect and allow resizing it
 
+use super::selection::OptionalSelectionExt as _;
 use iced::{
     Background, Element, Length, Rectangle,
     widget::{self, Space, column, row, text::Shaping},
 };
 
-use crate::{CONFIG, message::Message, rect::RectangleExt as _, ui::selection::SelectionIsSome};
+use crate::{CONFIG, rect::RectangleExt as _, ui::selection::SelectionIsSome};
+
+/// One of the values in the size indicator has changed
+#[derive(Clone, Debug)]
+pub enum Message {
+    /// Change the height of the selection, bottom right does not move
+    ResizeVertically {
+        /// Change height of the selection to this
+        new_height: u32,
+        /// A key to obtain `&mut Selection` from `Option<Selection>` with a guarantee that it will
+        /// always be there (to bypass the limitation that we cannot pass `&mut Selection` in a `Message`)
+        sel_is_some: SelectionIsSome,
+    },
+    /// Change the width of the selection, bottom right does not move
+    ResizeHorizontally {
+        /// Change width of the selection to this
+        new_width: u32,
+        /// A key to obtain `&mut Selection` from `Option<Selection>` with a guarantee that it will
+        /// always be there (to bypass the limitation that we cannot pass `&mut Selection` in a `Message`)
+        sel_is_some: SelectionIsSome,
+    },
+}
+
+impl crate::message::Handler for Message {
+    fn handle(self, app: &mut crate::App) {
+        match self {
+            Self::ResizeVertically {
+                new_height,
+                sel_is_some,
+            } => {
+                let sel = app.selection.unlock(sel_is_some);
+
+                // what is the minimum value for `new_height` that would make
+                // this overflow vertically?
+                // We want to make sure the selection cannot get bigger than that.
+                let new_height =
+                    new_height.min((sel.norm().rect.y + sel.norm().rect.height) as u32);
+
+                let dy = new_height as f32 - sel.norm().rect.height;
+                *sel = sel
+                    .norm()
+                    .with_height(|_| new_height as f32)
+                    .with_y(|y| y - dy);
+            }
+            Self::ResizeHorizontally {
+                new_width,
+                sel_is_some,
+            } => {
+                let sel = app.selection.unlock(sel_is_some);
+
+                // what is the minimum value for `new_width` that would make
+                // this overflow vertically?
+                // We want to make sure the selection cannot get bigger than that.
+                let new_width = new_width.min((sel.norm().rect.x + sel.norm().rect.width) as u32);
+
+                let dx = new_width as f32 - sel.norm().rect.width;
+                *sel = sel
+                    .norm()
+                    .with_width(|_| new_width as f32)
+                    .with_x(|x| x - dx);
+            }
+        }
+    }
+}
 
 /// Shows the width and height of the image
 pub struct SizeIndicator {
@@ -22,8 +86,8 @@ pub struct SizeIndicator {
 /// Renders the indicator for a single dimension (e.g. width or height)
 fn dimension_indicator<'a>(
     value: u32,
-    on_change: impl Fn(u32) -> Message + 'a,
-) -> widget::TextInput<'a, Message> {
+    on_change: impl Fn(u32) -> crate::Message + 'a,
+) -> widget::TextInput<'a, crate::Message> {
     let content = value.to_string();
     let input = iced::widget::text_input(Default::default(), content.as_str())
         // HACK: iced does not provide a way to mimic `width: min-content` from CSS
@@ -35,7 +99,9 @@ fn dimension_indicator<'a>(
             if s.is_empty() {
                 on_change(0)
             } else {
-                s.parse::<u32>().ok().map_or(Message::NoOp, &on_change)
+                s.parse::<u32>()
+                    .ok()
+                    .map_or(crate::Message::NoOp, &on_change)
             }
         })
         .style(|_, _| widget::text_input::Style {
@@ -58,7 +124,7 @@ fn dimension_indicator<'a>(
 
 impl SizeIndicator {
     /// Renders a tiny numeric input which shows a dimension of the rect and allow resizing it
-    pub fn view(self) -> Element<'static, Message> {
+    pub fn view(self) -> Element<'static, crate::Message> {
         const SPACING: f32 = 12.0;
         const ESTIMATED_INDICATOR_WIDTH: u32 = 120;
         const ESTIMATED_INDICATOR_HEIGHT: u32 = 26;
@@ -72,17 +138,18 @@ impl SizeIndicator {
         let vertical_space = Space::with_height(y_offset);
 
         let width = dimension_indicator(self.selection_rect.width as u32, move |new_width| {
-            Message::ResizeHorizontally {
+            crate::Message::SizeIndicator(Message::ResizeHorizontally {
                 new_width,
                 sel_is_some: self.sel_is_some,
-            }
+            })
         });
         let height = dimension_indicator(self.selection_rect.height as u32, move |new_height| {
-            Message::ResizeVertically {
+            crate::Message::SizeIndicator(Message::ResizeVertically {
                 new_height,
                 sel_is_some: self.sel_is_some,
-            }
+            })
         });
+
         let x = iced::widget::text("✕ ")
             .color(CONFIG.theme.size_indicator_fg)
             .shaping(Shaping::Advanced);

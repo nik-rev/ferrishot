@@ -188,74 +188,10 @@ impl App {
     pub fn update(&mut self, message: Message) -> Task<Message> {
         use crate::message::Handler as _;
 
-        if self.show_debug_overlay {
-            self.logged_messages.push(message.clone());
-        }
-
         match message {
+            Message::SizeIndicator(size_indicator) => size_indicator.handle(self),
             Message::ImageUploaded(image_uploaded) => image_uploaded.handle(self),
-            Message::CopyTextToClipboard(text) => {
-                if let Err(err) = crate::clipboard::set_text(&text) {
-                    self.errors.push(err.to_string());
-                }
-            }
-            Message::LettersAbort => {
-                self.picking_corner = None;
-            }
-            Message::LettersPick { point } => {
-                let sel = self.selection.map(Selection::norm).unwrap_or_default();
-                let x = point.x;
-                let y = point.y;
-                if let Some(pick_corner) = self.picking_corner {
-                    match pick_corner {
-                        PickCorner::TopLeft => {
-                            self.selection = Some(sel.with_x(|_| x).with_y(|_| y));
-                        }
-                        PickCorner::BottomRight => {
-                            self.selection = Some(
-                                sel.with_height(|_| y - sel.rect.y)
-                                    .with_width(|_| x - sel.rect.x),
-                            );
-                        }
-                    }
-                };
-                self.picking_corner = None;
-            }
-            Message::ResizeVertically {
-                new_height,
-                sel_is_some,
-            } => {
-                let sel = self.selection.unlock(sel_is_some);
-
-                // what is the minimum value for `new_height` that would make
-                // this overflow vertically?
-                // We want to make sure the selection cannot get bigger than that.
-                let new_height =
-                    new_height.min((sel.norm().rect.y + sel.norm().rect.height) as u32);
-
-                let dy = new_height as f32 - sel.norm().rect.height;
-                *sel = sel
-                    .norm()
-                    .with_height(|_| new_height as f32)
-                    .with_y(|y| y - dy);
-            }
-            Message::ResizeHorizontally {
-                new_width,
-                sel_is_some,
-            } => {
-                let sel = self.selection.unlock(sel_is_some);
-
-                // what is the minimum value for `new_width` that would make
-                // this overflow vertically?
-                // We want to make sure the selection cannot get bigger than that.
-                let new_width = new_width.min((sel.norm().rect.x + sel.norm().rect.width) as u32);
-
-                let dx = new_width as f32 - sel.norm().rect.width;
-                *sel = sel
-                    .norm()
-                    .with_width(|_| new_width as f32)
-                    .with_x(|x| x - dx);
-            }
+            Message::Letters(letters) => letters.handle(self),
             Message::NoOp => (),
             Message::LeftMouseDown(cursor) => {
                 if let Some((cursor, side, rect)) = cursor.position().and_then(|cursor_pos| {
@@ -347,20 +283,6 @@ impl App {
                 self.selection = Some(new_selection);
             }
             Message::KeyBind { action, count } => match action {
-                KeyAction::ToggleDebugOverlay => {
-                    self.show_debug_overlay = !self.show_debug_overlay;
-                }
-                KeyAction::ClearSelection => {
-                    self.selection = None;
-                }
-                KeyAction::SelectFullScreen => {
-                    self.selection = Some(Selection::new(Point { x: 0.0, y: 0.0 }).with_size(
-                        |_| Size {
-                            width: self.image.width() as f32,
-                            height: self.image.height() as f32,
-                        },
-                    ));
-                }
                 KeyAction::CopyToClipboard => {
                     let Some(selection) = self.selection.map(Selection::norm) else {
                         self.errors.push("There is no selection to copy");
@@ -407,6 +329,20 @@ impl App {
                             self.errors.push(format!("Could not copy the image: {err}"));
                         }
                     }
+                }
+                KeyAction::ToggleDebugOverlay => {
+                    self.show_debug_overlay = !self.show_debug_overlay;
+                }
+                KeyAction::ClearSelection => {
+                    self.selection = None;
+                }
+                KeyAction::SelectFullScreen => {
+                    self.selection = Some(Selection::new(Point { x: 0.0, y: 0.0 }).with_size(
+                        |_| Size {
+                            width: self.image.width() as f32,
+                            height: self.image.height() as f32,
+                        },
+                    ));
                 }
                 KeyAction::SaveScreenshot => {
                     let Some(selection) = self.selection.as_ref().map(|sel| Selection::norm(*sel))

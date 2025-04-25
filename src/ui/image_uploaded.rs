@@ -1,4 +1,8 @@
-//! Data for the uploaded image
+//! Show a popup when the image has already been uploaded
+//! Popup contains:
+//! - QR Code
+//! - Image thumbnail
+//! - Copy URL to clipboard
 
 use iced::{
     Background, Element, Length,
@@ -22,12 +26,19 @@ pub enum Message {
         /// the uploaded image
         uploaded_image: iced::widget::image::Handle,
     },
+    /// Copy link of image to clipboard
+    CopyLink(String),
 }
 
 impl crate::message::Handler for Message {
     /// Handle the message
     fn handle(self, app: &mut super::App) {
         match self {
+            Self::CopyLink(url) => {
+                if let Err(err) = crate::clipboard::set_text(&url) {
+                    app.errors.push(err.to_string());
+                }
+            }
             Self::CloseImageUploadedPopup => {
                 app.uploaded_url = None;
             }
@@ -69,7 +80,9 @@ impl<'app> ImageUploaded<'app> {
                         button(icon!(Clipboard).style(|_, _| svg::Style {
                             color: Some(iced::Color::WHITE)
                         }))
-                        .on_press(crate::Message::CopyTextToClipboard(self.url.to_string()))
+                        .on_press(crate::Message::ImageUploaded(Message::CopyLink(
+                            self.url.to_string()
+                        )))
                         .style(|_, _| {
                             iced::widget::button::Style {
                                 background: Some(Background::Color(iced::Color::TRANSPARENT)),

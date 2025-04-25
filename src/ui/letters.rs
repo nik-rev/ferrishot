@@ -12,6 +12,53 @@ use iced::{
     },
 };
 
+/// Letters message
+#[derive(Clone, Debug)]
+pub enum Message {
+    /// Abort selecting a letter
+    Abort,
+    /// A region was picked using `Letters` widget
+    ///
+    /// See `LetterLevel` for more info on "level" and "region"
+    Pick {
+        /// the center of the region clicked on the 3rd level of `Letters`
+        point: Point,
+    },
+}
+
+impl crate::message::Handler for Message {
+    fn handle(self, app: &mut crate::App) {
+        match self {
+            Self::Abort => {
+                app.picking_corner = None;
+            }
+            Self::Pick { point } => {
+                let sel = app
+                    .selection
+                    .map(crate::ui::selection::Selection::norm)
+                    .unwrap_or_default();
+                let x = point.x;
+                let y = point.y;
+                if let Some(pick_corner) = app.picking_corner {
+                    match pick_corner {
+                        PickCorner::TopLeft => {
+                            app.selection = Some(sel.with_x(|_| x).with_y(|_| y));
+                        }
+                        PickCorner::BottomRight => {
+                            app.selection = Some(
+                                sel.with_height(|_| y - sel.rect.y)
+                                    .with_width(|_| x - sel.rect.x),
+                            );
+                        }
+                    }
+                };
+                app.picking_corner = None;
+            }
+        }
+        todo!()
+    }
+}
+
 /// How many letters to draw vertically
 const VERTICAL_COUNT: f32 = 5.0;
 /// How many letters to draw horizontally
@@ -148,8 +195,6 @@ fn draw_boxes(
     );
 }
 
-use crate::message::Message;
-
 /// The letter grid consists of 3 "levels"
 ///
 /// - Level 1: the entire screen is divided into 25 regions, a letter is assigned to each
@@ -200,7 +245,7 @@ pub struct Letters {
 
 impl Letters {
     /// Render a grid of letters
-    pub fn view(self) -> Element<'static, Message> {
+    pub fn view(self) -> Element<'static, crate::Message> {
         Canvas::new(self)
             .width(Length::Fill)
             .height(Length::Fill)
@@ -215,7 +260,7 @@ pub struct LettersState {
     level: LetterLevel,
 }
 
-impl canvas::Program<Message> for Letters {
+impl canvas::Program<crate::Message> for Letters {
     type State = LettersState;
 
     fn draw(
@@ -283,7 +328,7 @@ impl canvas::Program<Message> for Letters {
         event: &Event,
         bounds: iced::Rectangle,
         _cursor: iced::advanced::mouse::Cursor,
-    ) -> Option<canvas::Action<Message>> {
+    ) -> Option<canvas::Action<crate::Message>> {
         if let Event::Keyboard(iced::keyboard::Event::KeyPressed {
             modified_key: Key::Character(input),
             ..
@@ -324,14 +369,14 @@ impl canvas::Program<Message> for Letters {
                         let box_width = bounds.width / HORIZONTAL_COUNT.powi(3);
                         let box_height = bounds.height / VERTICAL_COUNT.powi(3);
 
-                        return Some(Action::publish(Message::LettersPick {
+                        return Some(Action::publish(crate::Message::Letters(Message::Pick {
                             // INFO: We want the point to be in the center, unlike in the previous levels where
                             // we wanted the top-left corner
                             point: Point {
                                 x: horizontal_steps.mul_add(box_width, point.x) + box_width / 2.0,
                                 y: vertical_steps.mul_add(box_height, point.y) + box_height / 2.0,
                             },
-                        }));
+                        })));
                     }
                 }
             }
@@ -340,7 +385,7 @@ impl canvas::Program<Message> for Letters {
             ..
         }) = event
         {
-            return Some(Action::publish(Message::LettersAbort));
+            return Some(Action::publish(crate::Message::Letters(Message::Abort)));
         }
 
         Some(Action::capture())

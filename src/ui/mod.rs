@@ -6,22 +6,24 @@ mod app;
 mod background_image;
 mod debug_overlay;
 mod errors;
-mod letters;
 pub mod selection;
 mod selection_icons;
-mod size_indicator;
 mod welcome_message;
 
 use background_image::BackgroundImage;
 use debug_overlay::DebugOverlay;
 use errors::Errors;
 
+pub mod size_indicator;
+use size_indicator::SizeIndicator;
+
 pub mod image_uploaded;
 use image_uploaded::ImageUploaded;
 
+pub mod letters;
 use letters::{Letters, PickCorner};
+
 use selection_icons::SelectionIcons;
-use size_indicator::SizeIndicator;
 use welcome_message::WelcomeMessage;
 
 pub use app::{App, SAVED_IMAGE};

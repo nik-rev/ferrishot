@@ -11,30 +11,21 @@ use crate::{
     },
 };
 
-/// Handle the message
 pub trait Handler {
-    /// Handle the message
     fn handle(self, app: &mut crate::App);
 }
 
 /// Represents an action happening in the application
 #[derive(Debug, Clone)]
 pub enum Message {
-    /// Copy text to clipboard
-    CopyTextToClipboard(String),
     /// Image uploaded message
     ImageUploaded(ui::image_uploaded::Message),
+    /// Letters message
+    Letters(ui::letters::Message),
+    /// Size indicator message
+    SizeIndicator(ui::size_indicator::Message),
     /// An error occured, display to the user
     Error(String),
-    /// Abort selecting a letter
-    LettersAbort,
-    /// A region was picked using `Letters` widget
-    ///
-    /// See `LetterLevel` for more info on "level" and "region"
-    LettersPick {
-        /// the center of the region clicked on the 3rd level of `Letters`
-        point: Point,
-    },
     /// Do nothing
     NoOp,
     /// Upload screenshot to the internet
@@ -58,22 +49,6 @@ pub enum Message {
         sel_is_some: SelectionIsSome,
         /// Multiplier for how fast we are resizing.
         speed: Speed,
-    },
-    /// Change the height of the selection, bottom right does not move
-    ResizeVertically {
-        /// Change height of the selection to this
-        new_height: u32,
-        /// A key to obtain `&mut Selection` from `Option<Selection>` with a guarantee that it will
-        /// always be there (to bypass the limitation that we cannot pass `&mut Selection` in a `Message`)
-        sel_is_some: SelectionIsSome,
-    },
-    /// Change the width of the selection, bottom right does not move
-    ResizeHorizontally {
-        /// Change width of the selection to this
-        new_width: u32,
-        /// A key to obtain `&mut Selection` from `Option<Selection>` with a guarantee that it will
-        /// always be there (to bypass the limitation that we cannot pass `&mut Selection` in a `Message`)
-        sel_is_some: SelectionIsSome,
     },
     /// When we have not yet released the left mouse button
     /// and are dragging the selection to extend it

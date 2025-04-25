@@ -3,15 +3,12 @@
 use crate::CLI;
 
 /// Initialize logging
-pub fn initialize() -> bool {
-    if CLI.print_log_file_path {
-        println!("{}", crate::config::DEFAULT_LOG_FILE_PATH.display());
-        true
-    } else if CLI.log_stdout {
+pub fn initialize() {
+    if CLI.log_stdout {
         env_logger::builder().init();
-        false
     } else {
         use std::io::Write as _;
+
         match std::fs::File::create(std::path::PathBuf::from(&*CLI.log_file)) {
             Ok(file) => env_logger::Builder::new()
                 .format(|buf, record| {
@@ -26,13 +23,12 @@ pub fn initialize() -> bool {
                     )
                 })
                 .target(env_logger::Target::Pipe(Box::new(file)))
-                .filter(None, log::LevelFilter::Error)
+                .filter(Some("ferrishot"), log::LevelFilter::Error)
                 .init(),
             Err(err) => {
                 env_logger::builder().init();
                 log::error!("Failed to create log file: {err}");
             }
         }
-        false
     }
 }

@@ -29,10 +29,13 @@ fn main() -> miette::Result<()> {
     // Parse the command line arguments
     LazyLock::force(&CLI);
 
-    // Setup logging
-    if ferrishot::logging::initialize() {
+    if CLI.print_log_file_path {
+        println!("{}", ferrishot::DEFAULT_LOG_FILE_PATH.display());
         return Ok(());
-    };
+    }
+
+    // Setup logging
+    ferrishot::logging::initialize();
 
     // Read the user's config, merging it with the default
     LazyLock::force(&ferrishot::CONFIG);

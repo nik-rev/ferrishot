@@ -9,12 +9,6 @@ use crate::{CONFIG, ui::selection::ICON_BUTTON_SIZE};
 use crate::{config::KeyAction, icon, message::Message, ui::selection::FRAME_WIDTH};
 use iced::{Background, Border, Shadow, widget};
 
-/// Helper to create a styled button with an icon
-#[macro_export]
-macro_rules! icon {
-    ($icon:ident) => {{ iced::widget::svg($crate::icons::Icon::$icon.svg()) }};
-}
-
 // Here is the behaviour that we want
 //
 // We have a list of icons we want to render.

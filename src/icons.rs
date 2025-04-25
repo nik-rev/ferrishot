@@ -70,3 +70,9 @@ load_icons! {
     /// Upload image to the internet
     Upload,
 }
+
+/// Expands to an SVG by reading from the `icons/` directory
+#[macro_export]
+macro_rules! icon {
+    ($icon:ident) => {{ iced::widget::svg($crate::icons::Icon::$icon.svg()) }};
+}
