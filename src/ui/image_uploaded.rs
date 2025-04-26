@@ -10,7 +10,9 @@
 use std::{thread, time::Duration};
 
 use iced::{
-    Background, Color, Element, Length, Task,
+    Background, Color, Element,
+    Length::{self, Fill},
+    Task,
     widget::{button, column, container, horizontal_rule, qr_code, row, stack, svg, text, tooltip},
 };
 
@@ -51,12 +53,12 @@ pub enum Message {
 impl crate::message::Handler for Message {
     fn handle(self, app: &mut super::App) -> Option<Task<crate::Message>> {
         match self {
-            Self::CopyLinkTimeout => app.url_copied = false,
+            Self::CopyLinkTimeout => app.has_copied_uploaded_image_link = false,
             Self::CopyLink(url) => {
                 if let Err(err) = crate::clipboard::set_text(&url) {
                     app.errors.push(err.to_string());
                 } else {
-                    app.url_copied = true;
+                    app.has_copied_uploaded_image_link = true;
                     return Some(Task::future(async move {
                         thread::sleep(Duration::from_secs(3));
                         crate::Message::ImageUploaded(Self::CopyLinkTimeout)
@@ -100,7 +102,7 @@ impl<'app> ImageUploaded<'app> {
                     //
                     // Heading
                     //
-                    container(text("Image Uploaded").size(30.0)).center_x(Length::Fill),
+                    container(text("Image Uploaded").size(30.0)).center_x(Fill),
                     //
                     // Divider
                     //
@@ -118,7 +120,7 @@ impl<'app> ImageUploaded<'app> {
                                 // URL Text
                                 //
                                 container(text(self.data.url.clone()).color(iced::Color::WHITE))
-                                    .center_y(Length::Fill),
+                                    .center_y(Fill),
                                 //
                                 // Copy to clipboard button
                                 //
@@ -154,7 +156,7 @@ impl<'app> ImageUploaded<'app> {
                                         text(label),
                                         tooltip::Position::Top,
                                     ))
-                                    .center_y(Length::Fill)
+                                    .center_y(Fill)
                                 }
                             ])
                             .style(|_| container::Style {
@@ -162,21 +164,28 @@ impl<'app> ImageUploaded<'app> {
                                 ..Default::default()
                             })
                             .center_y(Length::Fixed(32.0))
-                            .center_x(Length::Fill),
+                            .center_x(Fill),
                             //
                             // QR Code
                             //
-                            container(qr_code(self.qr_code_data).total_size(250.0))
-                                .center_x(Length::Fill),
+                            container(qr_code(self.qr_code_data).total_size(250.0)).center_x(Fill),
                         ]
                         .spacing(30.0)
                     )
-                    .center(Length::Fill)
+                    .center(Fill)
                     .height(Length::Fixed(300.0)),
                     //
-                    // Heading
+                    // --- Preview ---
                     //
-                    container(text("Preview").size(30.0)).center_x(Length::Fill),
+                    container(
+                        row![
+                            container(horizontal_rule(2)).center_y(Fill),
+                            container(text("Preview").size(30.0)).center_y(Fill),
+                            container(horizontal_rule(2)).center_y(Fill)
+                        ]
+                        .spacing(20.0)
+                    )
+                    .center_x(Fill),
                     //
                     // Metadata
                     //
@@ -188,13 +197,16 @@ impl<'app> ImageUploaded<'app> {
                             human_bytes::human_bytes(self.data.file_size as f64)
                         )
                     ])
-                    .center_x(Length::Fill),
+                    .center_x(Fill),
                     //
                     // Image
                     //
-                    iced::widget::image(self.data.uploaded_image.clone()).width(Length::Fill)
+                    iced::widget::image(self.data.uploaded_image.clone()).width(Fill)
                 ]
                 .spacing(30.0),
+                //
+                // Close button
+                //
                 container(icon_tooltip(
                     button(
                         icon!(Close)
@@ -214,8 +226,8 @@ impl<'app> ImageUploaded<'app> {
                     text("Close"),
                     tooltip::Position::Right
                 ))
-                .align_top(Length::Fill)
-                .align_right(Length::Fill),
+                .align_top(Fill)
+                .align_right(Fill),
             ])
             .width(Length::Fixed(700.0))
             .height(Length::Fixed(1100.0))
@@ -226,7 +238,7 @@ impl<'app> ImageUploaded<'app> {
             })
             .padding(30.0),
         )
-        .center(Length::Fill)
+        .center(Fill)
         .into()
     }
 }

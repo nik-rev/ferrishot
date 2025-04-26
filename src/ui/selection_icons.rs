@@ -1,7 +1,9 @@
 //! Icons around the selection rectangle
 
 use iced::{
-    Element, Length, Padding, Rectangle,
+    Element,
+    Length::{self, Fill},
+    Padding, Rectangle,
     widget::{Column, Row, Space, row, tooltip},
 };
 
@@ -448,15 +450,15 @@ impl SelectionIcons {
                 (top_icon_rows_count as f32)
                     .mul_add(-PX_PER_ICON, self.selection_rect.y - height_added / 2.0)
             ))
-            .width(Length::Fill),
+            .width(Fill),
             // top icon row
             top_icons,
             // right icon row + left icon row
-            row![Space::with_width(self.selection_rect.x - PX_PER_ICON).height(Length::Fill),]
+            row![Space::with_width(self.selection_rect.x - PX_PER_ICON).height(Fill),]
                 .push_maybe(left_icons)
                 .push(
                     Space::with_width(FRAME_WIDTH.mul_add(2.0, self.selection_rect.width))
-                        .height(Length::Fill)
+                        .height(Fill)
                 )
                 .push_maybe(right_icons)
                 .padding(Padding::default().top(height_added / 2.0))

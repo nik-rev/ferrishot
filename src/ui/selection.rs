@@ -6,7 +6,7 @@ use crate::rect::Side;
 use crate::rect::SideOrCorner;
 use delegate::delegate;
 use iced::Element;
-use iced::Length;
+use iced::Length::Fill;
 use iced::Renderer;
 use iced::Task;
 use iced::Theme;
@@ -318,10 +318,7 @@ pub impl Option<Selection> {
 impl Selection {
     /// Render the selection
     pub fn view(&self) -> Element<crate::Message> {
-        Canvas::new(self)
-            .width(Length::Fill)
-            .height(Length::Fill)
-            .into()
+        Canvas::new(self).width(Fill).height(Fill).into()
     }
 
     /// Convert the image into its final form, with crop (and in the future will also have

@@ -1,7 +1,9 @@
 //! Shows useful information when pressing F12
 
 use iced::{
-    Background, Element, Length, Theme,
+    Background, Element,
+    Length::Fill,
+    Theme,
     widget::{Column, column, container, horizontal_space, row, scrollable, text, vertical_space},
 };
 
@@ -48,7 +50,7 @@ impl DebugOverlay<'_> {
                 .width(400.0),
             )
             .style(container_style),
-            horizontal_space().width(Length::Fill),
+            horizontal_space().width(Fill),
             container(
                 scrollable(column![
                     text("Latest Messages").color(CONFIG.theme.debug_label),
@@ -61,12 +63,12 @@ impl DebugOverlay<'_> {
                         .collect::<Column<_>>()
                 ])
                 .width(400.0)
-                .height(Length::Fill),
+                .height(Fill),
             )
             .style(container_style)
         ]
-        .width(Length::Fill)
-        .height(Length::Fill)
+        .width(Fill)
+        .height(Fill)
         .into()
     }
 }

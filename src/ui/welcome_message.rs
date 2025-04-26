@@ -1,7 +1,8 @@
 //! The welcome message contains tips on how to use ferrishot
 
 use iced::{
-    Background, Color, Element, Font, Length,
+    Background, Color, Element, Font,
+    Length::{self, Fill},
     alignment::Vertical,
     widget::{Space, column, row, text, text::Shaping},
 };
@@ -35,10 +36,10 @@ impl WelcomeMessage {
             ..Font::default()
         };
 
-        let keys = |key: &'static str, action: &'static str| {
+        let tip = |key: &'static str, action: &'static str| {
             row![
                 row![
-                    Space::with_width(Length::Fill),
+                    Space::with_width(Fill),
                     text(key)
                         .size(FONT_SIZE)
                         .font(bold)
@@ -53,12 +54,12 @@ impl WelcomeMessage {
 
         let stuff = iced::widget::container(
             column![
-                keys("Mouse", "Select screenshot area"),
-                keys("Ctrl + S", "Save screenshot to a file"),
-                keys("Enter", "Copy screenshot to clipboard"),
-                keys("Right Click", "Snap closest corner to mouse"),
-                keys("Shift + Mouse", "Slowly resize / move area"),
-                keys("Esc", "Exit"),
+                tip("Mouse", "Select screenshot area"),
+                tip("Ctrl + S", "Save screenshot to a file"),
+                tip("Enter", "Copy screenshot to clipboard"),
+                tip("Right Click", "Snap closest corner to mouse"),
+                tip("Shift + Mouse", "Slowly resize / move area"),
+                tip("Esc", "Exit"),
             ]
             .spacing(8.0)
             .height(HEIGHT)

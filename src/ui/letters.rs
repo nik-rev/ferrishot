@@ -3,7 +3,9 @@
 use std::iter;
 
 use iced::{
-    Color, Element, Event, Font, Length, Point, Task,
+    Color, Element, Event, Font,
+    Length::Fill,
+    Point, Task,
     font::Weight,
     keyboard::Key,
     widget::{
@@ -247,10 +249,7 @@ pub struct Letters {
 impl Letters {
     /// Render a grid of letters
     pub fn view(self) -> Element<'static, crate::Message> {
-        Canvas::new(self)
-            .width(Length::Fill)
-            .height(Length::Fill)
-            .into()
+        Canvas::new(self).width(Fill).height(Fill).into()
     }
 }
 

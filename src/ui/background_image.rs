@@ -1,4 +1,5 @@
 //! Renders the full, unprocessed desktop screenshot on the screen
+use iced::Length::Fill;
 use iced::advanced::widget::Tree;
 use iced::advanced::{Layout, Widget, layout, renderer};
 use iced::widget::image;
@@ -17,8 +18,8 @@ where
 {
     fn size(&self) -> Size<Length> {
         Size {
-            width: Length::Fill,
-            height: Length::Fill,
+            width: Fill,
+            height: Fill,
         }
     }
 
@@ -32,8 +33,8 @@ where
             renderer,
             limits,
             &self.image_handle,
-            Length::Fill,
-            Length::Fill,
+            Fill,
+            Fill,
             iced::ContentFit::Contain,
             iced::Rotation::Solid(0.into()),
         )

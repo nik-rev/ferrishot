@@ -5,7 +5,7 @@ use crate::config::KeyAction;
 use crate::config::Place;
 use crate::ui;
 use crate::ui::PickCorner;
-use iced::Length;
+use iced::Length::Fill;
 use iced::Renderer;
 use iced::Theme;
 use iced::mouse::Interaction;
@@ -85,9 +85,9 @@ pub struct App {
     pub picking_corner: Option<PickCorner>,
     /// A link to the uploaded image
     pub uploaded_url: Option<(qr_code::Data, ui::image_uploaded::ImageUploadedData)>,
-    /// When the URL was copied
-    /// If the URL was copied less than a given time ago,
-    pub url_copied: bool,
+    /// When clicking on "Copy" button, change it to be a green tick for a few seconds before
+    /// reverting back
+    pub has_copied_uploaded_image_link: bool,
     /// Whether to show an overlay with additional information (F12)
     pub show_debug_overlay: bool,
     /// Dummy value
@@ -114,7 +114,7 @@ impl App {
                 image_handle: Screenshot::clone(&self.image).into(),
             })
             // event handler + shade in the background if no selection
-            .push(Canvas::new(self).width(Length::Fill).height(Length::Fill))
+            .push(Canvas::new(self).width(Fill).height(Fill))
             // border around the selection
             .push_maybe(self.selection.as_ref().map(|sel| sel.view()))
             // information popup, when there is no selection
@@ -158,7 +158,7 @@ impl App {
                 super::ImageUploaded {
                     qr_code_data,
                     data,
-                    url_copied: self.url_copied,
+                    url_copied: self.has_copied_uploaded_image_link,
                 }
                 .view()
             }))
