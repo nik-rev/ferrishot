@@ -23,7 +23,7 @@ use iced::{Point, Size, Task};
 
 use crate::rect::Direction;
 use crate::rect::RectangleExt;
-use crate::ui::selection::{Selection, SelectionStatus};
+use crate::ui::selection::Selection;
 
 use super::Errors;
 use super::selection::OptionalSelectionExt as _;
@@ -84,30 +84,12 @@ pub struct App {
     /// allows accessing 25 * 25 * 25 = 15,625 different locations
     pub picking_corner: Option<PickCorner>,
     /// A link to the uploaded image
-    pub uploaded_url: Option<(qr_code::Data, iced::widget::image::Handle, String)>,
+    pub uploaded_url: Option<(qr_code::Data, ui::image_uploaded::ImageUploadedData)>,
     /// Whether to show an overlay with additional information (F12)
     pub show_debug_overlay: bool,
 }
 
 impl App {
-    /// Create an empty selection at the current position
-    pub fn create_selection_at(&mut self, create_selection_at: Point) {
-        let mut selection = Selection::new(create_selection_at);
-        selection.status = SelectionStatus::Create;
-        self.selections_created += 1;
-        self.selection = Some(selection);
-    }
-
-    /// Computes a new selection based on the current position
-    pub fn update_selection(&mut self, other: Point) {
-        self.selection = self.selection.take().map(|selected_region| {
-            let width = other.x - selected_region.rect.x;
-            let height = other.y - selected_region.rect.y;
-
-            selected_region.with_size(|_| Size { width, height })
-        });
-    }
-
     /// Close the app
     ///
     /// This is like `iced::exit`, but it does not cause a segfault in special
@@ -167,14 +149,7 @@ impl App {
             .push_maybe(
                 self.uploaded_url
                     .as_ref()
-                    .map(|(qr_code_data, image_handle, url)| {
-                        super::ImageUploaded {
-                            qr_code_data,
-                            url,
-                            image_handle,
-                        }
-                        .view()
-                    }),
+                    .map(|(qr_code_data, data)| super::ImageUploaded { qr_code_data, data }.view()),
             )
             // debug overlay
             .push_maybe(
@@ -302,28 +277,46 @@ impl App {
                     };
                     let image_height = self.image.height() as f32;
                     let image_width = self.image.width() as f32;
-                    let sel = selection.norm();
 
-                    *selection = match place {
-                        Place::Center => sel
-                            .with_x(|_| (image_width - sel.rect.width) / 2.0)
-                            .with_y(|_| (image_height - sel.rect.height) / 2.0),
-                        Place::XCenter => sel.with_x(|_| (image_width - sel.rect.width) / 2.0),
-                        Place::YCenter => sel.with_y(|_| (image_height - sel.rect.height) / 2.0),
-                        Place::TopLeft => sel.with_x(|_| 0.0).with_y(|_| 0.0),
-                        Place::TopRight => {
-                            sel.with_x(|_| image_width - sel.rect.width).with_y(|_| 0.0)
+                    match place {
+                        Place::Center => {
+                            selection.rect.x = (image_width - selection.rect.width) / 2.0;
+                            selection.rect.y = (image_height - selection.rect.height) / 2.0;
                         }
-                        Place::BottomLeft => sel
-                            .with_x(|_| 0.0)
-                            .with_y(|_| image_height - sel.rect.height),
-                        Place::BottomRight => sel
-                            .with_x(|_| image_width - sel.rect.width)
-                            .with_y(|_| image_height - sel.rect.height),
-                        Place::Top => sel.with_y(|_| 0.0),
-                        Place::Bottom => sel.with_y(|_| image_height - sel.rect.height),
-                        Place::Left => sel.with_x(|_| 0.0),
-                        Place::Right => sel.with_x(|_| image_width - sel.rect.width),
+                        Place::XCenter => {
+                            selection.rect.x = (image_width - selection.rect.width) / 2.0;
+                        }
+                        Place::YCenter => {
+                            selection.rect.y = (image_height - selection.rect.height) / 2.0;
+                        }
+                        Place::TopLeft => {
+                            selection.rect.x = 0.0;
+                            selection.rect.y = 0.0;
+                        }
+                        Place::TopRight => {
+                            selection.rect.x = image_width - selection.rect.width;
+                            selection.rect.y = 0.0;
+                        }
+                        Place::BottomLeft => {
+                            selection.rect.x = 0.0;
+                            selection.rect.y = image_height - selection.rect.height;
+                        }
+                        Place::BottomRight => {
+                            selection.rect.x = image_width - selection.rect.width;
+                            selection.rect.y = image_height - selection.rect.height;
+                        }
+                        Place::Top => {
+                            selection.rect.y = 0.0;
+                        }
+                        Place::Bottom => {
+                            selection.rect.y = image_height - selection.rect.height;
+                        }
+                        Place::Left => {
+                            selection.rect.x = 0.0;
+                        }
+                        Place::Right => {
+                            selection.rect.x = image_width - selection.rect.width;
+                        }
                     }
                 }
                 KeyAction::Move(direction, amount) => {
@@ -406,11 +399,10 @@ impl App {
                     return Task::none();
                 };
 
-                let cropped_image = selection.process_image(
-                    self.image.width(),
-                    self.image.height(),
-                    self.image.bytes(),
-                );
+                let width = self.image.width();
+                let height = self.image.height();
+
+                let cropped_image = selection.process_image(width, height, self.image.bytes());
 
                 let tempfile = match tempfile::TempDir::new() {
                     Ok(tempdir) => tempdir.into_path().join("ferrishot-screenshot.png"),
@@ -428,6 +420,7 @@ impl App {
                 return Task::future(async move {
                     {
                         let file = tempfile;
+                        let file_size = file.metadata().unwrap().len();
                         let response = CONFIG
                             .default_image_upload_provider
                             .upload_image(&file)
@@ -435,10 +428,17 @@ impl App {
 
                         match response {
                             Ok(url) => Message::ImageUploaded(
-                                super::image_uploaded::Message::ImageUploaded {
-                                    url,
-                                    uploaded_image: iced::widget::image::Handle::from_path(&file),
-                                },
+                                super::image_uploaded::Message::ImageUploaded(
+                                    ui::image_uploaded::ImageUploadedData {
+                                        url,
+                                        uploaded_image: iced::widget::image::Handle::from_path(
+                                            &file,
+                                        ),
+                                        height,
+                                        width,
+                                        file_size,
+                                    },
+                                ),
                             ),
                             Err(err) => Message::Error(err.to_string()),
                         }

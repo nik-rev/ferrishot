@@ -89,7 +89,12 @@ impl crate::message::Handler for Message {
                 }
             }
             Self::ExtendNewSelection(new_mouse_position) => {
-                app.update_selection(new_mouse_position);
+                app.selection = app.selection.take().map(|selected_region| {
+                    let width = new_mouse_position.x - selected_region.rect.x;
+                    let height = new_mouse_position.y - selected_region.rect.y;
+
+                    selected_region.with_size(|_| Size { width, height })
+                });
             }
             Self::ResizeToCursor {
                 cursor_pos,

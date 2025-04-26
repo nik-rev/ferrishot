@@ -7,10 +7,25 @@
 use iced::{
     Background, Element, Length,
     widget::{
-        button, column, container, horizontal_space, image, image::Handle, qr_code, row, svg, text,
+        button, column, container, horizontal_rule, horizontal_space, qr_code, row, svg, text,
         vertical_space,
     },
 };
+
+/// Data of the uploaded image
+#[derive(Clone, Debug)]
+pub struct ImageUploadedData {
+    /// link to the uploaded image
+    pub url: String,
+    /// the uploaded image
+    pub uploaded_image: iced::widget::image::Handle,
+    /// The height of the image
+    pub height: u32,
+    /// The width of the image
+    pub width: u32,
+    /// File size in bytes
+    pub file_size: u64,
+}
 
 /// Message for the image uploaded
 #[derive(Clone, Debug)]
@@ -20,12 +35,7 @@ pub enum Message {
     /// Click "close" on the image upload menu
     ExitImageUploadMenu,
     /// The image was uploaded to the internet
-    ImageUploaded {
-        /// link to the uploaded image
-        url: String,
-        /// the uploaded image
-        uploaded_image: iced::widget::image::Handle,
-    },
+    ImageUploaded(ImageUploadedData),
     /// Copy link of image to clipboard
     CopyLink(String),
 }
@@ -43,14 +53,11 @@ impl crate::message::Handler for Message {
                 app.uploaded_url = None;
             }
             Self::ExitImageUploadMenu => app.uploaded_url = None,
-            Self::ImageUploaded {
-                url,
-                uploaded_image,
-            } => {
+            Self::ImageUploaded(data) => {
                 app.uploaded_url = Some((
-                    iced::widget::qr_code::Data::new(&url).unwrap(),
-                    uploaded_image,
-                    url,
+                    iced::widget::qr_code::Data::new(data.url.clone())
+                        .expect("URL to be valid QR Code data"),
+                    data,
                 ));
             }
         }
@@ -59,70 +66,134 @@ impl crate::message::Handler for Message {
 
 use crate::icon;
 
+use super::Explainer;
+
 /// Data for the uploaded image
 pub struct ImageUploaded<'app> {
     /// Data for the URL to the uploaded image
     pub qr_code_data: &'app qr_code::Data,
-    /// Link to the URL to the uploaded image
-    pub url: &'app str,
-    /// The uploaded image
-    pub image_handle: &'app Handle,
+    /// Data of the uploaded image
+    pub data: &'app ImageUploadedData,
 }
 
 impl<'app> ImageUploaded<'app> {
     /// Render the QR Code
     pub fn view(&self) -> Element<'app, crate::Message> {
+        // let close_button = button(icon!(Close).style(|_, _| svg::Style {
+        //     color: Some(iced::Color::WHITE),
+        // }))
+        // .width(Length::Fixed(32.0))
+        // .height(Length::Fixed(32.0))
+        // .style(|_, _| button::Style {
+        //     background: Some(Background::Color(Color::TRANSPARENT)),
+        //     text_color: Color::TRANSPARENT,
+        //     ..Default::default()
+        // })
+        // .on_press(crate::Message::ImageUploaded(
+        //     Message::CloseImageUploadedPopup,
+        // ));
+
         container(
-            container(column![
-                row![
-                    container(row![
-                        text(self.url).color(iced::Color::WHITE),
-                        button(icon!(Clipboard).style(|_, _| svg::Style {
-                            color: Some(iced::Color::WHITE)
-                        }))
-                        .on_press(crate::Message::ImageUploaded(Message::CopyLink(
-                            self.url.to_string()
-                        )))
-                        .style(|_, _| {
-                            iced::widget::button::Style {
-                                background: Some(Background::Color(iced::Color::TRANSPARENT)),
+            container(
+                column![
+                    //
+                    // Heading
+                    //
+                    container(text("Image Uploaded").size(30.0)).center_x(Length::Fill),
+                    //
+                    // Divider
+                    //
+                    container(horizontal_rule(2)).height(10.0),
+                    //
+                    // URL Text + Copy Button + QR Code
+                    //
+                    container(
+                        column![
+                            //
+                            // URL Text + Copy Button
+                            //
+                            container(row![
+                                //
+                                // URL Text
+                                //
+                                container(text(self.data.url.clone()).color(iced::Color::WHITE))
+                                    .center_y(Length::Fill),
+                                //
+                                // Copy to clipboard button
+                                //
+                                container(
+                                    button(
+                                        icon!(Clipboard)
+                                            .width(Length::Fixed(25.0))
+                                            .height(Length::Fixed(25.0))
+                                            .style(|_, _| {
+                                                svg::Style {
+                                                    color: Some(iced::Color::WHITE),
+                                                }
+                                            })
+                                    )
+                                    .on_press(crate::Message::ImageUploaded(Message::CopyLink(
+                                        self.data.url.to_string()
+                                    )))
+                                    .style(|_, _| {
+                                        iced::widget::button::Style {
+                                            background: Some(Background::Color(
+                                                iced::Color::TRANSPARENT,
+                                            )),
+                                            ..Default::default()
+                                        }
+                                    })
+                                )
+                                .center_y(Length::Fill)
+                            ])
+                            .style(|_| container::Style {
+                                text_color: Some(iced::Color::WHITE),
+                                background: Some(Background::Color(iced::color!(0x0f_0f_0f))),
                                 ..Default::default()
-                            }
-                        })
+                            })
+                            .center_y(Length::Fixed(32.0))
+                            .center_x(Length::Fill),
+                            //
+                            // QR Code
+                            //
+                            container(qr_code(self.qr_code_data).total_size(250.0))
+                                .center_x(Length::Fill),
+                        ]
+                        .spacing(30.0)
+                    )
+                    .center(Length::Fill)
+                    .height(Length::Fixed(300.0)),
+                    //
+                    // Heading
+                    //
+                    container(text("Preview").size(30.0)).center_x(Length::Fill),
+                    //
+                    // Metadata
+                    //
+                    container(column![
+                        text!("size: {w} ✕ {h}", w = self.data.width, h = self.data.height)
+                            .shaping(text::Shaping::Advanced),
+                        text!(
+                            "filesize: {}",
+                            human_bytes::human_bytes(self.data.file_size as f64)
+                        )
                     ])
-                    .style(|_| {
-                        container::Style {
-                            text_color: Some(iced::Color::WHITE),
-                            background: Some(Background::Color(iced::color!(0x0f_0f_0f))),
-                            ..Default::default()
-                        }
-                    }),
-                    horizontal_space().width(Length::Fill),
-                    button(icon!(Close).style(|_, _| svg::Style {
-                        color: Some(iced::Color::WHITE)
-                    }))
-                    .on_press(crate::Message::ImageUploaded(
-                        Message::CloseImageUploadedPopup
-                    ))
-                ],
-                vertical_space().height(Length::Fill),
-                container(row![
-                    container(qr_code(self.qr_code_data).total_size(200.0))
-                        .height(300.0)
-                        .center_y(Length::Fill),
-                    horizontal_space().width(30.0),
-                    horizontal_space().width(Length::Fill),
-                    image(self.image_handle).height(300.0),
-                ]),
-            ])
-            .padding(40.0)
-            .width(Length::Fixed(1200.0))
-            .height(Length::Fixed(650.0))
+                    .center_x(Length::Fill),
+                    //
+                    // Image
+                    //
+                    iced::widget::image(self.data.uploaded_image.clone()).width(Length::Fill)
+                ]
+                .spacing(30.0),
+            )
+            .width(Length::Fixed(700.0))
+            .height(Length::Fixed(1100.0))
             .style(|_| container::Style {
                 text_color: Some(iced::Color::WHITE),
-                background: Some(Background::Color(iced::Color::BLACK)),
+                background: Some(Background::Color(iced::Color::BLACK.scale_alpha(0.9))),
                 ..Default::default()
-            }),
+            })
+            .padding(30.0),
         )
         .center(Length::Fill)
         .into()
