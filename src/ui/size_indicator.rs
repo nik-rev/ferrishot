@@ -30,7 +30,7 @@ pub enum Message {
 }
 
 impl crate::message::Handler for Message {
-    fn handle(self, app: &mut crate::App) -> Option<Task<crate::Message>> {
+    fn handle(self, app: &mut crate::App) -> Task<crate::Message> {
         match self {
             Self::ResizeVertically {
                 new_height,
@@ -69,7 +69,7 @@ impl crate::message::Handler for Message {
             }
         }
 
-        None
+        Task::none()
     }
 }
 

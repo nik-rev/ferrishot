@@ -5,15 +5,10 @@ use crate::rect::RectangleExt;
 use crate::rect::Side;
 use crate::rect::SideOrCorner;
 use delegate::delegate;
-use iced::Element;
-use iced::Length::Fill;
-use iced::Renderer;
 use iced::Task;
-use iced::Theme;
 use iced::mouse::Cursor;
 use iced::mouse::Interaction;
 use iced::widget::Action;
-use iced::widget::Canvas;
 use iced::widget::canvas;
 use iced::{Point, Rectangle, Size};
 
@@ -74,7 +69,7 @@ pub enum Message {
 }
 
 impl crate::message::Handler for Message {
-    fn handle(self, app: &mut crate::App) -> Option<Task<crate::Message>> {
+    fn handle(self, app: &mut crate::App) -> Task<crate::Message> {
         match self {
             Self::CreateSelection(point) => {
                 app.selection = Some(Selection::new(point).with_status(SelectionStatus::Create));
@@ -202,7 +197,8 @@ impl crate::message::Handler for Message {
                 app.selection = Some(new_selection);
             }
         }
-        None
+
+        Task::none()
     }
 }
 
@@ -316,9 +312,40 @@ pub impl Option<Selection> {
 }
 
 impl Selection {
-    /// Render the selection
-    pub fn view(&self) -> Element<crate::Message> {
-        Canvas::new(self).width(Fill).height(Fill).into()
+    /// Draw the `Selection`
+    pub fn draw(&self, frame: &mut canvas::Frame, bounds: Rectangle) {
+        self.draw_shade(frame, bounds);
+        self.draw_border(frame);
+        self.draw_corners(frame);
+    }
+
+    /// Type of the mouse cursor
+    pub fn mouse_interaction(&self, cursor: Cursor) -> Interaction {
+        // if we are already resizing, then this cursor takes priority
+        // e.g. we are resizing horizontally but we are on the top left
+        // corner = we should have horizontal resize cursor.
+        (if let SelectionStatus::Resize { resize_side, .. } = self.status {
+            // resize icon corresponding to a specific side
+            Some(resize_side.mouse_icon())
+        } else if self.status.is_move() {
+            Some(Interaction::Grabbing)
+        } else {
+            None
+        })
+        .or_else(|| {
+            // when we started dragging a side, even if we go outside of the bounds of that side (which
+            // happens often when we are dragging the mouse fast), we don't want the cursor to change
+            cursor
+                .position()
+                .and_then(|cursor| self.corners().side_at(cursor).map(SideOrCorner::mouse_icon))
+        })
+        .unwrap_or_else(|| {
+            if self.cursor_in_selection(cursor).is_some() {
+                Interaction::Grab
+            } else {
+                Interaction::Crosshair
+            }
+        })
     }
 
     /// Convert the image into its final form, with crop (and in the future will also have
@@ -410,144 +437,10 @@ impl Selection {
         }
     }
 
-    /// If the given cursor intersects the selected region, give the region and
-    /// the cursor
-    pub fn cursor_in_selection(self, cursor: Cursor) -> Option<(Point, Self)> {
-        cursor.position().and_then(|cursor_pos| {
-            self.norm()
-                .contains(cursor_pos)
-                .then_some((cursor_pos, self))
-        })
-    }
-
-    /// If the given cursor intersects the selected region, give the region and
-    /// the cursor
-    pub fn cursor_in_selection_mut(&mut self, cursor: Cursor) -> Option<(Point, &mut Self)> {
-        cursor.position().and_then(|cursor_pos| {
-            self.norm()
-                .contains(cursor_pos)
-                .then_some((cursor_pos, self))
-        })
-    }
-
-    delegate! {
-        to self.rect {
-            /// The height and width of the selection
-            pub fn size(self) -> Size;
-            /// Top left corner of the selection
-            pub fn pos(self) -> Point;
-            /// Top-left, top-right, bottom-left and bottom-right points
-            pub fn corners(self) -> Corners;
-            /// Whether this selection contains a given point
-            pub fn contains(self, point: Point) -> bool;
-            /// Position of the top left corner
-            pub fn top_left(self) -> Point;
-            /// Position of the top right corner
-            pub fn top_right(self) -> Point;
-            /// Position of the bottom right corner
-            pub fn bottom_right(self) -> Point;
-            /// Position of the bottom left corner
-            pub fn bottom_left(self) -> Point;
-        }
-        #[expr(self.rect = $; self)]
-        to self.rect {
-            /// Update the size of the rect
-            pub fn with_size<F: FnOnce(Size) -> Size>(mut self, f: F) -> Self;
-            /// Update the position of the top left corner
-            pub fn with_pos<F: FnOnce(Point) -> Point>(mut self, f: F) -> Self;
-            /// Update the selection's height
-            pub fn with_height<F: FnOnce(f32) -> f32>(mut self, f: F) -> Self;
-            /// Update the selection's width
-            pub fn with_width<F: FnOnce(f32) -> f32>(mut self, f: F) -> Self;
-            /// Update the x coordinate of the top left corner
-            pub fn with_x<F: FnOnce(f32) -> f32>(mut self, f: F) -> Self;
-            /// Update the y coordinate of the top left corner
-            pub fn with_y<F: FnOnce(f32) -> f32>(mut self, f: F) -> Self;
-            /// Make sure the width and height is not negative
-            pub fn norm(mut self) -> Self;
-        }
-        to self.status {
-            /// The selection is currently being dragged
-            pub const fn is_move(self) -> bool;
-            /// The selection is not moving
-            pub const fn is_idle(self) -> bool;
-            /// The selection is being resized
-            pub const fn is_resize(self) -> bool;
-            /// The selection is being created
-            pub const fn is_create(self) -> bool;
-        }
-    }
-}
-
-/// Holds information about the mouse
-#[derive(Default, Debug, Clone)]
-pub struct SelectionKeysState {
-    /// Left mouse click is currently being held down
-    pub is_left_down: bool,
-    /// Left mouse click is currently being held down
-    pub is_right_down: bool,
-    /// Shift key is currently being held down
-    pub is_shift_down: bool,
-}
-
-impl canvas::Program<crate::Message> for Selection {
-    type State = SelectionKeysState;
-
-    fn draw(
+    /// Update the selection
+    pub fn update(
         &self,
-        _state: &Self::State,
-        renderer: &Renderer,
-        _theme: &Theme,
-        bounds: Rectangle,
-        _cursor: iced::advanced::mouse::Cursor,
-    ) -> Vec<canvas::Geometry> {
-        let mut frame = canvas::Frame::new(renderer, bounds.size());
-
-        let sel = self.norm();
-
-        sel.draw_shade(&mut frame, bounds);
-        sel.draw_border(&mut frame);
-        sel.draw_corners(&mut frame);
-
-        vec![frame.into_geometry()]
-    }
-
-    fn mouse_interaction(
-        &self,
-        _state: &Self::State,
-        _bounds: Rectangle,
-        cursor: iced::advanced::mouse::Cursor,
-    ) -> Interaction {
-        let sel = self.norm();
-        // if we are already resizing, then this cursor takes priority
-        // e.g. we are resizing horizontally but we are on the top left
-        // corner = we should have horizontal resize cursor.
-        (if let SelectionStatus::Resize { resize_side, .. } = sel.status {
-            Some(resize_side.mouse_icon())
-        } else if sel.status.is_move() {
-            Some(Interaction::Grabbing)
-        } else {
-            None
-        })
-        .or_else(|| {
-            // when we started dragging a side, even if we go outside of the bounds of that side (which
-            // happens often when we are dragging the mouse fast), we don't want the cursor to change
-            cursor
-                .position()
-                .and_then(|cursor| sel.corners().side_at(cursor).map(SideOrCorner::mouse_icon))
-        })
-        .unwrap_or_else(|| {
-            if self.cursor_in_selection(cursor).is_some() {
-                Interaction::Grab
-            } else {
-                Interaction::Crosshair
-            }
-        })
-    }
-
-    fn update(
-        &self,
-        state: &mut Self::State,
+        state: &mut SelectionKeysState,
         event: &iced::Event,
         _bounds: Rectangle,
         cursor: iced::advanced::mouse::Cursor,
@@ -720,4 +613,83 @@ impl canvas::Program<crate::Message> for Selection {
 
         Some(Action::publish(message))
     }
+
+    /// If the given cursor intersects the selected region, give the region and
+    /// the cursor
+    pub fn cursor_in_selection(self, cursor: Cursor) -> Option<(Point, Self)> {
+        cursor.position().and_then(|cursor_pos| {
+            self.norm()
+                .contains(cursor_pos)
+                .then_some((cursor_pos, self))
+        })
+    }
+
+    /// If the given cursor intersects the selected region, give the region and
+    /// the cursor
+    pub fn cursor_in_selection_mut(&mut self, cursor: Cursor) -> Option<(Point, &mut Self)> {
+        cursor.position().and_then(|cursor_pos| {
+            self.norm()
+                .contains(cursor_pos)
+                .then_some((cursor_pos, self))
+        })
+    }
+
+    delegate! {
+        to self.rect {
+            /// The height and width of the selection
+            pub fn size(self) -> Size;
+            /// Top left corner of the selection
+            pub fn pos(self) -> Point;
+            /// Top-left, top-right, bottom-left and bottom-right points
+            pub fn corners(self) -> Corners;
+            /// Whether this selection contains a given point
+            pub fn contains(self, point: Point) -> bool;
+            /// Position of the top left corner
+            pub fn top_left(self) -> Point;
+            /// Position of the top right corner
+            pub fn top_right(self) -> Point;
+            /// Position of the bottom right corner
+            pub fn bottom_right(self) -> Point;
+            /// Position of the bottom left corner
+            pub fn bottom_left(self) -> Point;
+        }
+        #[expr(self.rect = $; self)]
+        to self.rect {
+            /// Update the size of the rect
+            pub fn with_size<F: FnOnce(Size) -> Size>(mut self, f: F) -> Self;
+            /// Update the position of the top left corner
+            pub fn with_pos<F: FnOnce(Point) -> Point>(mut self, f: F) -> Self;
+            /// Update the selection's height
+            pub fn with_height<F: FnOnce(f32) -> f32>(mut self, f: F) -> Self;
+            /// Update the selection's width
+            pub fn with_width<F: FnOnce(f32) -> f32>(mut self, f: F) -> Self;
+            /// Update the x coordinate of the top left corner
+            pub fn with_x<F: FnOnce(f32) -> f32>(mut self, f: F) -> Self;
+            /// Update the y coordinate of the top left corner
+            pub fn with_y<F: FnOnce(f32) -> f32>(mut self, f: F) -> Self;
+            /// Make sure the width and height is not negative
+            pub fn norm(mut self) -> Self;
+        }
+        to self.status {
+            /// The selection is currently being dragged
+            pub const fn is_move(self) -> bool;
+            /// The selection is not moving
+            pub const fn is_idle(self) -> bool;
+            /// The selection is being resized
+            pub const fn is_resize(self) -> bool;
+            /// The selection is being created
+            pub const fn is_create(self) -> bool;
+        }
+    }
+}
+
+/// Holds information about the mouse
+#[derive(Default, Debug, Clone)]
+pub struct SelectionKeysState {
+    /// Left mouse click is currently being held down
+    pub is_left_down: bool,
+    /// Left mouse click is currently being held down
+    pub is_right_down: bool,
+    /// Shift key is currently being held down
+    pub is_shift_down: bool,
 }

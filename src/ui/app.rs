@@ -27,6 +27,7 @@ use crate::ui::selection::Selection;
 
 use super::Errors;
 use super::selection::OptionalSelectionExt as _;
+use super::selection::SelectionKeysState;
 
 /// The image to save to a file, chosen by the user in a file picker.
 ///
@@ -115,8 +116,6 @@ impl App {
             })
             // event handler + shade in the background if no selection
             .push(Canvas::new(self).width(Fill).height(Fill))
-            // border around the selection
-            .push_maybe(self.selection.as_ref().map(|sel| sel.view()))
             // information popup, when there is no selection
             .push_maybe(self.selection.is_none().then(|| {
                 super::WelcomeMessage {
@@ -176,24 +175,16 @@ impl App {
 
         match message {
             Message::Selection(selection) => {
-                if let Some(task) = selection.handle(self) {
-                    return task;
-                }
+                return selection.handle(self);
             }
             Message::SizeIndicator(size_indicator) => {
-                if let Some(task) = size_indicator.handle(self) {
-                    return task;
-                }
+                return size_indicator.handle(self);
             }
             Message::ImageUploaded(image_uploaded) => {
-                if let Some(task) = image_uploaded.handle(self) {
-                    return task;
-                }
+                return image_uploaded.handle(self);
             }
             Message::Letters(letters) => {
-                if let Some(task) = letters.handle(self) {
-                    return task;
-                }
+                return letters.handle(self);
             }
             Message::NoOp => (),
             Message::KeyBind { action, count } => match action {
@@ -495,7 +486,7 @@ pub struct AppKeysState {
 }
 
 impl canvas::Program<Message> for App {
-    type State = AppKeysState;
+    type State = (AppKeysState, SelectionKeysState);
 
     fn draw(
         &self,
@@ -507,7 +498,9 @@ impl canvas::Program<Message> for App {
     ) -> Vec<canvas::Geometry> {
         let mut frame = canvas::Frame::new(renderer, bounds.size());
 
-        if self.selection.is_none() {
+        if let Some(sel) = self.selection.map(Selection::norm) {
+            sel.draw(&mut frame, bounds);
+        } else {
             // usually the selection is responsible for drawing shade around itself
             // However here we don't have selection, so just draw the shade on the entire screen
             frame.fill_rectangle(
@@ -524,7 +517,7 @@ impl canvas::Program<Message> for App {
         &self,
         state: &mut Self::State,
         event: &iced::Event,
-        _bounds: Rectangle,
+        bounds: Rectangle,
         cursor: iced::advanced::mouse::Cursor,
     ) -> Option<Action<Message>> {
         use iced::Event::{Keyboard, Mouse};
@@ -535,6 +528,14 @@ impl canvas::Program<Message> for App {
         use iced::mouse::Button::Left;
         use iced::mouse::Event::ButtonPressed;
         use iced::mouse::Event::ButtonReleased;
+
+        let (state, selection_state) = state;
+
+        if let Some(sel) = self.selection {
+            if let Some(action) = sel.update(selection_state, event, bounds, cursor) {
+                return Some(action);
+            };
+        }
 
         // handle the number pressed
         //
@@ -642,8 +643,10 @@ impl canvas::Program<Message> for App {
         &self,
         _state: &Self::State,
         _bounds: Rectangle,
-        _cursor: iced::advanced::mouse::Cursor,
+        cursor: iced::advanced::mouse::Cursor,
     ) -> Interaction {
-        Interaction::Crosshair
+        self.selection
+            .map(Selection::norm)
+            .map_or(Interaction::Crosshair, |sel| sel.mouse_interaction(cursor))
     }
 }

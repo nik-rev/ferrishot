@@ -51,7 +51,7 @@ pub enum Message {
 }
 
 impl crate::message::Handler for Message {
-    fn handle(self, app: &mut super::App) -> Option<Task<crate::Message>> {
+    fn handle(self, app: &mut super::App) -> Task<crate::Message> {
         match self {
             Self::CopyLinkTimeout => app.has_copied_uploaded_image_link = false,
             Self::CopyLink(url) => {
@@ -59,10 +59,10 @@ impl crate::message::Handler for Message {
                     app.errors.push(err.to_string());
                 } else {
                     app.has_copied_uploaded_image_link = true;
-                    return Some(Task::future(async move {
+                    return Task::future(async move {
                         thread::sleep(Duration::from_secs(3));
                         crate::Message::ImageUploaded(Self::CopyLinkTimeout)
-                    }));
+                    });
                 }
             }
             Self::CloseImageUploadedPopup => {
@@ -79,7 +79,7 @@ impl crate::message::Handler for Message {
             },
         }
 
-        None
+        Task::none()
     }
 }
 
