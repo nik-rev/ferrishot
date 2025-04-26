@@ -66,8 +66,6 @@ impl crate::message::Handler for Message {
 
 use crate::icon;
 
-use super::Explainer;
-
 /// Data for the uploaded image
 pub struct ImageUploaded<'app> {
     /// Data for the URL to the uploaded image

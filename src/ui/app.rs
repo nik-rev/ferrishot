@@ -399,10 +399,11 @@ impl App {
                     return Task::none();
                 };
 
-                let width = self.image.width();
-                let height = self.image.height();
-
-                let cropped_image = selection.process_image(width, height, self.image.bytes());
+                let cropped_image = selection.process_image(
+                    self.image.width(),
+                    self.image.height(),
+                    self.image.bytes(),
+                );
 
                 let tempfile = match tempfile::TempDir::new() {
                     Ok(tempdir) => tempdir.into_path().join("ferrishot-screenshot.png"),
@@ -420,7 +421,7 @@ impl App {
                 return Task::future(async move {
                     {
                         let file = tempfile;
-                        let file_size = file.metadata().unwrap().len();
+                        let file_size = file.metadata().map(|meta| meta.len()).unwrap_or(0);
                         let response = CONFIG
                             .default_image_upload_provider
                             .upload_image(&file)
@@ -434,8 +435,8 @@ impl App {
                                         uploaded_image: iced::widget::image::Handle::from_path(
                                             &file,
                                         ),
-                                        height,
-                                        width,
+                                        height: cropped_image.height(),
+                                        width: cropped_image.width(),
                                         file_size,
                                     },
                                 ),
