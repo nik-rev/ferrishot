@@ -6,10 +6,7 @@
 
 use iced::{
     Background, Element, Length,
-    widget::{
-        button, column, container, horizontal_rule, horizontal_space, qr_code, row, svg, text,
-        vertical_space,
-    },
+    widget::{button, column, container, horizontal_rule, qr_code, row, svg, text},
 };
 
 /// Data of the uploaded image

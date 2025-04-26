@@ -26,6 +26,8 @@ crate::declare_config_options! {
 }
 
 crate::declare_key_options! {
+    /// Upload screenshot to the internet
+    UploadScreenshot,
     /// Toggle the overlay showing various information for debugging
     ToggleDebugOverlay,
     /// Open a grid of letters to pick the top left corner in 3 keystrokes

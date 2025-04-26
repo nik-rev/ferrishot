@@ -14,6 +14,8 @@ keys {
 
   save-screenshot mod=ctrl key=s
 
+  upload-screenshot mod=ctrl key=u
+
   select-full-screen key=<f11>
 
   clear-selection mod=ctrl key=x

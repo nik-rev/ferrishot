@@ -390,62 +390,63 @@ impl App {
                 KeyAction::PickBottomRightCorner => {
                     self.picking_corner = Some(PickCorner::BottomRight);
                 }
-            },
-            Message::Upload => {
-                let Some(selection) = self.selection.as_ref().map(|sel| Selection::norm(*sel))
-                else {
-                    self.errors
-                        .push("Selection does not exist. There is nothing to copy!");
-                    return Task::none();
-                };
-
-                let cropped_image = selection.process_image(
-                    self.image.width(),
-                    self.image.height(),
-                    self.image.bytes(),
-                );
-
-                let tempfile = match tempfile::TempDir::new() {
-                    Ok(tempdir) => tempdir.into_path().join("ferrishot-screenshot.png"),
-                    Err(err) => {
-                        self.errors.push(err.to_string());
+                KeyAction::UploadScreenshot => {
+                    let Some(selection) = self.selection.as_ref().map(|sel| Selection::norm(*sel))
+                    else {
+                        self.errors
+                            .push("Selection does not exist. There is nothing to copy!");
                         return Task::none();
-                    }
-                };
+                    };
 
-                if let Err(err) = cropped_image.save_with_format(&tempfile, image::ImageFormat::Png)
-                {
-                    self.errors.push(err.to_string());
-                }
+                    let cropped_image = selection.process_image(
+                        self.image.width(),
+                        self.image.height(),
+                        self.image.bytes(),
+                    );
 
-                return Task::future(async move {
-                    {
-                        let file = tempfile;
-                        let file_size = file.metadata().map(|meta| meta.len()).unwrap_or(0);
-                        let response = CONFIG
-                            .default_image_upload_provider
-                            .upload_image(&file)
-                            .await;
-
-                        match response {
-                            Ok(url) => Message::ImageUploaded(
-                                super::image_uploaded::Message::ImageUploaded(
-                                    ui::image_uploaded::ImageUploadedData {
-                                        url,
-                                        uploaded_image: iced::widget::image::Handle::from_path(
-                                            &file,
-                                        ),
-                                        height: cropped_image.height(),
-                                        width: cropped_image.width(),
-                                        file_size,
-                                    },
-                                ),
-                            ),
-                            Err(err) => Message::Error(err.to_string()),
+                    let tempfile = match tempfile::TempDir::new() {
+                        Ok(tempdir) => tempdir.into_path().join("ferrishot-screenshot.png"),
+                        Err(err) => {
+                            self.errors.push(err.to_string());
+                            return Task::none();
                         }
+                    };
+
+                    if let Err(err) =
+                        cropped_image.save_with_format(&tempfile, image::ImageFormat::Png)
+                    {
+                        self.errors.push(err.to_string());
                     }
-                });
-            }
+
+                    return Task::future(async move {
+                        {
+                            let file = tempfile;
+                            let file_size = file.metadata().map(|meta| meta.len()).unwrap_or(0);
+                            let response = CONFIG
+                                .default_image_upload_provider
+                                .upload_image(&file)
+                                .await;
+
+                            match response {
+                                Ok(url) => Message::ImageUploaded(
+                                    super::image_uploaded::Message::ImageUploaded(
+                                        ui::image_uploaded::ImageUploadedData {
+                                            url,
+                                            uploaded_image: iced::widget::image::Handle::from_path(
+                                                &file,
+                                            ),
+                                            height: cropped_image.height(),
+                                            width: cropped_image.width(),
+                                            file_size,
+                                        },
+                                    ),
+                                ),
+                                Err(err) => Message::Error(err.to_string()),
+                            }
+                        }
+                    });
+                }
+            },
             Message::Error(err) => {
                 self.errors.push(err);
             }

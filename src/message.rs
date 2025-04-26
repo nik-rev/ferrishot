@@ -25,8 +25,6 @@ pub enum Message {
     Error(String),
     /// Do nothing
     NoOp,
-    /// Upload screenshot to the internet
-    Upload,
     /// An action can be triggered by a keybind
     ///
     /// It can also be triggered through other means, such as pressing a button

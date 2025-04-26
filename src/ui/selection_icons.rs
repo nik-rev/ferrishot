@@ -171,7 +171,7 @@ impl SelectionIcons {
                         count: 1,
                     })
                     .into(),
-                "Save Screenshot (Ctrl + S)",
+                "Save Screenshot (Ctrl + s)",
             ),
             (
                 selection_icon(icon!(Close))
@@ -180,13 +180,16 @@ impl SelectionIcons {
                         count: 1,
                     })
                     .into(),
-                "Exit (Esc)",
+                "Exit (esc)",
             ),
             (
                 selection_icon(icon!(Upload))
-                    .on_press(Message::Upload)
+                    .on_press(Message::KeyBind {
+                        action: KeyAction::UploadScreenshot,
+                        count: 1,
+                    })
                     .into(),
-                "Upload screenshot online",
+                "Upload Screenshot (Ctrl + u)",
             ),
         ];
 
