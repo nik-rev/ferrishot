@@ -44,7 +44,13 @@ impl crate::message::Handler for Message {
                 if let Some(pick_corner) = app.picking_corner {
                     match pick_corner {
                         PickCorner::TopLeft => {
-                            app.selection = Some(sel.with_x(|_| x).with_y(|_| y));
+                            app.selection = Some(
+                                sel.with_x(|_| x)
+                                    .with_y(|_| y)
+                                    // make sure that the selection is not going to be out of bounds
+                                    .with_width(|w| w.min(app.image.width() as f32 - x))
+                                    .with_height(|h| h.min(app.image.height() as f32 - y)),
+                            );
                         }
                         PickCorner::BottomRight => {
                             app.selection = Some(
