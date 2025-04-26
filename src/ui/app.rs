@@ -117,13 +117,15 @@ impl App {
             // event handler + shade in the background if no selection
             .push(Canvas::new(self).width(Fill).height(Fill))
             // information popup, when there is no selection
-            .push_maybe(self.selection.is_none().then(|| {
-                super::WelcomeMessage {
-                    image_width: self.image.width(),
-                    image_height: self.image.height(),
-                }
-                .view()
-            }))
+            .push_maybe(
+                (self.uploaded_url.is_none() && self.selection.is_none()).then(|| {
+                    super::WelcomeMessage {
+                        image_width: self.image.width(),
+                        image_height: self.image.height(),
+                    }
+                    .view()
+                }),
+            )
             // errors
             .push(self.errors.view(self.image.width()))
             // icons around the selection
@@ -412,7 +414,7 @@ impl App {
                     let Some(selection) = self.selection.as_ref().map(|sel| Selection::norm(*sel))
                     else {
                         self.errors
-                            .push("Selection does not exist. There is nothing to copy!");
+                            .push("Select something on the screen to upload it");
                         return Task::none();
                     };
 
@@ -430,6 +432,7 @@ impl App {
                         }
                     };
 
+                    // TODO: add config option for setting the format to upload with
                     if let Err(err) =
                         cropped_image.save_with_format(&tempfile, image::ImageFormat::Png)
                     {
@@ -528,6 +531,38 @@ impl canvas::Program<Message> for App {
         use iced::mouse::Button::Left;
         use iced::mouse::Event::ButtonPressed;
         use iced::mouse::Event::ButtonReleased;
+
+        // Handle popups
+        //
+        // Events will still be forwarded to the canvas even if we have a popup
+        if self.uploaded_url.is_some() {
+            match event {
+                Keyboard(KeyPressed {
+                    key: iced::keyboard::Key::Named(iced::keyboard::key::Named::Escape),
+                    ..
+                })
+                | Mouse(ButtonPressed(Left)) => {
+                    return Some(Action::publish(Message::ImageUploaded(
+                        ui::image_uploaded::Message::ExitImageUploadMenu,
+                    )));
+                }
+                _ => (),
+            }
+
+            return None;
+        } else if self.picking_corner.is_some() {
+            if let Keyboard(KeyPressed {
+                key: iced::keyboard::Key::Named(iced::keyboard::key::Named::Escape),
+                ..
+            }) = event
+            {
+                return Some(Action::publish(Message::Letters(
+                    ui::letters::Message::Abort,
+                )));
+            }
+
+            return None;
+        }
 
         let (state, selection_state) = state;
 
@@ -645,8 +680,12 @@ impl canvas::Program<Message> for App {
         _bounds: Rectangle,
         cursor: iced::advanced::mouse::Cursor,
     ) -> Interaction {
-        self.selection
-            .map(Selection::norm)
-            .map_or(Interaction::Crosshair, |sel| sel.mouse_interaction(cursor))
+        if self.uploaded_url.is_some() {
+            Interaction::default()
+        } else {
+            self.selection
+                .map(Selection::norm)
+                .map_or(Interaction::Crosshair, |sel| sel.mouse_interaction(cursor))
+        }
     }
 }

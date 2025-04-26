@@ -13,7 +13,9 @@ use iced::{
     Background, Color, Element,
     Length::{self, Fill},
     Task,
-    widget::{button, column, container, horizontal_rule, qr_code, row, stack, svg, text, tooltip},
+    widget::{
+        button, column, container, horizontal_rule, opaque, qr_code, row, stack, svg, text, tooltip,
+    },
 };
 
 use crate::icon;
@@ -38,8 +40,6 @@ pub struct ImageUploadedData {
 /// Message for the image uploaded
 #[derive(Clone, Debug)]
 pub enum Message {
-    /// Close image uploaded popup
-    CloseImageUploadedPopup,
     /// Click "close" on the image upload menu
     ExitImageUploadMenu,
     /// The image was uploaded to the internet
@@ -65,13 +65,11 @@ impl crate::message::Handler for Message {
                     });
                 }
             }
-            Self::CloseImageUploadedPopup => {
-                app.uploaded_url = None;
-            }
             Self::ExitImageUploadMenu => app.uploaded_url = None,
             Self::ImageUploaded(data) => match iced::widget::qr_code::Data::new(data.url.clone()) {
                 Ok(qr_code) => {
                     app.uploaded_url = Some((qr_code, data));
+                    app.selection = None;
                 }
                 Err(err) => {
                     app.errors.push(format!("Failed to get QR Code: {err}"));
@@ -96,7 +94,7 @@ pub struct ImageUploaded<'app> {
 impl<'app> ImageUploaded<'app> {
     /// Render the QR Code
     pub fn view(&self) -> Element<'app, crate::Message> {
-        container(
+        container(opaque(
             container(stack![
                 column![
                     //
@@ -220,9 +218,7 @@ impl<'app> ImageUploaded<'app> {
                         background: Some(Background::Color(Color::TRANSPARENT)),
                         ..Default::default()
                     })
-                    .on_press(crate::Message::ImageUploaded(
-                        Message::CloseImageUploadedPopup
-                    )),
+                    .on_press(crate::Message::ImageUploaded(Message::ExitImageUploadMenu)),
                     text("Close"),
                     tooltip::Position::Right
                 ))
@@ -230,14 +226,14 @@ impl<'app> ImageUploaded<'app> {
                 .align_right(Fill),
             ])
             .width(Length::Fixed(700.0))
-            .height(Length::Fixed(1100.0))
+            .height(Length::Fixed(1200.0))
             .style(|_| container::Style {
                 text_color: Some(iced::Color::WHITE),
                 background: Some(Background::Color(iced::Color::BLACK.scale_alpha(0.9))),
                 ..Default::default()
             })
             .padding(30.0),
-        )
+        ))
         .center(Fill)
         .into()
     }
