@@ -85,8 +85,16 @@ pub struct App {
     pub picking_corner: Option<PickCorner>,
     /// A link to the uploaded image
     pub uploaded_url: Option<(qr_code::Data, ui::image_uploaded::ImageUploadedData)>,
+    /// When the URL was copied
+    /// If the URL was copied less than a given time ago,
+    pub url_copied: bool,
     /// Whether to show an overlay with additional information (F12)
     pub show_debug_overlay: bool,
+    /// Dummy value
+    /// Incrementing this value causes a re-render of the app
+    ///
+    /// Yes, this isn't good. I need to find a better way of doing this
+    pub dummy_value: u32,
 }
 
 impl App {
@@ -146,11 +154,14 @@ impl App {
                 },
             ))
             // output when uploading image
-            .push_maybe(
-                self.uploaded_url
-                    .as_ref()
-                    .map(|(qr_code_data, data)| super::ImageUploaded { qr_code_data, data }.view()),
-            )
+            .push_maybe(self.uploaded_url.as_ref().map(|(qr_code_data, data)| {
+                super::ImageUploaded {
+                    qr_code_data,
+                    data,
+                    url_copied: self.url_copied,
+                }
+                .view()
+            }))
             // debug overlay
             .push_maybe(
                 self.show_debug_overlay
@@ -164,10 +175,26 @@ impl App {
         use crate::message::Handler as _;
 
         match message {
-            Message::Selection(selection) => selection.handle(self),
-            Message::SizeIndicator(size_indicator) => size_indicator.handle(self),
-            Message::ImageUploaded(image_uploaded) => image_uploaded.handle(self),
-            Message::Letters(letters) => letters.handle(self),
+            Message::Selection(selection) => {
+                if let Some(task) = selection.handle(self) {
+                    return task;
+                }
+            }
+            Message::SizeIndicator(size_indicator) => {
+                if let Some(task) = size_indicator.handle(self) {
+                    return task;
+                }
+            }
+            Message::ImageUploaded(image_uploaded) => {
+                if let Some(task) = image_uploaded.handle(self) {
+                    return task;
+                }
+            }
+            Message::Letters(letters) => {
+                if let Some(task) = letters.handle(self) {
+                    return task;
+                }
+            }
             Message::NoOp => (),
             Message::KeyBind { action, count } => match action {
                 KeyAction::CopyToClipboard => {

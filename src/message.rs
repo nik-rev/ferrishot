@@ -7,7 +7,7 @@ use crate::config::KeyAction;
 /// Handler for a `Message`
 pub trait Handler {
     /// Handle the message
-    fn handle(self, app: &mut crate::App);
+    fn handle(self, app: &mut crate::App) -> Option<iced::Task<Message>>;
 }
 
 /// Represents an action happening in the application

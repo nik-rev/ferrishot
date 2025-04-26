@@ -8,6 +8,7 @@ use delegate::delegate;
 use iced::Element;
 use iced::Length;
 use iced::Renderer;
+use iced::Task;
 use iced::Theme;
 use iced::mouse::Cursor;
 use iced::mouse::Interaction;
@@ -73,7 +74,7 @@ pub enum Message {
 }
 
 impl crate::message::Handler for Message {
-    fn handle(self, app: &mut crate::App) {
+    fn handle(self, app: &mut crate::App) -> Option<Task<crate::Message>> {
         match self {
             Self::CreateSelection(point) => {
                 app.selection = Some(Selection::new(point).with_status(SelectionStatus::Create));
@@ -201,6 +202,7 @@ impl crate::message::Handler for Message {
                 app.selection = Some(new_selection);
             }
         }
+        None
     }
 }
 

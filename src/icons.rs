@@ -69,6 +69,8 @@ load_icons! {
     Text,
     /// Upload image to the internet
     Upload,
+    /// Indicate success
+    Check,
 }
 
 /// Expands to an SVG by reading from the `icons/` directory

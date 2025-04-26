@@ -2,7 +2,7 @@
 
 use super::selection::OptionalSelectionExt as _;
 use iced::{
-    Background, Element, Length, Rectangle,
+    Background, Element, Length, Rectangle, Task,
     widget::{self, Space, column, row, text::Shaping},
 };
 
@@ -30,7 +30,7 @@ pub enum Message {
 }
 
 impl crate::message::Handler for Message {
-    fn handle(self, app: &mut crate::App) {
+    fn handle(self, app: &mut crate::App) -> Option<Task<crate::Message>> {
         match self {
             Self::ResizeVertically {
                 new_height,
@@ -68,6 +68,8 @@ impl crate::message::Handler for Message {
                     .with_x(|x| x - dx);
             }
         }
+
+        None
     }
 }
 

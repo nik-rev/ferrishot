@@ -3,7 +3,7 @@
 use std::iter;
 
 use iced::{
-    Color, Element, Event, Font, Length, Point,
+    Color, Element, Event, Font, Length, Point, Task,
     font::Weight,
     keyboard::Key,
     widget::{
@@ -27,7 +27,7 @@ pub enum Message {
 }
 
 impl crate::message::Handler for Message {
-    fn handle(self, app: &mut crate::App) {
+    fn handle(self, app: &mut crate::App) -> Option<Task<crate::Message>> {
         match self {
             Self::Abort => {
                 app.picking_corner = None;
@@ -55,7 +55,8 @@ impl crate::message::Handler for Message {
                 app.picking_corner = None;
             }
         }
-        todo!()
+
+        None
     }
 }
 

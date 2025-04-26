@@ -1,13 +1,22 @@
 //! Show a popup when the image has already been uploaded
+//!
 //! Popup contains:
+//!
 //! - QR Code
-//! - Image thumbnail
 //! - Copy URL to clipboard
+//! - Image metadata
+//! - Image preview
+
+use std::{thread, time::Duration};
 
 use iced::{
-    Background, Element, Length,
-    widget::{button, column, container, horizontal_rule, qr_code, row, svg, text},
+    Background, Color, Element, Length, Task,
+    widget::{button, column, container, horizontal_rule, qr_code, row, stack, svg, text, tooltip},
 };
+
+use crate::icon;
+
+use super::selection_icons::icon_tooltip;
 
 /// Data of the uploaded image
 #[derive(Clone, Debug)]
@@ -35,38 +44,49 @@ pub enum Message {
     ImageUploaded(ImageUploadedData),
     /// Copy link of image to clipboard
     CopyLink(String),
+    /// Some time has passed after the link was copied
+    CopyLinkTimeout,
 }
 
 impl crate::message::Handler for Message {
-    /// Handle the message
-    fn handle(self, app: &mut super::App) {
+    fn handle(self, app: &mut super::App) -> Option<Task<crate::Message>> {
         match self {
+            Self::CopyLinkTimeout => app.url_copied = false,
             Self::CopyLink(url) => {
                 if let Err(err) = crate::clipboard::set_text(&url) {
                     app.errors.push(err.to_string());
+                } else {
+                    app.url_copied = true;
+                    return Some(Task::future(async move {
+                        thread::sleep(Duration::from_secs(3));
+                        crate::Message::ImageUploaded(Self::CopyLinkTimeout)
+                    }));
                 }
             }
             Self::CloseImageUploadedPopup => {
                 app.uploaded_url = None;
             }
             Self::ExitImageUploadMenu => app.uploaded_url = None,
-            Self::ImageUploaded(data) => {
-                app.uploaded_url = Some((
-                    iced::widget::qr_code::Data::new(data.url.clone())
-                        .expect("URL to be valid QR Code data"),
-                    data,
-                ));
-            }
+            Self::ImageUploaded(data) => match iced::widget::qr_code::Data::new(data.url.clone()) {
+                Ok(qr_code) => {
+                    app.uploaded_url = Some((qr_code, data));
+                }
+                Err(err) => {
+                    app.errors.push(format!("Failed to get QR Code: {err}"));
+                }
+            },
         }
+
+        None
     }
 }
-
-use crate::icon;
 
 /// Data for the uploaded image
 pub struct ImageUploaded<'app> {
     /// Data for the URL to the uploaded image
     pub qr_code_data: &'app qr_code::Data,
+    /// When the URL Was copied
+    pub url_copied: bool,
     /// Data of the uploaded image
     pub data: &'app ImageUploadedData,
 }
@@ -74,22 +94,8 @@ pub struct ImageUploaded<'app> {
 impl<'app> ImageUploaded<'app> {
     /// Render the QR Code
     pub fn view(&self) -> Element<'app, crate::Message> {
-        // let close_button = button(icon!(Close).style(|_, _| svg::Style {
-        //     color: Some(iced::Color::WHITE),
-        // }))
-        // .width(Length::Fixed(32.0))
-        // .height(Length::Fixed(32.0))
-        // .style(|_, _| button::Style {
-        //     background: Some(Background::Color(Color::TRANSPARENT)),
-        //     text_color: Color::TRANSPARENT,
-        //     ..Default::default()
-        // })
-        // .on_press(crate::Message::ImageUploaded(
-        //     Message::CloseImageUploadedPopup,
-        // ));
-
         container(
-            container(
+            container(stack![
                 column![
                     //
                     // Heading
@@ -116,34 +122,43 @@ impl<'app> ImageUploaded<'app> {
                                 //
                                 // Copy to clipboard button
                                 //
-                                container(
-                                    button(
-                                        icon!(Clipboard)
-                                            .width(Length::Fixed(25.0))
-                                            .height(Length::Fixed(25.0))
-                                            .style(|_, _| {
-                                                svg::Style {
-                                                    color: Some(iced::Color::WHITE),
-                                                }
-                                            })
-                                    )
-                                    .on_press(crate::Message::ImageUploaded(Message::CopyLink(
-                                        self.data.url.to_string()
-                                    )))
-                                    .style(|_, _| {
-                                        iced::widget::button::Style {
-                                            background: Some(Background::Color(
-                                                iced::Color::TRANSPARENT,
-                                            )),
-                                            ..Default::default()
-                                        }
-                                    })
-                                )
-                                .center_y(Length::Fill)
+                                {
+                                    let (clipboard_icon, clipboard_icon_color, label) = if self
+                                        .url_copied
+                                    {
+                                        (icon!(Check), iced::color!(0x_00_ff_00), "Copied!")
+                                    } else {
+                                        (icon!(Clipboard), iced::color!(0x_ff_ff_ff), "Copy Link")
+                                    };
+
+                                    container(icon_tooltip(
+                                        button(
+                                            clipboard_icon
+                                                .style(move |_, _| svg::Style {
+                                                    color: Some(clipboard_icon_color),
+                                                })
+                                                .width(Length::Fixed(25.0))
+                                                .height(Length::Fixed(25.0)),
+                                        )
+                                        .on_press(crate::Message::ImageUploaded(Message::CopyLink(
+                                            self.data.url.to_string(),
+                                        )))
+                                        .style(|_, _| {
+                                            iced::widget::button::Style {
+                                                background: Some(Background::Color(
+                                                    iced::Color::TRANSPARENT,
+                                                )),
+                                                ..Default::default()
+                                            }
+                                        }),
+                                        text(label),
+                                        tooltip::Position::Top,
+                                    ))
+                                    .center_y(Length::Fill)
+                                }
                             ])
                             .style(|_| container::Style {
                                 text_color: Some(iced::Color::WHITE),
-                                background: Some(Background::Color(iced::color!(0x0f_0f_0f))),
                                 ..Default::default()
                             })
                             .center_y(Length::Fixed(32.0))
@@ -180,7 +195,28 @@ impl<'app> ImageUploaded<'app> {
                     iced::widget::image(self.data.uploaded_image.clone()).width(Length::Fill)
                 ]
                 .spacing(30.0),
-            )
+                container(icon_tooltip(
+                    button(
+                        icon!(Close)
+                            .width(30.0)
+                            .height(30.0)
+                            .style(|_, _| svg::Style {
+                                color: Some(Color::WHITE)
+                            })
+                    )
+                    .style(|_, _| button::Style {
+                        background: Some(Background::Color(Color::TRANSPARENT)),
+                        ..Default::default()
+                    })
+                    .on_press(crate::Message::ImageUploaded(
+                        Message::CloseImageUploadedPopup
+                    )),
+                    text("Close"),
+                    tooltip::Position::Right
+                ))
+                .align_top(Length::Fill)
+                .align_right(Length::Fill),
+            ])
             .width(Length::Fixed(700.0))
             .height(Length::Fixed(1100.0))
             .style(|_| container::Style {
