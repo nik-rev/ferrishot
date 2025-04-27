@@ -3,15 +3,13 @@
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
   };
 
-  outputs =
-    {
-      nixpkgs,
-      flake-utils,
-      ...
-    }:
+  outputs = {
+    nixpkgs,
+    flake-utils,
+    ...
+  }:
     flake-utils.lib.eachDefaultSystem (
-      system:
-      let
+      system: let
         pkgs = import nixpkgs {
           inherit system;
         };
@@ -30,8 +28,7 @@
           xorg.libX11
           libxkbcommon
         ];
-      in
-      {
+      in {
         devShells.default = pkgs.mkShell {
           buildInputs =
             buildInputs
@@ -50,7 +47,12 @@
           version = manifest.package.version;
 
           src = pkgs.lib.cleanSource ./.;
-          cargoLock.lockFile = ./Cargo.lock;
+          cargoLock = {
+            lockFile = ./Cargo.lock;
+            outputHashes = {
+              "knus-3.2.0" = "sha256-eh6EH0NEVNLgwgHDD3IdrW+NTnL2QAY8EQIuyDhe5rw=";
+            };
+          };
 
           inherit buildInputs;
 
