@@ -113,7 +113,7 @@ impl Default for App {
             picking_corner: None,
             uploaded_url: None,
             has_copied_uploaded_image_link: false,
-            show_debug_overlay: false,
+            show_debug_overlay: CLI.debug,
         }
     }
 }

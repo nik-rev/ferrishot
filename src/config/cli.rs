@@ -10,13 +10,15 @@ use crate::rect::RectangleExt;
 
 /// What to output when exiting the app
 #[derive(clap::ValueEnum, Debug, Clone)]
-pub enum Output {
+pub enum Print {
     /// Raw bytes of the image
     Raw,
     /// Selected region in the format <width>x<height>+<top-left-x>+<top-left-y>
     Region,
-    /// Path of the saved image
+    /// Path to the saved image
     Path,
+    /// Link to the uploaded image
+    Url,
 }
 
 /// Action to take when instantly accepting
@@ -33,10 +35,13 @@ pub enum AcceptOnSelect {
 /// Command line arguments for the program
 #[derive(Parser, Debug)]
 #[command(version, about, author = "Nik Revenco")]
+#[expect(clippy::struct_excessive_bools, reason = "normal for CLIs")]
 pub struct Cli {
-    /// When exiting the program, print something
+    /// Instead of taking a screenshot of the desktop, open this image instead
+    pub file: Option<PathBuf>,
+    /// When exiting the program, print something, if applicable
     #[arg(long)]
-    pub output: Option<Output>,
+    pub print: Option<Print>,
 
     /// Screenshot region to select
     ///
@@ -44,7 +49,7 @@ pub struct Cli {
     #[arg(long, value_parser = Rectangle::from_str, value_name = "WxH+X+Y")]
     pub region: Option<Rectangle>,
 
-    /// Delay time in milliseconds
+    /// Wait this long before launching
     #[arg(
         long,
         value_name = "MILLISECONDS",
@@ -78,7 +83,7 @@ pub struct Cli {
     pub config_file: String,
 
     //
-    // --- Logging ---
+    // --- Logging / Debugging ---
     //
     /// Choose a minumum level at which to log
     #[arg(group = "Logging", long, hide = true, default_value_t = log::LevelFilter::Error)]
@@ -87,8 +92,11 @@ pub struct Cli {
     #[arg(group = "Logging", long, hide = true)]
     pub log_stdout: bool,
     /// Print the path of the log file
-    #[arg(group = "Logging",long, hide = true, default_value_t = DEFAULT_LOG_FILE_PATH.to_string_lossy().to_string())]
+    #[arg(group = "Logging", long, hide = true, default_value_t = DEFAULT_LOG_FILE_PATH.to_string_lossy().to_string())]
     pub log_file: String,
+    /// Launch ferrishot in debug mode (F12)
+    #[arg(long, hide = true)]
+    pub debug: bool,
     /// Output the path to the log file
     #[arg(group = "Logging", long, hide = true)]
     pub print_log_file_path: bool,
