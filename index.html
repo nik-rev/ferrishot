@@ -76,6 +76,9 @@
         @media (width <= 600px) {
           padding: 40px;
         }
+        @media (width <= 400px) {
+          padding: 20px;
+        }
       }
     </style>
     <main>
@@ -152,24 +155,41 @@
             margin-bottom: 80px;
           }
           ul {
-            display: flex;
             gap: 40px;
+            display: flex;
             flex-direction: column;
             li {
+              display: flex;
+              @media (width <= 600px) {
+                flex-direction: column;
+              }
               .description {
                 margin-top: auto;
                 margin-bottom: auto;
                 width: 50%;
+                @media (width <= 600px) {
+                  width: 100%;
+                }
                 display: flex;
                 flex-direction: column;
                 h3 {
                   margin-bottom: 10px;
                 }
               }
+              .showcase {
+                width: 50%;
+                @media (width <= 600px) {
+                  width: 100%;
+                }
+              }
               #qr_code {
                 transform: scale(0.4) translateX(20%) translateY(10%);
+                @media (width <= 600px) {
+                  transform: scale(0.4) ;
+                  margin-top: -120px;
+                  margin-bottom: -120px;
+                }
               }
-              display: flex;
               gap: 12px;
             }
           }
@@ -186,7 +206,7 @@
               <p>Click and drag to create a selection</p>
               <a class="learn-more" href="https://github.com/nik-rev/ferrishot?tab=readme-ov-file#features">Learn more</a>
             </div>
-            <video autoplay loop muted width="50%" src="assets/Preview.mp4">
+            <video autoplay loop muted class="showcase" src="assets/Preview.mp4">
                 A man moving his hands away from his forehead sideways, in a mind-explosion gesture. An overlaid animation enforces the explosion character.
             </video>
           </li>
@@ -196,12 +216,12 @@
               <p>Upload your screenshot online with the click of a button</p>
               <a class="learn-more" href="https://github.com/nik-rev/ferrishot?tab=readme-ov-file#features">Learn more</a>
             </div>
-            <img id="qr_code" width="50%" src="assets/qr-code.svg"></img>
+            <img id="qr_code" class="showcase" src="assets/qr-code.svg"></img>
           </li>
           <li>
             <div class="description">
               <h3>No mouse? No problem</h3>
-              <p>Ferrishot is fully keyboard-controllable, we even have <br><font color="#4e8f20">vim motions</font>!</p>
+              <p>Ferrishot is fully keyboard-controllable, we even have <font color="#4e8f20">vim motions</font>!</p>
               <a class="learn-more" href="https://github.com/nik-rev/ferrishot?tab=readme-ov-file#features">Learn more</a>
             </div>
             <div id="cont">
@@ -211,8 +231,13 @@
                 }
                 #cont {
                   width: 50%;
+                  @media (width <= 600px) {
+                    width: 100%;
+                    margin-top: 40px;
+                  }
                   font-size: 9px;
                   font-style: italic;
+
                   position: relative;
                     #des {
                       position: absolute;
@@ -252,6 +277,11 @@
           position: absolute;
           left: 10px;
           z-index: -10;
+          @media (width <= 600px) {
+            width: 50px;
+            left: 0px;
+            top: 40px;
+          }
         }
       </style>
       <div id="final-install-button">
