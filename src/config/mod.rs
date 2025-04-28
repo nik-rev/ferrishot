@@ -60,13 +60,7 @@ pub static CONFIG: LazyLock<Config> = LazyLock::new(|| {
     })();
 
     match kdl_config {
-        Ok(kdl_config) => Config {
-            instant: kdl_config.instant,
-            default_image_upload_provider: kdl_config.default_image_upload_provider,
-            size_indicator: kdl_config.size_indicator,
-            theme: kdl_config.theme.into(),
-            keys: kdl_config.keys.keys.into_iter().collect::<KeyMap>(),
-        },
+        Ok(kdl_config) => kdl_config.into(),
         Err(miette_error) => {
             eprintln!("{miette_error:?}");
             std::process::exit(1);

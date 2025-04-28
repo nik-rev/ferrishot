@@ -84,6 +84,18 @@ macro_rules! declare_config_options {
             )*
         }
 
+        impl From<DefaultKdlConfig> for Config {
+            fn from(value: DefaultKdlConfig) -> Self {
+                Self {
+                    $(
+                        $key: value.$key,
+                    )*
+                    theme: value.theme.into(),
+                    keys: value.keys.keys.into_iter().collect::<$crate::config::KeyMap>(),
+                }
+            }
+        }
+
         impl DefaultKdlConfig {
             /// Merge the user's top-level config options with the default options.
             /// User config options take priority.
