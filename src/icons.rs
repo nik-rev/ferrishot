@@ -1,6 +1,6 @@
 //! Icons for ferrishot
 //!
-//! Icons are stored in the `icons/` directory.
+//! Icons are stored in the `assets/icons/` directory.
 //! Icons are declared at the invocation of the `icons!` macro.
 //! Each `Icon` must have a corresponding `icons/Icon.svg` file.
 
@@ -28,7 +28,7 @@ macro_rules! load_icons {
                 #[expect(nonstandard_style, reason = "handy for creating statics")]
                 pub(super) static $icon: std::sync::LazyLock<iced::widget::svg::Handle> = std::sync::LazyLock::new(|| {
                     iced::widget::svg::Handle::from_memory(include_bytes!(concat!(
-                        "../icons/",
+                        "../assets/icons/",
                         stringify!($icon),
                         ".svg"
                     )))

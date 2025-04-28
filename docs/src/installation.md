@@ -1,5 +1,7 @@
 # Installation
 
+Ferrishot is available on Windows, Linux and MacOS.
+
 ## Homebrew
 
 ```sh
