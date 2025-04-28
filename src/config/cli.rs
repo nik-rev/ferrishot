@@ -1,13 +1,64 @@
 //! Parse the command line arguments passed to ferrishot
+use std::time::Duration;
 use std::{path::PathBuf, sync::LazyLock};
 
 use clap::Parser;
 use etcetera::BaseStrategy;
+use iced::Rectangle;
+
+use crate::rect::RectangleExt;
+
+/// What to output when exiting the app
+#[derive(clap::ValueEnum, Debug, Clone)]
+pub enum Output {
+    /// Raw bytes of the image
+    Raw,
+    /// Selected region in the format <width>x<height>+<top-left-x>+<top-left-y>
+    Region,
+    /// Path of the saved image
+    Path,
+}
+
+/// Action to take when instantly accepting
+#[derive(clap::ValueEnum, Debug, Clone)]
+pub enum AcceptOnSelect {
+    /// Copy the selected region to the clipboard
+    Copy,
+    /// Save the selected region as a file
+    Save,
+    /// Upload the selected region to the internet
+    Upload,
+}
 
 /// Command line arguments for the program
 #[derive(Parser, Debug)]
 #[command(version, about, author = "Nik Revenco")]
 pub struct Cli {
+    /// When exiting the program, print something
+    #[arg(long)]
+    pub output: Option<Output>,
+
+    /// Screenshot region to select
+    ///
+    /// Format: <width>x<height>+<top-left-x>+<top-left-y>
+    #[arg(long, value_parser = Rectangle::from_str, value_name = "WxH+X+Y")]
+    pub region: Option<Rectangle>,
+
+    /// Delay time in milliseconds
+    #[arg(
+        long,
+        value_name = "MILLISECONDS",
+        value_parser = |s: &str| s.parse().map(Duration::from_millis),
+    )]
+    pub delay: Option<Duration>,
+    /// Instead of opening a file picker to save the screenshot, save it to this path instead
+    #[arg(long, value_name = "PATH")]
+    pub save_path: Option<PathBuf>,
+
+    /// Accept capture as soon as a selection is made
+    #[arg(long, value_name = "ACTION")]
+    pub accept_on_select: Option<AcceptOnSelect>,
+
     //
     // --- Config ---
     //

@@ -8,6 +8,17 @@ use std::str::FromStr;
 
 use strum::IntoEnumIterator;
 
+/// Error parsing a rect
+#[derive(Debug, Clone, thiserror::Error, Eq, PartialEq)]
+pub enum ParseRectError {
+    /// Invalid format
+    #[error("Invalid format. Expected: `<width>x<height>+<top-left-x>+<top-left-y>`")]
+    InvalidFormat,
+    /// Parse float error
+    #[error(transparent)]
+    ParseFloatError(#[from] std::num::ParseFloatError),
+}
+
 /// Corner of a rectangle
 #[derive(
     Copy,
@@ -399,5 +410,48 @@ pub impl Rectangle<f32> {
             x: self.x,
             y: f(self.y),
         })
+    }
+
+    /// Convert this rectangle into a string
+    #[allow(dead_code, reason = "will be used later")]
+    fn as_str(&self) -> String {
+        format!("{}x{}+{}+{}", self.width, self.height, self.x, self.y)
+    }
+
+    /// Parse a string into an `iced::Rectangle`
+    fn from_str(s: &str) -> Result<Rectangle, ParseRectError> {
+        let (width, height, x, y) = s
+            .split_once('x')
+            .and_then(|(width, rest)| {
+                rest.split_once('+')
+                    .and_then(|(height, rest)| rest.split_once('+').map(|(x, y)| (height, x, y)))
+                    .map(|(height, x, y)| (width, height, x, y))
+            })
+            .ok_or(ParseRectError::InvalidFormat)?;
+
+        Ok(Self {
+            x: x.parse()?,
+            y: y.parse()?,
+            width: width.parse()?,
+            height: height.parse()?,
+        })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parse_rect() {
+        assert_eq!(
+            Rectangle::from_str("1000x900+100+200"),
+            Ok(iced::Rectangle {
+                width: 1000.0,
+                height: 900.0,
+                x: 100.0,
+                y: 200.0,
+            })
+        );
     }
 }

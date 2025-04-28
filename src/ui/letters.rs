@@ -206,6 +206,8 @@ fn draw_boxes(
     );
 }
 
+/// Level of the letter grid.
+///
 /// The letter grid consists of 3 "levels"
 ///
 /// - Level 1: the entire screen is divided into 25 regions, a letter is assigned to each
@@ -215,10 +217,6 @@ fn draw_boxes(
 /// - Level 3: The region picked in Level 2 is further divided into 25 even tinier regions. Now, once we
 ///   pick any of the tiny regions the center of that region will be sent as a `Message` to the main
 ///   `App`.
-///
-/// On the first level
-///
-/// Level of the letter grid.
 #[derive(PartialEq, Clone, Copy, Debug, Default)]
 pub enum LetterLevel {
     /// First level
@@ -238,10 +236,12 @@ pub enum LetterLevel {
     },
 }
 
-/// Pick a position for a corner in the rectangle
+/// When a position is picked, what does that signify?
+///
+/// This enum represents the possible outcomes that can happen when we pick a position.
 #[derive(PartialEq, Eq, PartialOrd, Clone, Copy, Debug)]
 pub enum PickCorner {
-    /// Picking position of the top-left corner of the selection
+    /// Picking position for the top-left corner of the selection
     TopLeft,
     /// Picking position for the bottom-right corner of the selection
     BottomRight,
@@ -263,15 +263,8 @@ impl<'app> Letters<'app> {
     }
 }
 
-/// State of the letters
-#[derive(PartialEq, Clone, Default)]
-pub struct LettersState {
-    /// The level of selection for this letter
-    level: LetterLevel,
-}
-
 impl canvas::Program<crate::Message> for Letters<'_> {
-    type State = LettersState;
+    type State = LetterLevel;
 
     fn draw(
         &self,
@@ -294,7 +287,7 @@ impl canvas::Program<crate::Message> for Letters<'_> {
         let width = frame.width();
         let height = frame.height();
 
-        match state.level {
+        match state {
             LetterLevel::First => draw_boxes(
                 x_start,
                 y_start,
@@ -346,12 +339,12 @@ impl canvas::Program<crate::Message> for Letters<'_> {
                 let ch = ch as u32 - UNICODE_CODEPOINT_LOWERCASE_A_START;
                 let vertical_steps = (ch % VERTICAL_COUNT as u32) as f32;
                 let horizontal_steps = (ch / HORIZONTAL_COUNT as u32) as f32;
-                match state.level {
+                match state {
                     LetterLevel::First => {
                         let box_width = bounds.width / HORIZONTAL_COUNT;
                         let box_height = bounds.height / VERTICAL_COUNT;
 
-                        state.level = LetterLevel::Second {
+                        *state = LetterLevel::Second {
                             point: Point {
                                 x: horizontal_steps * box_width,
                                 y: vertical_steps * box_height,
@@ -364,7 +357,7 @@ impl canvas::Program<crate::Message> for Letters<'_> {
                         let box_width = bounds.width / HORIZONTAL_COUNT.powi(2);
                         let box_height = bounds.height / VERTICAL_COUNT.powi(2);
 
-                        state.level = LetterLevel::Third {
+                        *state = LetterLevel::Third {
                             point: Point {
                                 x: horizontal_steps.mul_add(box_width, point.x),
                                 y: vertical_steps.mul_add(box_height, point.y),
@@ -397,6 +390,7 @@ impl canvas::Program<crate::Message> for Letters<'_> {
             return Some(Action::publish(crate::Message::Letters(Message::Abort)));
         }
 
+        // Any unrecognized event should not propagate to the `App`
         Some(Action::capture())
     }
 }

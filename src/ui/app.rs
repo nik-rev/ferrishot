@@ -1,5 +1,6 @@
 //! Main logic for the application, handling of events and mutation of the state
 
+use crate::CLI;
 use crate::Config;
 use crate::config::KeyAction;
 use crate::config::Place;
@@ -65,7 +66,7 @@ use super::selection::SelectionKeysState;
 pub static SAVED_IMAGE: std::sync::OnceLock<image::DynamicImage> = std::sync::OnceLock::new();
 
 /// Holds the state for ferrishot
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct App {
     /// Config of the app
     pub config: Config,
@@ -93,11 +94,28 @@ pub struct App {
     pub has_copied_uploaded_image_link: bool,
     /// Whether to show an overlay with additional information (F12)
     pub show_debug_overlay: bool,
-    /// Dummy value
-    /// Incrementing this value causes a re-render of the app
-    ///
-    /// Yes, this isn't good. I need to find a better way of doing this
-    pub dummy_value: u32,
+}
+
+impl Default for App {
+    fn default() -> Self {
+        let config = Config::default();
+        Self {
+            selection: CLI.region.map(|rect| Selection {
+                theme: config.theme,
+                rect,
+                status: ui::selection::SelectionStatus::default(),
+            }),
+            config,
+            logged_messages: vec![],
+            selections_created: 0,
+            image: Screenshot::default(),
+            errors: Errors::default(),
+            picking_corner: None,
+            uploaded_url: None,
+            has_copied_uploaded_image_link: false,
+            show_debug_overlay: false,
+        }
+    }
 }
 
 impl App {
@@ -116,7 +134,7 @@ impl App {
             .push(super::BackgroundImage {
                 image_handle: Screenshot::clone(&self.image).into(),
             })
-            // event handler + shade in the background if no selection
+            // Shade in the background + global event handler + selection renderer
             .push(Canvas::new(self).width(Fill).height(Fill))
             // information popup, when there is no selection
             .push_maybe(

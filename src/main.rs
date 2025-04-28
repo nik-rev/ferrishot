@@ -52,6 +52,11 @@ fn main() -> miette::Result<()> {
         return Ok(());
     }
 
+    if let Some(delay) = CLI.delay {
+        println!("Sleeping for {delay:?}...");
+        std::thread::sleep(delay);
+    }
+
     // Launch ferrishot
     iced::application(App::default, App::update, App::view)
         .window(iced::window::Settings {
