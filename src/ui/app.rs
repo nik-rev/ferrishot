@@ -569,7 +569,7 @@ impl canvas::Program<Message> for App {
         if let Some(sel) = self.selection {
             if let Some(action) = sel.update(selection_state, event, bounds, cursor) {
                 return Some(action);
-            };
+            }
         }
 
         // handle the number pressed

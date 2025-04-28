@@ -8,18 +8,27 @@ use etcetera::BaseStrategy;
 #[derive(Parser, Debug)]
 #[command(version, about, author = "Nik Revenco")]
 pub struct Cli {
+    //
+    // --- Config ---
+    //
+    // Currently these options are hidden. You *can* configure ferrishot,
+    // but I'd like to expose this a bit later when I am sure this is the config I'd like to commit to
+    //
     /// Write the default config file
-    #[arg(long, help = format!("Write the default config to {}", DEFAULT_CONFIG_FILE_PATH.display()))]
+    #[arg(long, hide = true, help = format!("Write the default config to {}", DEFAULT_CONFIG_FILE_PATH.display()))]
     pub dump_default_config: bool,
     /// Specifies the config file to use
     #[arg(
         long,
+        hide = true,
         value_name = "file.kdl",
         default_value_t = DEFAULT_CONFIG_FILE_PATH.to_string_lossy().to_string()
     )]
     pub config_file: String,
 
-    // Logging
+    //
+    // --- Logging ---
+    //
     /// Choose a minumum level at which to log
     #[arg(group = "Logging", long, hide = true, default_value_t = log::LevelFilter::Error)]
     pub log_level: log::LevelFilter,

@@ -3,7 +3,7 @@
 use std::iter;
 
 use iced::{
-    Color, Element, Event, Font,
+    Element, Event, Font,
     Length::Fill,
     Point, Task,
     font::Weight,
@@ -13,6 +13,8 @@ use iced::{
         canvas::{self, Path, Stroke},
     },
 };
+
+use crate::CONFIG;
 
 /// Letters message
 #[derive(Clone, Debug)]
@@ -59,7 +61,7 @@ impl crate::message::Handler for Message {
                             );
                         }
                     }
-                };
+                }
                 app.picking_corner = None;
             }
         }
@@ -72,8 +74,6 @@ impl crate::message::Handler for Message {
 const VERTICAL_COUNT: f32 = 5.0;
 /// How many letters to draw horizontally
 const HORIZONTAL_COUNT: f32 = 5.0;
-/// Color of lines
-const LINE_COLOR: Color = Color::WHITE;
 /// where does `a` start?
 const UNICODE_CODEPOINT_LOWERCASE_A_START: u32 = 97;
 /// A tiny error margin for doing less than / greater than calculations
@@ -132,7 +132,7 @@ fn draw_boxes(
                     }
                     font
                 },
-                color: iced::Color::WHITE,
+                color: CONFIG.theme.letters_fg,
                 size: match font_size {
                     FontSize::Fixed(px) => px,
                     FontSize::Fill => box_height,
@@ -151,7 +151,7 @@ fn draw_boxes(
                 Point::new(x + line_offset, y_start + height),
             ),
             Stroke {
-                style: LINE_COLOR.into(),
+                style: CONFIG.theme.letters_lines.into(),
                 width: line_width,
                 ..Default::default()
             },
@@ -168,7 +168,7 @@ fn draw_boxes(
                 Point::new(x_start + width, y + line_offset),
             ),
             Stroke {
-                style: LINE_COLOR.into(),
+                style: CONFIG.theme.letters_lines.into(),
                 width: line_width,
                 ..Default::default()
             },
@@ -185,7 +185,7 @@ fn draw_boxes(
             Point::new(x_start + width - line_offset, y_start + height),
         ),
         Stroke {
-            style: LINE_COLOR.into(),
+            style: CONFIG.theme.letters_lines.into(),
             width: line_width,
             ..Default::default()
         },
@@ -197,7 +197,7 @@ fn draw_boxes(
             Point::new(x_start + width, y_start + height - line_offset),
         ),
         Stroke {
-            style: LINE_COLOR.into(),
+            style: CONFIG.theme.letters_lines.into(),
             width: line_width,
             ..Default::default()
         },
@@ -279,16 +279,7 @@ impl canvas::Program<crate::Message> for Letters {
     ) -> Vec<canvas::Geometry> {
         let mut frame = canvas::Frame::new(renderer, bounds.size());
 
-        frame.fill_rectangle(
-            bounds.position(),
-            bounds.size(),
-            Color {
-                r: 0.0,
-                g: 0.0,
-                b: 0.0,
-                a: 0.6,
-            },
-        );
+        frame.fill_rectangle(bounds.position(), bounds.size(), CONFIG.theme.letters_bg);
 
         let x_start = 0.0;
         let y_start = 0.0;
@@ -323,7 +314,7 @@ impl canvas::Program<crate::Message> for Letters {
                 FontSize::Fill,
                 0.2,
             ),
-        };
+        }
 
         vec![frame.into_geometry()]
     }

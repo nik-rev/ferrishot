@@ -1,7 +1,7 @@
 //! The welcome message contains tips on how to use ferrishot
 
 use iced::{
-    Background, Color, Element, Font,
+    Background, Element, Font,
     Length::{self, Fill},
     alignment::Vertical,
     widget::{Space, column, row, text, text::Shaping},
@@ -70,7 +70,7 @@ impl WelcomeMessage {
             text_color: Some(CONFIG.theme.info_box_fg),
             background: Some(Background::Color(CONFIG.theme.info_box_bg)),
             border: iced::Border::default()
-                .color(Color::WHITE)
+                .color(CONFIG.theme.info_box_border)
                 .rounded(6.0)
                 .width(1.5),
             shadow: iced::Shadow::default(),

@@ -82,30 +82,73 @@ crate::declare_theme_options! {
     drop_shadow,
     /// Background color of selected text
     text_selection,
+
+    //
+    // --- Side Indicator ---
+    //
     /// Foreground color of the size indicator
     size_indicator_fg,
     /// Background color of the size indicator
     size_indicator_bg,
+
+    //
+    // --- Tooltip ---
+    //
     /// Text color of the tooltip
     tooltip_fg,
     /// Background color of the tooltip
     tooltip_bg,
+
+    //
+    // --- Errors ---
+    //
     /// Color of the text on errors
     error_fg,
     /// Background color of the error boxes
     error_bg,
+
+    //
+    // --- Info Box ---
+    //
     /// Background color of the info box, which shows various tips
     info_box_bg,
     /// Text color of the info box, which shows various tips
     info_box_fg,
+    /// Color of the border of the info box
+    info_box_border,
+
+    //
+    // --- Selection Icons ---
+    //
     /// Background color of the icons around the selection
     icon_bg,
     /// Color of icons around the selection
     icon_fg,
+
+    //
+    // --- Debug Menu ---
+    //
     /// Color of the labels in the debug menu (F12)
     debug_label,
     /// Foreground color of debug menu (F12)
     debug_fg,
     /// Background color of debug menu (F12)
     debug_bg,
+
+    //
+    // --- Letters ---
+    //
+    /// Color of lines
+    letters_lines,
+    /// Color of letters
+    letters_fg,
+    /// Background color of letters
+    letters_bg,
+
+    //
+    // --- Image uploaded popup ---
+    //
+    image_uploaded_fg, // WHITE
+    image_uploaded_bg, // BLACK 0.9
+    success, // GREEN
 }

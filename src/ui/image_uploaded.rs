@@ -10,7 +10,7 @@
 use std::{thread, time::Duration};
 
 use iced::{
-    Background, Color, Element,
+    Background, Element,
     Length::{self, Fill},
     Task,
     widget::{
@@ -18,7 +18,7 @@ use iced::{
     },
 };
 
-use crate::icon;
+use crate::{CONFIG, icon};
 
 use super::selection_icons::icon_tooltip;
 
@@ -117,19 +117,25 @@ impl<'app> ImageUploaded<'app> {
                                 //
                                 // URL Text
                                 //
-                                container(text(self.data.url.clone()).color(iced::Color::WHITE))
-                                    .center_y(Fill),
+                                container(
+                                    text(self.data.url.clone())
+                                        .color(CONFIG.theme.image_uploaded_fg)
+                                )
+                                .center_y(Fill),
                                 //
                                 // Copy to clipboard button
                                 //
                                 {
-                                    let (clipboard_icon, clipboard_icon_color, label) = if self
-                                        .url_copied
-                                    {
-                                        (icon!(Check), iced::color!(0x_00_ff_00), "Copied!")
-                                    } else {
-                                        (icon!(Clipboard), iced::color!(0x_ff_ff_ff), "Copy Link")
-                                    };
+                                    let (clipboard_icon, clipboard_icon_color, label) =
+                                        if self.url_copied {
+                                            (icon!(Check), CONFIG.theme.success, "Copied!")
+                                        } else {
+                                            (
+                                                icon!(Clipboard),
+                                                CONFIG.theme.image_uploaded_fg,
+                                                "Copy Link",
+                                            )
+                                        };
 
                                     container(icon_tooltip(
                                         button(
@@ -158,7 +164,7 @@ impl<'app> ImageUploaded<'app> {
                                 }
                             ])
                             .style(|_| container::Style {
-                                text_color: Some(iced::Color::WHITE),
+                                text_color: Some(CONFIG.theme.image_uploaded_fg),
                                 ..Default::default()
                             })
                             .center_y(Length::Fixed(32.0))
@@ -211,11 +217,11 @@ impl<'app> ImageUploaded<'app> {
                             .width(30.0)
                             .height(30.0)
                             .style(|_, _| svg::Style {
-                                color: Some(Color::WHITE)
+                                color: Some(CONFIG.theme.image_uploaded_fg)
                             })
                     )
                     .style(|_, _| button::Style {
-                        background: Some(Background::Color(Color::TRANSPARENT)),
+                        background: Some(Background::Color(iced::Color::TRANSPARENT)),
                         ..Default::default()
                     })
                     .on_press(crate::Message::ImageUploaded(Message::ExitImageUploadMenu)),
@@ -228,8 +234,8 @@ impl<'app> ImageUploaded<'app> {
             .width(Length::Fixed(700.0))
             .height(Length::Fixed(1200.0))
             .style(|_| container::Style {
-                text_color: Some(iced::Color::WHITE),
-                background: Some(Background::Color(iced::Color::BLACK.scale_alpha(0.9))),
+                text_color: Some(CONFIG.theme.image_uploaded_fg),
+                background: Some(Background::Color(CONFIG.theme.image_uploaded_bg)),
                 ..Default::default()
             })
             .padding(30.0),
