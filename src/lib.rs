@@ -19,5 +19,5 @@ use message::Message;
 #[cfg(target_os = "linux")]
 pub use clipboard::{CLIPBOARD_DAEMON_ID, run_clipboard_daemon};
 
-pub use config::{CLI, Config, DEFAULT_KDL_CONFIG_STR, DEFAULT_LOG_FILE_PATH};
+pub use config::{Cli, Config, DEFAULT_KDL_CONFIG_STR, DEFAULT_LOG_FILE_PATH};
 pub use ui::{App, SAVED_IMAGE};

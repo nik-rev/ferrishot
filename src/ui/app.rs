@@ -1,6 +1,8 @@
 //! Main logic for the application, handling of events and mutation of the state
 
-use crate::CLI;
+use std::sync::Arc;
+
+use crate::Cli;
 use crate::Config;
 use crate::config::KeyAction;
 use crate::config::Place;
@@ -69,7 +71,7 @@ pub static SAVED_IMAGE: std::sync::OnceLock<image::DynamicImage> = std::sync::On
 #[derive(Debug)]
 pub struct App {
     /// Config of the app
-    pub config: Config,
+    pub config: Arc<Config>,
     /// A list of messages which obtained while the debug overlay is active
     pub logged_messages: Vec<Message>,
     /// How many selections were created throughout the
@@ -94,18 +96,20 @@ pub struct App {
     pub has_copied_uploaded_image_link: bool,
     /// Whether to show an overlay with additional information (F12)
     pub show_debug_overlay: bool,
+    /// Command line arguments passed
+    pub cli: Arc<Cli>,
 }
 
-impl Default for App {
-    fn default() -> Self {
-        let config = Config::default();
+impl App {
+    /// Create a new `App`
+    #[must_use]
+    pub fn new(cli: Arc<Cli>, config: Arc<Config>) -> Self {
         Self {
-            selection: CLI.region.map(|rect| Selection {
+            selection: cli.region.map(|rect| Selection {
                 theme: config.theme,
                 rect,
                 status: ui::selection::SelectionStatus::default(),
             }),
-            config,
             logged_messages: vec![],
             selections_created: 0,
             image: Screenshot::default(),
@@ -113,12 +117,12 @@ impl Default for App {
             picking_corner: None,
             uploaded_url: None,
             has_copied_uploaded_image_link: false,
-            show_debug_overlay: CLI.debug,
+            show_debug_overlay: cli.debug,
+            config,
+            cli,
         }
     }
-}
 
-impl App {
     /// Close the app
     ///
     /// This is like `iced::exit`, but it does not cause a segfault in special

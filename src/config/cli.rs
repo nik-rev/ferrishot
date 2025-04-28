@@ -61,7 +61,7 @@ pub struct Cli {
     pub save_path: Option<PathBuf>,
 
     /// Accept capture as soon as a selection is made
-    #[arg(long, value_name = "ACTION")]
+    #[arg(short('a'), long, value_name = "ACTION")]
     pub accept_on_select: Option<AcceptOnSelect>,
 
     //
@@ -123,9 +123,3 @@ pub static DEFAULT_LOG_FILE_PATH: LazyLock<PathBuf> = LazyLock::new(|| {
         |strategy| strategy.cache_dir().join("ferrishot.log"),
     )
 });
-
-/// Command line arguments passed to ferrishot
-///
-/// It is a static because it is needed by the `CONFIG` static, in order to
-/// read config from the correct place
-pub static CLI: LazyLock<Cli> = LazyLock::new(Cli::parse);

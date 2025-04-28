@@ -1,15 +1,13 @@
 //! Initialize ferrishot logging
 
-use crate::CLI;
-
 /// Initialize logging
-pub fn initialize() {
-    if CLI.log_stdout {
+pub fn initialize(cli: &crate::Cli) {
+    if cli.log_stdout {
         env_logger::builder().init();
     } else {
         use std::io::Write as _;
 
-        match std::fs::File::create(std::path::PathBuf::from(&*CLI.log_file)) {
+        match std::fs::File::create(std::path::PathBuf::from(&*cli.log_file)) {
             Ok(file) => env_logger::Builder::new()
                 .format(|buf, record| {
                     writeln!(

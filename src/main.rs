@@ -1,10 +1,12 @@
 //! The ferrishot app
 
+use std::sync::Arc;
+
+use clap::Parser;
 use miette::IntoDiagnostic as _;
 use miette::miette;
 
-use ferrishot::{App, CLI};
-use std::sync::LazyLock;
+use ferrishot::App;
 
 /// RGBA bytes for the Logo of ferrishot. Generated with `build.rs`
 const LOGO: &[u8; 64 * 64 * 4] = include_bytes!(concat!(env!("OUT_DIR"), "/logo.bin"));
@@ -26,52 +28,59 @@ fn main() -> miette::Result<()> {
         }
     }
 
-    // Parse the command line arguments
-    LazyLock::force(&CLI);
+    // Parse command line arguments
+    let cli = Arc::new(ferrishot::Cli::parse());
 
-    if CLI.print_log_file_path {
+    if cli.print_log_file_path {
         println!("{}", ferrishot::DEFAULT_LOG_FILE_PATH.display());
         return Ok(());
     }
 
     // Setup logging
-    ferrishot::logging::initialize();
+    ferrishot::logging::initialize(&cli);
 
-    if CLI.dump_default_config {
+    if cli.dump_default_config {
         std::fs::create_dir_all(
-            std::path::PathBuf::from(&CLI.config_file)
+            std::path::PathBuf::from(&cli.config_file)
                 .parent()
-                .ok_or_else(|| miette!("Could not get parent path of {}", CLI.config_file))?,
+                .ok_or_else(|| miette!("Could not get parent path of {}", cli.config_file))?,
         )
         .into_diagnostic()?;
 
-        std::fs::write(&CLI.config_file, ferrishot::DEFAULT_KDL_CONFIG_STR).into_diagnostic()?;
+        std::fs::write(&cli.config_file, ferrishot::DEFAULT_KDL_CONFIG_STR).into_diagnostic()?;
 
-        println!("Wrote the default config file to {}", CLI.config_file);
+        println!("Wrote the default config file to {}", cli.config_file);
 
         return Ok(());
     }
 
-    if let Some(delay) = CLI.delay {
+    if let Some(delay) = cli.delay {
         println!("Sleeping for {delay:?}...");
         std::thread::sleep(delay);
     }
 
+    // Parse user's `ferrishot.kdl` config file
+    let config = Arc::new(ferrishot::Config::parse(&cli.config_file)?);
+
     // Launch ferrishot
-    iced::application(App::default, App::update, App::view)
-        .window(iced::window::Settings {
-            level: iced::window::Level::Normal,
-            fullscreen: true,
-            icon: Some(
-                iced::window::icon::from_rgba(LOGO.to_vec(), 64, 64)
-                    .expect("Icon to be valid RGBA bytes"),
-            ),
-            ..Default::default()
-        })
-        .title("ferrishot")
-        .default_font(iced::Font::MONOSPACE)
-        .run()
-        .map_err(|err| miette!("Failed to start ferrishot: {err}"))?;
+    iced::application(
+        move || App::new(Arc::clone(&cli), Arc::clone(&config)),
+        App::update,
+        App::view,
+    )
+    .window(iced::window::Settings {
+        level: iced::window::Level::Normal,
+        fullscreen: true,
+        icon: Some(
+            iced::window::icon::from_rgba(LOGO.to_vec(), 64, 64)
+                .expect("Icon to be valid RGBA bytes"),
+        ),
+        ..Default::default()
+    })
+    .title("ferrishot")
+    .default_font(iced::Font::MONOSPACE)
+    .run()
+    .map_err(|err| miette!("Failed to start ferrishot: {err}"))?;
 
     if let Some(saved_image) = ferrishot::SAVED_IMAGE.get() {
         // Open file explorer to choose where to save the image
