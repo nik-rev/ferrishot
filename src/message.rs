@@ -20,7 +20,7 @@ pub enum Message {
     /// Size indicator message
     SizeIndicator(ui::size_indicator::Message),
     /// Selection message
-    Selection(ui::selection::Message),
+    Selection(Box<ui::selection::Message>),
     /// An error occured, display to the user
     Error(String),
     /// Do nothing

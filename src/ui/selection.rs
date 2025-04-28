@@ -1,5 +1,4 @@
 //! A `Selection` is the structure representing a selected area in the background image
-use crate::CONFIG;
 use crate::rect::Corners;
 use crate::rect::RectangleExt;
 use crate::rect::Side;
@@ -72,7 +71,9 @@ impl crate::message::Handler for Message {
     fn handle(self, app: &mut crate::App) -> Task<crate::Message> {
         match self {
             Self::CreateSelection(point) => {
-                app.selection = Some(Selection::new(point).with_status(SelectionStatus::Create));
+                app.selection = Some(
+                    Selection::new(point, &app.config.theme).with_status(SelectionStatus::Create),
+                );
                 app.selections_created += 1;
             }
             Self::UpdateStatus(status, sel_is_some) => {
@@ -232,8 +233,10 @@ impl Speed {
 }
 
 /// The selected area of the desktop which will be captured
-#[derive(Debug, Default, Copy, Clone, PartialEq)]
+#[derive(Debug, Copy, Clone)]
 pub struct Selection {
+    /// Theme of the app
+    pub theme: crate::config::Theme,
     /// Area represented by the selection
     pub rect: Rectangle,
     /// Status of the selection
@@ -382,7 +385,7 @@ impl Selection {
             p.move_to(sel.top_left());
         });
 
-        frame.fill(&outside, CONFIG.theme.non_selected_region);
+        frame.fill(&outside, self.theme.non_selected_region);
     }
 
     /// Renders border of the selection
@@ -392,7 +395,7 @@ impl Selection {
             self.pos(),
             self.size(),
             iced::widget::canvas::Stroke::default()
-                .with_color(CONFIG.theme.drop_shadow)
+                .with_color(self.theme.drop_shadow)
                 .with_width(FRAME_WIDTH * 2.0),
         );
         // Draw the border around the selection (the sides)
@@ -400,7 +403,7 @@ impl Selection {
             self.pos(),
             self.size(),
             iced::widget::canvas::Stroke::default()
-                .with_color(CONFIG.theme.selection_frame)
+                .with_color(self.theme.selection_frame)
                 .with_width(FRAME_WIDTH),
         );
     }
@@ -419,7 +422,7 @@ impl Selection {
         ]
         .map(|corner| iced::widget::canvas::Path::circle(corner, FRAME_CIRCLE_RADIUS))
         {
-            frame.fill(&circle, CONFIG.theme.selection_frame);
+            frame.fill(&circle, self.theme.selection_frame);
         }
     }
 
@@ -430,10 +433,11 @@ impl Selection {
     }
 
     /// Create selection at a point with a size of zero
-    pub fn new(point: Point) -> Self {
+    pub fn new(point: Point, theme: &crate::config::Theme) -> Self {
         Self {
             rect: Rectangle::new(point, Size::default()),
             status: SelectionStatus::default(),
+            theme: *theme,
         }
     }
 
@@ -465,26 +469,26 @@ impl Selection {
                         .map(|side| (cursor_pos, side))
                 }) {
                     // Left click on corners = Start resizing selection
-                    crate::Message::Selection(Message::UpdateStatus(
+                    crate::Message::Selection(Box::new(Message::UpdateStatus(
                         SelectionStatus::Resize {
                             initial_rect: self.rect.norm(),
                             initial_cursor_pos: cursor,
                             resize_side: side,
                         },
                         SelectionIsSome { _private: () },
-                    ))
+                    )))
                 } else if let Some((cursor, selected_region)) = self.cursor_in_selection(cursor) {
                     // Left click on selection = Move selection
-                    crate::Message::Selection(Message::UpdateStatus(
+                    crate::Message::Selection(Box::new(Message::UpdateStatus(
                         SelectionStatus::Move {
                             initial_rect_pos: selected_region.norm().pos(),
                             initial_cursor_pos: cursor,
                         },
                         SelectionIsSome { _private: () },
-                    ))
+                    )))
                 } else if let Some(cursor_position) = cursor.position() {
                     // Left click outside of selection = Create new selection
-                    crate::Message::Selection(Message::CreateSelection(cursor_position))
+                    crate::Message::Selection(Box::new(Message::CreateSelection(cursor_position)))
                 } else {
                     return None;
                 }
@@ -492,7 +496,7 @@ impl Selection {
             Mouse(ButtonReleased(Left)) => {
                 state.is_left_down = false;
 
-                crate::Message::Selection(Message::EnterIdle)
+                crate::Message::Selection(Box::new(Message::EnterIdle))
             }
             Keyboard(KeyReleased {
                 key: Named(Shift), ..
@@ -511,7 +515,7 @@ impl Selection {
                     unreachable!("has `.is_some_and(is_resized)` guard");
                 };
 
-                crate::Message::Selection(Message::Resize {
+                crate::Message::Selection(Box::new(Message::Resize {
                     current_cursor_pos: *position,
                     resize_side,
                     initial_cursor_pos,
@@ -524,7 +528,7 @@ impl Selection {
                     } else {
                         Speed::Regular
                     },
-                })
+                }))
             }
             Keyboard(KeyPressed {
                 key: Named(Shift), ..
@@ -538,7 +542,7 @@ impl Selection {
                 // so we do not get a surprising jump
                 match self.status {
                     SelectionStatus::Resize { resize_side, .. } => {
-                        crate::Message::Selection(Message::Resize {
+                        crate::Message::Selection(Box::new(Message::Resize {
                             resize_side,
                             // start resizing from this point on
                             current_cursor_pos,
@@ -549,10 +553,10 @@ impl Selection {
                             speed: Speed::Slow {
                                 has_speed_changed: true,
                             },
-                        })
+                        }))
                     }
                     SelectionStatus::Move { .. } => {
-                        crate::Message::Selection(Message::MoveSelection {
+                        crate::Message::Selection(Box::new(Message::MoveSelection {
                             current_cursor_pos,
                             initial_cursor_pos: current_cursor_pos,
                             current_selection: *self,
@@ -560,7 +564,7 @@ impl Selection {
                             speed: Speed::Slow {
                                 has_speed_changed: true,
                             },
-                        })
+                        }))
                     }
                     _ => return None,
                 }
@@ -577,7 +581,7 @@ impl Selection {
                     unreachable!();
                 };
 
-                crate::Message::Selection(Message::MoveSelection {
+                crate::Message::Selection(Box::new(Message::MoveSelection {
                     current_cursor_pos: *position,
                     initial_cursor_pos,
                     current_selection,
@@ -589,24 +593,24 @@ impl Selection {
                     } else {
                         Speed::Regular
                     },
-                })
+                }))
             }
             Mouse(ButtonPressed(Right)) => {
                 state.is_right_down = true;
 
-                crate::Message::Selection(Message::ResizeToCursor {
+                crate::Message::Selection(Box::new(Message::ResizeToCursor {
                     cursor_pos: cursor.position()?,
                     selection: self.norm(),
                     sel_is_some: SelectionIsSome { _private: () },
-                })
+                }))
             }
             Mouse(ButtonReleased(Right)) => {
                 state.is_right_down = false;
 
-                crate::Message::Selection(Message::EnterIdle)
+                crate::Message::Selection(Box::new(Message::EnterIdle))
             }
             Mouse(CursorMoved { position }) if self.is_create() => {
-                crate::Message::Selection(Message::ExtendNewSelection(*position))
+                crate::Message::Selection(Box::new(Message::ExtendNewSelection(*position)))
             }
             _ => return None,
         };

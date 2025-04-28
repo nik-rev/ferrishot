@@ -7,7 +7,7 @@ use iced::{
     widget::{Column, Row, Space, row, tooltip},
 };
 
-use crate::{CONFIG, ui::selection::ICON_BUTTON_SIZE};
+use crate::ui::selection::ICON_BUTTON_SIZE;
 use crate::{config::KeyAction, icon, message::Message, ui::selection::FRAME_WIDTH};
 use iced::{Background, Border, Shadow, widget};
 
@@ -37,11 +37,12 @@ pub fn icon_tooltip<'a, Message>(
     content: impl Into<Element<'a, Message>>,
     tooltip: impl Into<Element<'a, Message>>,
     position: widget::tooltip::Position,
+    theme: &'a crate::config::Theme,
 ) -> widget::Tooltip<'a, Message> {
     widget::Tooltip::new(content, tooltip, position)
-        .style(|_| widget::container::Style {
-            text_color: Some(CONFIG.theme.tooltip_fg),
-            background: Some(Background::Color(CONFIG.theme.tooltip_bg)),
+        .style(move |_| widget::container::Style {
+            text_color: Some(theme.tooltip_fg),
+            background: Some(Background::Color(theme.tooltip_bg)),
             border: Border::default(),
             shadow: Shadow::default(),
         })
@@ -49,13 +50,16 @@ pub fn icon_tooltip<'a, Message>(
 }
 
 /// Styled icon as a button
-pub fn selection_icon<Message>(icon: widget::Svg) -> widget::Button<Message> {
+pub fn selection_icon<'a, Message>(
+    icon: widget::Svg<'a>,
+    theme: &'a crate::config::Theme,
+) -> widget::Button<'a, Message> {
     /// Width and height for icons *inside* of buttons
     const ICON_SIZE: f32 = 32.0;
 
     widget::button(
-        icon.style(|_, _| widget::svg::Style {
-            color: Some(CONFIG.theme.icon_fg),
+        icon.style(move |_, _| widget::svg::Style {
+            color: Some(theme.icon_fg),
         })
         .width(Length::Fixed(ICON_SIZE))
         .height(Length::Fixed(ICON_SIZE)),
@@ -63,9 +67,9 @@ pub fn selection_icon<Message>(icon: widget::Svg) -> widget::Button<Message> {
     .width(Length::Fixed(ICON_BUTTON_SIZE))
     .height(Length::Fixed(ICON_BUTTON_SIZE))
     .style(move |_, _| {
-        let mut style = widget::button::Style::default().with_background(CONFIG.theme.icon_bg);
+        let mut style = widget::button::Style::default().with_background(theme.icon_bg);
         style.shadow = Shadow {
-            color: CONFIG.theme.drop_shadow,
+            color: theme.drop_shadow,
             blur_radius: 3.0,
             offset: iced::Vector { x: 0.0, y: 0.0 },
         };
@@ -76,8 +80,10 @@ pub fn selection_icon<Message>(icon: widget::Svg) -> widget::Button<Message> {
 }
 
 /// Icons around the selection
-#[derive(Debug, Copy, Clone, PartialEq)]
-pub struct SelectionIcons {
+#[derive(Debug, Copy, Clone)]
+pub struct SelectionIcons<'app> {
+    /// The App
+    pub app: &'app super::App,
     /// Width of the container which contains `inner_rect`
     pub image_width: f32,
     /// Height of the container which contains `inner_rect`
@@ -94,10 +100,11 @@ fn add_icons_until_there_is_at_least_n_of_them<'a, const MIN_ELEMENTS: usize>(
     mut padding: f32,
     total_icons_positioned: &mut usize,
     tooltip_position: tooltip::Position,
+    theme: &'a crate::config::Theme,
 ) -> (Vec<Element<'a, Message>>, f32) {
     while icons.len() < MIN_ELEMENTS {
         if let Some((next, tooltip_str)) = iter.by_ref().next() {
-            icons.push(icon_tooltip(next, tooltip_str, tooltip_position).into());
+            icons.push(icon_tooltip(next, tooltip_str, tooltip_position, theme).into());
             *total_icons_positioned += 1;
             padding -= PX_PER_ICON / 2.0;
         } else {
@@ -114,6 +121,7 @@ fn position_icons_in_line<'a>(
     total_icons_positioned: &mut usize,
     mut icons_iter: impl Iterator<Item = (Element<'a, Message>, &'static str)>,
     icons_len: usize,
+    theme: &'a crate::config::Theme,
 ) -> (Vec<Element<'a, Message>>, f32) {
     let icons_left_to_position = icons_len - *total_icons_positioned;
     let icons_rendered_here =
@@ -125,7 +133,7 @@ fn position_icons_in_line<'a>(
     let mut icons = Vec::with_capacity(icons_rendered_here);
     for _ in 0..icons_rendered_here {
         if let Some((icon, tooltip_str)) = icons_iter.by_ref().next() {
-            icons.push(icon_tooltip(icon, tooltip_str, tooltip_position).into());
+            icons.push(icon_tooltip(icon, tooltip_str, tooltip_position, theme).into());
         }
     }
 
@@ -140,16 +148,16 @@ fn position_icons_in_line<'a>(
     (icons, padding)
 }
 
-impl SelectionIcons {
+impl<'app> SelectionIcons<'app> {
     /// Render icons around the selection border
     // TODO: Currently, this function does not handle the case where the selection has the
     // same size as the entire screen - so no icons can be rendered at all.
     //
     // We should add even more fallbacks so that it can render a little bit inside of the selection.
-    pub fn view(self) -> Element<'static, Message> {
+    pub fn view(self) -> Element<'app, Message> {
         let icons = vec![
             (
-                selection_icon(icon!(Fullscreen))
+                selection_icon(icon!(Fullscreen), &self.app.config.theme)
                     .on_press(Message::KeyBind {
                         action: KeyAction::SelectFullScreen,
                         count: 1,
@@ -158,7 +166,7 @@ impl SelectionIcons {
                 "Select entire monitor (F11)",
             ),
             (
-                selection_icon(icon!(Clipboard))
+                selection_icon(icon!(Clipboard), &self.app.config.theme)
                     .on_press(Message::KeyBind {
                         action: KeyAction::CopyToClipboard,
                         count: 1,
@@ -167,7 +175,7 @@ impl SelectionIcons {
                 "Copy to Clipboard (Enter)",
             ),
             (
-                selection_icon(icon!(Save))
+                selection_icon(icon!(Save), &self.app.config.theme)
                     .on_press(Message::KeyBind {
                         action: KeyAction::SaveScreenshot,
                         count: 1,
@@ -176,7 +184,7 @@ impl SelectionIcons {
                 "Save Screenshot (Ctrl + s)",
             ),
             (
-                selection_icon(icon!(Close))
+                selection_icon(icon!(Close), &self.app.config.theme)
                     .on_press(Message::KeyBind {
                         action: KeyAction::Exit,
                         count: 1,
@@ -185,7 +193,7 @@ impl SelectionIcons {
                 "Exit (esc)",
             ),
             (
-                selection_icon(icon!(Upload))
+                selection_icon(icon!(Upload), &self.app.config.theme)
                     .on_press(Message::KeyBind {
                         action: KeyAction::UploadScreenshot,
                         count: 1,
@@ -218,6 +226,7 @@ impl SelectionIcons {
                 &mut total_icons_positioned,
                 &mut icons_iter,
                 icons_len,
+                &self.app.config.theme,
             )
         });
 
@@ -228,6 +237,7 @@ impl SelectionIcons {
                 &mut total_icons_positioned,
                 &mut icons_iter,
                 icons_len,
+                &self.app.config.theme,
             )
         });
 
@@ -238,6 +248,7 @@ impl SelectionIcons {
                 &mut total_icons_positioned,
                 &mut icons_iter,
                 icons_len,
+                &self.app.config.theme,
             )
         });
 
@@ -248,6 +259,7 @@ impl SelectionIcons {
                 &mut total_icons_positioned,
                 &mut icons_iter,
                 icons_len,
+                &self.app.config.theme,
             )
         });
 
@@ -263,6 +275,7 @@ impl SelectionIcons {
                 bottom_padding,
                 &mut total_icons_positioned,
                 tooltip::Position::Bottom,
+                &self.app.config.theme,
             )
         });
 
@@ -273,6 +286,7 @@ impl SelectionIcons {
                 top_padding,
                 &mut total_icons_positioned,
                 tooltip::Position::Top,
+                &self.app.config.theme,
             )
         });
 
@@ -283,6 +297,7 @@ impl SelectionIcons {
                 left_padding,
                 &mut total_icons_positioned,
                 tooltip::Position::Left,
+                &self.app.config.theme,
             )
         });
 
@@ -293,6 +308,7 @@ impl SelectionIcons {
                 right_padding,
                 &mut total_icons_positioned,
                 tooltip::Position::Right,
+                &self.app.config.theme,
             )
         });
 
@@ -306,6 +322,7 @@ impl SelectionIcons {
                 &mut total_icons_positioned,
                 &mut icons_iter,
                 icons_len,
+                &self.app.config.theme,
             )
         });
 
@@ -316,6 +333,7 @@ impl SelectionIcons {
                 &mut total_icons_positioned,
                 &mut icons_iter,
                 icons_len,
+                &self.app.config.theme,
             )
         });
 
@@ -327,6 +345,7 @@ impl SelectionIcons {
                     extra_bottom_padding,
                     &mut total_icons_positioned,
                     tooltip::Position::Bottom,
+                    &self.app.config.theme,
                 )
             });
 
@@ -337,6 +356,7 @@ impl SelectionIcons {
                 extra_top_padding,
                 &mut total_icons_positioned,
                 tooltip::Position::Top,
+                &self.app.config.theme,
             )
         });
 
@@ -347,6 +367,7 @@ impl SelectionIcons {
                 &mut total_icons_positioned,
                 &mut icons_iter,
                 icons_len,
+                &self.app.config.theme,
             )
         });
 
@@ -357,6 +378,7 @@ impl SelectionIcons {
                 &mut total_icons_positioned,
                 &mut icons_iter,
                 icons_len,
+                &self.app.config.theme,
             )
         });
 
@@ -368,6 +390,7 @@ impl SelectionIcons {
                     extra_extra_top_padding,
                     &mut total_icons_positioned,
                     tooltip::Position::Top,
+                    &self.app.config.theme,
                 )
             });
 
@@ -379,6 +402,7 @@ impl SelectionIcons {
                     extra_extra_bottom_padding,
                     &mut total_icons_positioned,
                     tooltip::Position::Bottom,
+                    &self.app.config.theme,
                 )
             },
         );

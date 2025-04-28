@@ -237,7 +237,7 @@ macro_rules! declare_theme_options {
         }
 
         /// Theme and colors of ferrishot
-        #[derive(Debug)]
+        #[derive(Debug, Copy, Clone)]
         pub struct Theme {
             $(
                 $(#[$doc])*

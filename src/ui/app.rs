@@ -1,6 +1,6 @@
 //! Main logic for the application, handling of events and mutation of the state
 
-use crate::CONFIG;
+use crate::Config;
 use crate::config::KeyAction;
 use crate::config::Place;
 use crate::ui;
@@ -67,6 +67,8 @@ pub static SAVED_IMAGE: std::sync::OnceLock<image::DynamicImage> = std::sync::On
 /// Holds the state for ferrishot
 #[derive(Debug, Default)]
 pub struct App {
+    /// Config of the app
+    pub config: Config,
     /// A list of messages which obtained while the debug overlay is active
     pub logged_messages: Vec<Message>,
     /// How many selections were created throughout the
@@ -118,19 +120,15 @@ impl App {
             .push(Canvas::new(self).width(Fill).height(Fill))
             // information popup, when there is no selection
             .push_maybe(
-                (self.uploaded_url.is_none() && self.selection.is_none()).then(|| {
-                    super::WelcomeMessage {
-                        image_width: self.image.width(),
-                        image_height: self.image.height(),
-                    }
-                    .view()
-                }),
+                (self.uploaded_url.is_none() && self.selection.is_none())
+                    .then(|| super::welcome_message(self)),
             )
             // errors
-            .push(self.errors.view(self.image.width()))
+            .push(self.errors.view(self))
             // icons around the selection
             .push_maybe(self.selection.filter(|sel| sel.is_idle()).map(|sel| {
                 super::SelectionIcons {
+                    app: self,
                     image_width: self.image.width() as f32,
                     image_height: self.image.height() as f32,
                     selection_rect: sel.rect.norm(),
@@ -138,25 +136,26 @@ impl App {
                 .view()
             }))
             // grid of letters to precisely choose a location
-            .push_maybe(
-                self.picking_corner
-                    .map(|pick_corner| super::Letters { pick_corner }.view()),
-            )
+            .push_maybe(self.picking_corner.map(|pick_corner| {
+                super::Letters {
+                    app: self,
+                    pick_corner,
+                }
+                .view()
+            }))
             // size indicator
-            .push_maybe(self.selection.filter(|_| CONFIG.size_indicator).get().map(
-                |(sel, sel_is_some)| {
-                    super::SizeIndicator {
-                        image_height: self.image.height(),
-                        image_width: self.image.width(),
-                        selection_rect: sel.rect.norm(),
-                        sel_is_some,
-                    }
-                    .view()
-                },
-            ))
+            .push_maybe(
+                self.selection
+                    .filter(|_| self.config.size_indicator)
+                    .get()
+                    .map(|(sel, sel_is_some)| {
+                        super::size_indicator(self, sel.rect.norm(), sel_is_some)
+                    }),
+            )
             // output when uploading image
             .push_maybe(self.uploaded_url.as_ref().map(|(qr_code_data, data)| {
                 super::ImageUploaded {
+                    app: self,
                     qr_code_data,
                     data,
                     url_copied: self.has_copied_uploaded_image_link,
@@ -164,10 +163,7 @@ impl App {
                 .view()
             }))
             // debug overlay
-            .push_maybe(
-                self.show_debug_overlay
-                    .then(|| super::DebugOverlay { app: self }.view()),
-            )
+            .push_maybe(self.show_debug_overlay.then(|| super::debug_overlay(self)))
             .into()
     }
 
@@ -244,12 +240,14 @@ impl App {
                     self.selection = None;
                 }
                 KeyAction::SelectFullScreen => {
-                    self.selection = Some(Selection::new(Point { x: 0.0, y: 0.0 }).with_size(
-                        |_| Size {
-                            width: self.image.width() as f32,
-                            height: self.image.height() as f32,
-                        },
-                    ));
+                    self.selection = Some(
+                        Selection::new(Point { x: 0.0, y: 0.0 }, &self.config.theme).with_size(
+                            |_| Size {
+                                width: self.image.width() as f32,
+                                height: self.image.height() as f32,
+                            },
+                        ),
+                    );
                 }
                 KeyAction::SaveScreenshot => {
                     let Some(selection) = self.selection.as_ref().map(|sel| Selection::norm(*sel))
@@ -439,14 +437,13 @@ impl App {
                         self.errors.push(err.to_string());
                     }
 
+                    let image_upload_provider = self.config.default_image_upload_provider;
+
                     return Task::future(async move {
                         {
                             let file = tempfile;
                             let file_size = file.metadata().map(|meta| meta.len()).unwrap_or(0);
-                            let response = CONFIG
-                                .default_image_upload_provider
-                                .upload_image(&file)
-                                .await;
+                            let response = image_upload_provider.upload_image(&file).await;
 
                             match response {
                                 Ok(url) => Message::ImageUploaded(
@@ -509,7 +506,7 @@ impl canvas::Program<Message> for App {
             frame.fill_rectangle(
                 bounds.position(),
                 bounds.size(),
-                CONFIG.theme.non_selected_region,
+                self.config.theme.non_selected_region,
             );
         }
 
@@ -610,13 +607,13 @@ impl canvas::Program<Message> for App {
                 .last_key_pressed
                 .as_ref()
                 .and_then(|last_key_pressed| {
-                    CONFIG.keys.get(
+                    self.config.keys.get(
                         last_key_pressed.clone(),
                         Some(modified_key.clone()),
                         modifiers,
                     )
                 })
-                .or_else(|| CONFIG.keys.get(modified_key.clone(), None, modifiers))
+                .or_else(|| self.config.keys.get(modified_key.clone(), None, modifiers))
             {
                 // the last key pressed needs to be reset for it to be
                 // correct in future invocations
@@ -652,11 +649,13 @@ impl canvas::Program<Message> for App {
         let message = match event {
             Mouse(ButtonPressed(Left)) => {
                 state.is_left_down = true;
-                Message::Selection(ui::selection::Message::CreateSelection(cursor.position()?))
+                Message::Selection(Box::new(ui::selection::Message::CreateSelection(
+                    cursor.position()?,
+                )))
             }
             Mouse(ButtonReleased(Left)) => {
                 state.is_left_down = false;
-                if CONFIG.instant && self.selections_created == 1 {
+                if self.config.instant && self.selections_created == 1 {
                     // we have created 1 selections in total, (the current one),
                     // in which case we want to copy it to the clipboard
                     Message::KeyBind {
@@ -665,7 +664,7 @@ impl canvas::Program<Message> for App {
                     }
                 } else {
                     // stop the creating of the initial selection
-                    Message::Selection(ui::selection::Message::EnterIdle)
+                    Message::Selection(Box::new(ui::selection::Message::EnterIdle))
                 }
             }
             _ => return None,

@@ -29,7 +29,7 @@ impl ErrorMessage {
     }
 }
 
-use crate::{CONFIG, message::Message};
+use crate::message::Message;
 
 /// Width of error message
 const ERROR_WIDTH: u32 = 300;
@@ -51,7 +51,8 @@ impl Errors {
     }
 
     /// Show errors on the screen
-    pub fn view(&self, image_width: u32) -> Element<'static, Message> {
+    pub fn view<'app>(&self, app: &'app super::App) -> Element<'app, Message> {
+        let image_width = app.image.width();
         let errors = self
             .errors
             .iter()
@@ -64,10 +65,10 @@ impl Errors {
                     .height(80)
                     .width(ERROR_WIDTH)
                     .style(|_| container::Style {
-                        text_color: Some(CONFIG.theme.error_fg),
-                        background: Some(Background::Color(CONFIG.theme.error_bg)),
+                        text_color: Some(app.config.theme.error_fg),
+                        background: Some(Background::Color(app.config.theme.error_bg)),
                         border: iced::Border {
-                            color: CONFIG.theme.drop_shadow,
+                            color: app.config.theme.drop_shadow,
                             width: 4.0,
                             radius: 2.0.into(),
                         },

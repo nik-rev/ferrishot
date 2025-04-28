@@ -12,11 +12,11 @@ mod welcome_message;
 pub mod selection;
 
 use background_image::BackgroundImage;
-use debug_overlay::DebugOverlay;
+use debug_overlay::debug_overlay;
 use errors::Errors;
 
 pub mod size_indicator;
-use size_indicator::SizeIndicator;
+use size_indicator::size_indicator;
 
 pub mod image_uploaded;
 use image_uploaded::ImageUploaded;
@@ -25,7 +25,7 @@ pub mod letters;
 use letters::{Letters, PickCorner};
 
 use selection_icons::SelectionIcons;
-use welcome_message::WelcomeMessage;
+use welcome_message::welcome_message;
 
 pub use app::{App, SAVED_IMAGE};
 

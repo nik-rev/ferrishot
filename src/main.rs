@@ -37,9 +37,6 @@ fn main() -> miette::Result<()> {
     // Setup logging
     ferrishot::logging::initialize();
 
-    // Read the user's config, merging it with the default
-    LazyLock::force(&ferrishot::CONFIG);
-
     if CLI.dump_default_config {
         std::fs::create_dir_all(
             std::path::PathBuf::from(&CLI.config_file)

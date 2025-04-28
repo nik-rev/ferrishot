@@ -14,7 +14,7 @@ use iced::{
     },
 };
 
-use crate::CONFIG;
+use super::selection::Selection;
 
 /// Letters message
 #[derive(Clone, Debug)]
@@ -27,6 +27,8 @@ pub enum Message {
     Pick {
         /// the center of the region clicked on the 3rd level of `Letters`
         point: Point,
+        /// The corner which was picked
+        corner: PickCorner,
     },
 }
 
@@ -36,30 +38,28 @@ impl crate::message::Handler for Message {
             Self::Abort => {
                 app.picking_corner = None;
             }
-            Self::Pick { point } => {
-                let sel = app
-                    .selection
-                    .map(crate::ui::selection::Selection::norm)
-                    .unwrap_or_default();
+            Self::Pick { point, corner } => {
+                let sel = app.selection.map_or_else(
+                    || Selection::new(Point::default(), &app.config.theme),
+                    Selection::norm,
+                );
                 let x = point.x;
                 let y = point.y;
-                if let Some(pick_corner) = app.picking_corner {
-                    match pick_corner {
-                        PickCorner::TopLeft => {
-                            app.selection = Some(
-                                sel.with_x(|_| x)
-                                    .with_y(|_| y)
-                                    // make sure that the selection is not going to be out of bounds
-                                    .with_width(|w| w.min(app.image.width() as f32 - x))
-                                    .with_height(|h| h.min(app.image.height() as f32 - y)),
-                            );
-                        }
-                        PickCorner::BottomRight => {
-                            app.selection = Some(
-                                sel.with_height(|_| y - sel.rect.y)
-                                    .with_width(|_| x - sel.rect.x),
-                            );
-                        }
+                match corner {
+                    PickCorner::TopLeft => {
+                        app.selection = Some(
+                            sel.with_x(|_| x)
+                                .with_y(|_| y)
+                                // make sure that the selection is not going to be out of bounds
+                                .with_width(|w| w.min(app.image.width() as f32 - x))
+                                .with_height(|h| h.min(app.image.height() as f32 - y)),
+                        );
+                    }
+                    PickCorner::BottomRight => {
+                        app.selection = Some(
+                            sel.with_height(|_| y - sel.rect.y)
+                                .with_width(|_| x - sel.rect.x),
+                        );
                     }
                 }
                 app.picking_corner = None;
@@ -91,6 +91,7 @@ enum FontSize {
 }
 
 /// Draw letters in a box
+#[expect(clippy::too_many_arguments, reason = "todo: refactor")]
 fn draw_boxes(
     x_start: f32,
     y_start: f32,
@@ -99,6 +100,7 @@ fn draw_boxes(
     frame: &mut canvas::Frame,
     font_size: FontSize,
     line_width: f32,
+    app: &super::App,
 ) {
     // We need to offset drawing each line, otherwise it will draw *half* of the line at each side
     let line_offset = line_width / 2.0;
@@ -132,7 +134,7 @@ fn draw_boxes(
                     }
                     font
                 },
-                color: CONFIG.theme.letters_fg,
+                color: app.config.theme.letters_fg,
                 size: match font_size {
                     FontSize::Fixed(px) => px,
                     FontSize::Fill => box_height,
@@ -151,7 +153,7 @@ fn draw_boxes(
                 Point::new(x + line_offset, y_start + height),
             ),
             Stroke {
-                style: CONFIG.theme.letters_lines.into(),
+                style: app.config.theme.letters_lines.into(),
                 width: line_width,
                 ..Default::default()
             },
@@ -168,7 +170,7 @@ fn draw_boxes(
                 Point::new(x_start + width, y + line_offset),
             ),
             Stroke {
-                style: CONFIG.theme.letters_lines.into(),
+                style: app.config.theme.letters_lines.into(),
                 width: line_width,
                 ..Default::default()
             },
@@ -185,7 +187,7 @@ fn draw_boxes(
             Point::new(x_start + width - line_offset, y_start + height),
         ),
         Stroke {
-            style: CONFIG.theme.letters_lines.into(),
+            style: app.config.theme.letters_lines.into(),
             width: line_width,
             ..Default::default()
         },
@@ -197,7 +199,7 @@ fn draw_boxes(
             Point::new(x_start + width, y_start + height - line_offset),
         ),
         Stroke {
-            style: CONFIG.theme.letters_lines.into(),
+            style: app.config.theme.letters_lines.into(),
             width: line_width,
             ..Default::default()
         },
@@ -246,15 +248,17 @@ pub enum PickCorner {
 }
 
 /// Letters
-#[derive(Eq, PartialEq, PartialOrd, Clone, Copy, Debug)]
-pub struct Letters {
+#[derive(Clone, Copy, Debug)]
+pub struct Letters<'app> {
+    /// The App
+    pub app: &'app super::App,
     /// Corner to pick the position for
     pub pick_corner: PickCorner,
 }
 
-impl Letters {
+impl<'app> Letters<'app> {
     /// Render a grid of letters
-    pub fn view(self) -> Element<'static, crate::Message> {
+    pub fn view(self) -> Element<'app, crate::Message> {
         Canvas::new(self).width(Fill).height(Fill).into()
     }
 }
@@ -266,7 +270,7 @@ pub struct LettersState {
     level: LetterLevel,
 }
 
-impl canvas::Program<crate::Message> for Letters {
+impl canvas::Program<crate::Message> for Letters<'_> {
     type State = LettersState;
 
     fn draw(
@@ -279,7 +283,11 @@ impl canvas::Program<crate::Message> for Letters {
     ) -> Vec<canvas::Geometry> {
         let mut frame = canvas::Frame::new(renderer, bounds.size());
 
-        frame.fill_rectangle(bounds.position(), bounds.size(), CONFIG.theme.letters_bg);
+        frame.fill_rectangle(
+            bounds.position(),
+            bounds.size(),
+            self.app.config.theme.letters_bg,
+        );
 
         let x_start = 0.0;
         let y_start = 0.0;
@@ -295,6 +303,7 @@ impl canvas::Program<crate::Message> for Letters {
                 &mut frame,
                 FontSize::Fixed(48.0),
                 1.0,
+                self.app,
             ),
             LetterLevel::Second { point } => draw_boxes(
                 point.x,
@@ -304,6 +313,7 @@ impl canvas::Program<crate::Message> for Letters {
                 &mut frame,
                 FontSize::Fixed(32.0),
                 1.0,
+                self.app,
             ),
             LetterLevel::Third { point } => draw_boxes(
                 point.x,
@@ -313,6 +323,7 @@ impl canvas::Program<crate::Message> for Letters {
                 &mut frame,
                 FontSize::Fill,
                 0.2,
+                self.app,
             ),
         }
 
@@ -373,6 +384,7 @@ impl canvas::Program<crate::Message> for Letters {
                                 x: horizontal_steps.mul_add(box_width, point.x) + box_width / 2.0,
                                 y: vertical_steps.mul_add(box_height, point.y) + box_height / 2.0,
                             },
+                            corner: self.pick_corner,
                         })));
                     }
                 }

@@ -1,12 +1,12 @@
 //! Renders a tiny numeric input which shows a dimension of the rect and allow resizing it
 
-use super::selection::OptionalSelectionExt as _;
+use super::{App, selection::OptionalSelectionExt as _};
 use iced::{
     Background, Element, Length, Rectangle, Task,
     widget::{self, Space, column, row, text::Shaping},
 };
 
-use crate::{CONFIG, rect::RectangleExt as _, ui::selection::SelectionIsSome};
+use crate::{rect::RectangleExt as _, ui::selection::SelectionIsSome};
 
 /// One of the values in the size indicator has changed
 #[derive(Clone, Debug)]
@@ -73,22 +73,11 @@ impl crate::message::Handler for Message {
     }
 }
 
-/// Shows the width and height of the image
-pub struct SizeIndicator {
-    /// Height of the image
-    pub image_height: u32,
-    /// Width of the image
-    pub image_width: u32,
-    /// Selection area
-    pub selection_rect: Rectangle,
-    /// A key to guarantee that `Selection.is_some()`
-    pub sel_is_some: SelectionIsSome,
-}
-
 /// Renders the indicator for a single dimension (e.g. width or height)
 fn dimension_indicator<'a>(
     value: u32,
     on_change: impl Fn(u32) -> crate::Message + 'a,
+    theme: &'a crate::config::Theme,
 ) -> widget::TextInput<'a, crate::Message> {
     let content = value.to_string();
     let input = iced::widget::text_input(Default::default(), content.as_str())
@@ -106,9 +95,9 @@ fn dimension_indicator<'a>(
                     .map_or(crate::Message::NoOp, &on_change)
             }
         })
-        .style(|_, _| widget::text_input::Style {
-            value: CONFIG.theme.size_indicator_fg,
-            selection: CONFIG.theme.text_selection,
+        .style(move |_, _| widget::text_input::Style {
+            value: theme.size_indicator_fg,
+            selection: theme.text_selection,
             // --- none
             background: Background::Color(iced::Color::TRANSPARENT),
             border: iced::Border {
@@ -124,46 +113,58 @@ fn dimension_indicator<'a>(
     input
 }
 
-impl SizeIndicator {
-    /// Renders a tiny numeric input which shows a dimension of the rect and allow resizing it
-    pub fn view(self) -> Element<'static, crate::Message> {
-        const SPACING: f32 = 12.0;
-        const ESTIMATED_INDICATOR_WIDTH: u32 = 120;
-        const ESTIMATED_INDICATOR_HEIGHT: u32 = 26;
+/// Renders a tiny numeric input which shows a dimension of the rect and allow resizing it
+pub fn size_indicator(
+    app: &App,
+    selection_rect: Rectangle,
+    sel_is_some: SelectionIsSome,
+) -> Element<crate::Message> {
+    const SPACING: f32 = 12.0;
+    const ESTIMATED_INDICATOR_WIDTH: u32 = 120;
+    const ESTIMATED_INDICATOR_HEIGHT: u32 = 26;
 
-        let x_offset = (self.selection_rect.bottom_right().x + SPACING)
-            .min((self.image_width - ESTIMATED_INDICATOR_WIDTH) as f32);
-        let y_offset = (self.selection_rect.bottom_right().y + SPACING)
-            .min((self.image_height - ESTIMATED_INDICATOR_HEIGHT) as f32);
+    let image_height = app.image.height();
+    let image_width = app.image.width();
 
-        let horizontal_space = Space::with_width(x_offset);
-        let vertical_space = Space::with_height(y_offset);
+    let x_offset = (selection_rect.bottom_right().x + SPACING)
+        .min((image_width - ESTIMATED_INDICATOR_WIDTH) as f32);
+    let y_offset = (selection_rect.bottom_right().y + SPACING)
+        .min((image_height - ESTIMATED_INDICATOR_HEIGHT) as f32);
 
-        let width = dimension_indicator(self.selection_rect.width as u32, move |new_width| {
+    let horizontal_space = Space::with_width(x_offset);
+    let vertical_space = Space::with_height(y_offset);
+
+    let width = dimension_indicator(
+        selection_rect.width as u32,
+        move |new_width| {
             crate::Message::SizeIndicator(Message::ResizeHorizontally {
                 new_width,
-                sel_is_some: self.sel_is_some,
+                sel_is_some,
             })
-        });
-        let height = dimension_indicator(self.selection_rect.height as u32, move |new_height| {
+        },
+        &app.config.theme,
+    );
+    let height = dimension_indicator(
+        selection_rect.height as u32,
+        move |new_height| {
             crate::Message::SizeIndicator(Message::ResizeVertically {
                 new_height,
-                sel_is_some: self.sel_is_some,
+                sel_is_some,
             })
-        });
+        },
+        &app.config.theme,
+    );
 
-        let x = iced::widget::text("✕ ")
-            .color(CONFIG.theme.size_indicator_fg)
-            .shaping(Shaping::Advanced);
-        let space = iced::widget::text(" ");
-        let c =
-            widget::container(row![space, width, x, height]).style(|_| widget::container::Style {
-                text_color: None,
-                background: Some(Background::Color(CONFIG.theme.size_indicator_bg)),
-                border: iced::Border::default(),
-                shadow: iced::Shadow::default(),
-            });
+    let x = iced::widget::text("✕ ")
+        .color(app.config.theme.size_indicator_fg)
+        .shaping(Shaping::Advanced);
+    let space = iced::widget::text(" ");
+    let c = widget::container(row![space, width, x, height]).style(|_| widget::container::Style {
+        text_color: None,
+        background: Some(Background::Color(app.config.theme.size_indicator_bg)),
+        border: iced::Border::default(),
+        shadow: iced::Shadow::default(),
+    });
 
-        column![vertical_space, row![horizontal_space, c]].into()
-    }
+    column![vertical_space, row![horizontal_space, c]].into()
 }

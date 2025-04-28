@@ -18,7 +18,7 @@ use iced::{
     },
 };
 
-use crate::{CONFIG, icon};
+use crate::icon;
 
 use super::selection_icons::icon_tooltip;
 
@@ -83,6 +83,8 @@ impl crate::message::Handler for Message {
 
 /// Data for the uploaded image
 pub struct ImageUploaded<'app> {
+    /// The App
+    pub app: &'app super::App,
     /// Data for the URL to the uploaded image
     pub qr_code_data: &'app qr_code::Data,
     /// When the URL Was copied
@@ -119,7 +121,7 @@ impl<'app> ImageUploaded<'app> {
                                 //
                                 container(
                                     text(self.data.url.clone())
-                                        .color(CONFIG.theme.image_uploaded_fg)
+                                        .color(self.app.config.theme.image_uploaded_fg)
                                 )
                                 .center_y(Fill),
                                 //
@@ -128,11 +130,11 @@ impl<'app> ImageUploaded<'app> {
                                 {
                                     let (clipboard_icon, clipboard_icon_color, label) =
                                         if self.url_copied {
-                                            (icon!(Check), CONFIG.theme.success, "Copied!")
+                                            (icon!(Check), self.app.config.theme.success, "Copied!")
                                         } else {
                                             (
                                                 icon!(Clipboard),
-                                                CONFIG.theme.image_uploaded_fg,
+                                                self.app.config.theme.image_uploaded_fg,
                                                 "Copy Link",
                                             )
                                         };
@@ -159,12 +161,13 @@ impl<'app> ImageUploaded<'app> {
                                         }),
                                         text(label),
                                         tooltip::Position::Top,
+                                        &self.app.config.theme,
                                     ))
                                     .center_y(Fill)
                                 }
                             ])
                             .style(|_| container::Style {
-                                text_color: Some(CONFIG.theme.image_uploaded_fg),
+                                text_color: Some(self.app.config.theme.image_uploaded_fg),
                                 ..Default::default()
                             })
                             .center_y(Length::Fixed(32.0))
@@ -217,7 +220,7 @@ impl<'app> ImageUploaded<'app> {
                             .width(30.0)
                             .height(30.0)
                             .style(|_, _| svg::Style {
-                                color: Some(CONFIG.theme.image_uploaded_fg)
+                                color: Some(self.app.config.theme.image_uploaded_fg)
                             })
                     )
                     .style(|_, _| button::Style {
@@ -226,7 +229,8 @@ impl<'app> ImageUploaded<'app> {
                     })
                     .on_press(crate::Message::ImageUploaded(Message::ExitImageUploadMenu)),
                     text("Close"),
-                    tooltip::Position::Right
+                    tooltip::Position::Right,
+                    &self.app.config.theme
                 ))
                 .align_top(Fill)
                 .align_right(Fill),
@@ -234,8 +238,8 @@ impl<'app> ImageUploaded<'app> {
             .width(Length::Fixed(700.0))
             .height(Length::Fixed(1200.0))
             .style(|_| container::Style {
-                text_color: Some(CONFIG.theme.image_uploaded_fg),
-                background: Some(Background::Color(CONFIG.theme.image_uploaded_bg)),
+                text_color: Some(self.app.config.theme.image_uploaded_fg),
+                background: Some(Background::Color(self.app.config.theme.image_uploaded_bg)),
                 ..Default::default()
             })
             .padding(30.0),
