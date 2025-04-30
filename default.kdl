@@ -4,7 +4,6 @@
 
 default-image-upload-provider the-null-pointer
 size-indicator #true
-instant #false
 
 keys {
   exit key=<esc>

@@ -40,7 +40,15 @@ impl crate::message::Handler for Message {
             }
             Self::Pick { point, corner } => {
                 let sel = app.selection.map_or_else(
-                    || Selection::new(Point::default(), &app.config.theme),
+                    || {
+                        app.selections_created += 1;
+                        Selection::new(
+                            Point::default(),
+                            &app.config.theme,
+                            app.selections_created == 1,
+                            app.cli.accept_on_select,
+                        )
+                    },
                     Selection::norm,
                 );
                 let x = point.x;

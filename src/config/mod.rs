@@ -23,7 +23,7 @@ mod options;
 use crate::config::key::KeyMap;
 use crate::config::macros::Color;
 
-pub use cli::Cli;
+pub use cli::{AcceptOnSelect, Cli};
 
 use std::fs;
 use std::path::PathBuf;

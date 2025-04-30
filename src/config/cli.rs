@@ -8,21 +8,8 @@ use iced::Rectangle;
 
 use crate::rect::RectangleExt;
 
-/// What to output when exiting the app
-#[derive(clap::ValueEnum, Debug, Clone)]
-pub enum Print {
-    /// Raw bytes of the image
-    Raw,
-    /// Selected region in the format <width>x<height>+<top-left-x>+<top-left-y>
-    Region,
-    /// Path to the saved image
-    Path,
-    /// Link to the uploaded image
-    Url,
-}
-
 /// Action to take when instantly accepting
-#[derive(clap::ValueEnum, Debug, Clone)]
+#[derive(clap::ValueEnum, Debug, Clone, Copy)]
 pub enum AcceptOnSelect {
     /// Copy the selected region to the clipboard
     Copy,
@@ -38,10 +25,10 @@ pub enum AcceptOnSelect {
 #[expect(clippy::struct_excessive_bools, reason = "normal for CLIs")]
 pub struct Cli {
     /// Instead of taking a screenshot of the desktop, open this image instead
+    // Currently disabled because if the screenshot is not the same size as the desktop,
+    // it will cause bugs as we consider 0,0 in the Canvas to be the
+    #[arg(hide = true)]
     pub file: Option<PathBuf>,
-    /// When exiting the program, print something, if applicable
-    #[arg(long)]
-    pub print: Option<Print>,
 
     /// Screenshot region to select
     ///
@@ -61,7 +48,10 @@ pub struct Cli {
     pub save_path: Option<PathBuf>,
 
     /// Accept capture as soon as a selection is made
-    #[arg(short('a'), long, value_name = "ACTION")]
+    ///
+    /// If holding `ctrl` while you are releasing the left mouse button on the
+    /// first selection, the behaviour is cancelled
+    #[arg(short('a'), long, value_name = "ACTION", verbatim_doc_comment)]
     pub accept_on_select: Option<AcceptOnSelect>,
 
     //
