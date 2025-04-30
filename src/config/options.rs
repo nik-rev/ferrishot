@@ -1,16 +1,9 @@
 //! Declare config options
 
 use crate::config::Place;
-use crate::image_upload::ImageUploadService;
 use crate::rect::Direction;
 
 crate::declare_config_options! {
-    /// The default image service to use when uploading images to the internet.
-    /// We have multiple options because some of them can be down / unreliable etc.
-    ///
-    /// You may also get rate limited by the service if you send too many images, so you can try a different
-    /// one if that happens.
-    default_image_upload_provider: ImageUploadService,
     /// Renders a size indicator in the bottom left corner.
     /// It shows the current height and width of the selection.
     ///
