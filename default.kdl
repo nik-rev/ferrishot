@@ -21,6 +21,8 @@ keys {
   pick-top-left-corner key=t
   pick-bottom-right-corner key=b
 
+  open-keybindings-cheatsheet key=?
+
   // Set width/height to whatever is the current count.
   // You can change the count by just writing numbers. e.g. type `100`
   set-width key=X

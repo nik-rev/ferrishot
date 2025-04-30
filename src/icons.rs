@@ -49,6 +49,14 @@ macro_rules! load_icons {
 }
 
 load_icons! {
+    /// Arrow pointing up
+    ArrowUp,
+    /// Arrow pointing right
+    ArrowRight,
+    /// Arrow pointing down
+    ArrowDown,
+    /// Arrow pointing left
+    ArrowLeft,
     /// Save the image to a path by opening the file dialog
     Save,
     /// Drawing a circle

@@ -699,6 +699,7 @@ impl Selection {
             pub fn corners(self) -> Corners;
             /// Whether this selection contains a given point
             pub fn contains(self, point: Point) -> bool;
+
             /// Position of the top left corner
             pub fn top_left(self) -> Point;
             /// Position of the top right corner
@@ -707,6 +708,17 @@ impl Selection {
             pub fn bottom_right(self) -> Point;
             /// Position of the bottom left corner
             pub fn bottom_left(self) -> Point;
+
+            /// Center
+            pub fn center(self) -> Point;
+            /// Top center
+            pub fn top_center(self) -> Point;
+            /// Right center
+            pub fn right_center(self) -> Point;
+            /// Left center
+            pub fn left_center(self) -> Point;
+            /// Bottom center
+            pub fn bottom_center(self) -> Point;
         }
         #[expr(self.rect = $; self)]
         to self.rect {

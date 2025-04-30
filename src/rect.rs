@@ -71,6 +71,18 @@ pub enum Side {
     Left,
 }
 
+impl Side {
+    /// Default keybinding (letter, arrow) for this
+    pub const fn default_keys(self) -> (&'static str, &'static str) {
+        match self {
+            Self::Top => ("k", "🡱"),
+            Self::Right => ("l", "🡲"),
+            Self::Bottom => ("j", "🡳"),
+            Self::Left => ("h", "🡰"),
+        }
+    }
+}
+
 /// Where to resize / shrink / extend rectangle
 #[derive(
     Copy,
@@ -302,6 +314,14 @@ pub impl Point<f32> {
         self.y = f(self.y);
         self
     }
+
+    /// Find the midpoint of two points
+    fn mid(self, other: Self) -> Self {
+        Self {
+            x: (self.x + other.x) / 2.0,
+            y: (self.y + other.y) / 2.0,
+        }
+    }
 }
 
 /// Extension methods for `iced::Rectangle`
@@ -346,6 +366,26 @@ pub impl Rectangle<f32> {
     /// Position of the top left corner
     fn pos(self) -> Point {
         self.position()
+    }
+
+    /// Top Center
+    fn top_center(&self) -> Point {
+        self.top_left().mid(self.top_right())
+    }
+
+    /// Bottom Center
+    fn bottom_center(&self) -> Point {
+        self.bottom_left().mid(self.bottom_right())
+    }
+
+    /// Right Center
+    fn right_center(&self) -> Point {
+        self.top_right().mid(self.bottom_right())
+    }
+
+    /// Left Center
+    fn left_center(&self) -> Point {
+        self.top_left().mid(self.bottom_left())
     }
 
     /// Position of the top left corner

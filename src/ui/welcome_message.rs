@@ -51,6 +51,7 @@ pub fn welcome_message(app: &super::App) -> Element<Message> {
             tip("Enter", "Copy screenshot to clipboard"),
             tip("Right Click", "Snap closest corner to mouse"),
             tip("Shift + Mouse", "Slowly resize / move area"),
+            tip("?", "Open Keybindings Cheatsheet"),
             tip("Esc", "Exit"),
         ]
         .spacing(8.0)
