@@ -107,12 +107,23 @@ impl App {
         Self {
             selection: cli.region.map(|rect| Selection {
                 theme: config.theme,
+                is_first: true,
+                accept_on_select: cli.accept_on_select,
                 rect,
                 status: ui::selection::SelectionStatus::default(),
             }),
             logged_messages: vec![],
             selections_created: 0,
-            image: Screenshot::default(),
+            // FIXME: Currently the app cannot handle when the resolution is very small
+            // if a path was passed and the path contains a valid image
+            image: cli
+                .file
+                .as_ref()
+                .and_then(|path| image::ImageReader::open(path).ok())
+                .and_then(|reader| reader.decode().ok())
+                .map(|img| Screenshot::new(img.width(), img.height(), img.into_rgba8().into_raw()))
+                // Default is taking a screenshot of the desktop
+                .unwrap_or_default(),
             errors: Errors::default(),
             picking_corner: None,
             uploaded_url: None,
@@ -263,13 +274,18 @@ impl App {
                 }
                 KeyAction::SelectFullScreen => {
                     self.selection = Some(
-                        Selection::new(Point { x: 0.0, y: 0.0 }, &self.config.theme).with_size(
-                            |_| Size {
-                                width: self.image.width() as f32,
-                                height: self.image.height() as f32,
-                            },
-                        ),
+                        Selection::new(
+                            Point { x: 0.0, y: 0.0 },
+                            &self.config.theme,
+                            self.selections_created == 0,
+                            self.cli.accept_on_select,
+                        )
+                        .with_size(|_| Size {
+                            width: self.image.width() as f32,
+                            height: self.image.height() as f32,
+                        }),
                     );
+                    self.selections_created += 1;
                 }
                 KeyAction::SaveScreenshot => {
                     let Some(selection) = self.selection.as_ref().map(|sel| Selection::norm(*sel))
@@ -554,22 +570,7 @@ impl canvas::Program<Message> for App {
         // Handle popups
         //
         // Events will still be forwarded to the canvas even if we have a popup
-        if self.uploaded_url.is_some() {
-            match event {
-                Keyboard(KeyPressed {
-                    key: iced::keyboard::Key::Named(iced::keyboard::key::Named::Escape),
-                    ..
-                })
-                | Mouse(ButtonPressed(Left)) => {
-                    return Some(Action::publish(Message::ImageUploaded(
-                        ui::image_uploaded::Message::ExitImageUploadMenu,
-                    )));
-                }
-                _ => (),
-            }
-
-            return None;
-        } else if self.picking_corner.is_some() {
+        if self.picking_corner.is_some() {
             if let Keyboard(KeyPressed {
                 key: iced::keyboard::Key::Named(iced::keyboard::key::Named::Escape),
                 ..
@@ -677,17 +678,7 @@ impl canvas::Program<Message> for App {
             }
             Mouse(ButtonReleased(Left)) => {
                 state.is_left_down = false;
-                if self.config.instant && self.selections_created == 1 {
-                    // we have created 1 selections in total, (the current one),
-                    // in which case we want to copy it to the clipboard
-                    Message::KeyBind {
-                        action: KeyAction::CopyToClipboard,
-                        count: 1,
-                    }
-                } else {
-                    // stop the creating of the initial selection
-                    Message::Selection(Box::new(ui::selection::Message::EnterIdle))
-                }
+                Message::NoOp
             }
             _ => return None,
         };

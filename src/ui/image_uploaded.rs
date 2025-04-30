@@ -14,7 +14,7 @@ use iced::{
     Length::{self, Fill},
     Task,
     widget::{
-        button, column, container, horizontal_rule, opaque, qr_code, row, stack, svg, text, tooltip,
+        button, column, container, horizontal_rule, opaque, qr_code, row, svg, text, tooltip,
     },
 };
 
@@ -40,8 +40,6 @@ pub struct ImageUploadedData {
 /// Message for the image uploaded
 #[derive(Clone, Debug)]
 pub enum Message {
-    /// Click "close" on the image upload menu
-    ExitImageUploadMenu,
     /// The image was uploaded to the internet
     ImageUploaded(ImageUploadedData),
     /// Copy link of image to clipboard
@@ -65,7 +63,6 @@ impl crate::message::Handler for Message {
                     });
                 }
             }
-            Self::ExitImageUploadMenu => app.uploaded_url = None,
             Self::ImageUploaded(data) => match iced::widget::qr_code::Data::new(data.url.clone()) {
                 Ok(qr_code) => {
                     app.uploaded_url = Some((qr_code, data));
@@ -97,7 +94,7 @@ impl<'app> ImageUploaded<'app> {
     /// Render the QR Code
     pub fn view(&self) -> Element<'app, crate::Message> {
         container(opaque(
-            container(stack![
+            container(
                 column![
                     //
                     // Heading
@@ -211,30 +208,7 @@ impl<'app> ImageUploaded<'app> {
                     iced::widget::image(self.data.uploaded_image.clone()).width(Fill)
                 ]
                 .spacing(30.0),
-                //
-                // Close button
-                //
-                container(icon_tooltip(
-                    button(
-                        icon!(Close)
-                            .width(30.0)
-                            .height(30.0)
-                            .style(|_, _| svg::Style {
-                                color: Some(self.app.config.theme.image_uploaded_fg)
-                            })
-                    )
-                    .style(|_, _| button::Style {
-                        background: Some(Background::Color(iced::Color::TRANSPARENT)),
-                        ..Default::default()
-                    })
-                    .on_press(crate::Message::ImageUploaded(Message::ExitImageUploadMenu)),
-                    text("Close"),
-                    tooltip::Position::Right,
-                    &self.app.config.theme
-                ))
-                .align_top(Fill)
-                .align_right(Fill),
-            ])
+            )
             .width(Length::Fixed(700.0))
             .height(Length::Fixed(1200.0))
             .style(|_| container::Style {

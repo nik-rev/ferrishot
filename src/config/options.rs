@@ -5,13 +5,6 @@ use crate::image_upload::ImageUploadService;
 use crate::rect::Direction;
 
 crate::declare_config_options! {
-    /// Specifying this option will copy the selection to clipboard as soon as you select your first rectangle.
-    /// This is useful, since often times you may not want to make any modifications to your selection,
-    /// so this makes simple select and copy faster.
-    ///
-    /// When this is `true`, while you are selecting the first square pressing the Right mouse button just once will
-    /// cancel this effect and not instantly copy the screenshot.
-    instant: bool,
     /// The default image service to use when uploading images to the internet.
     /// We have multiple options because some of them can be down / unreliable etc.
     ///

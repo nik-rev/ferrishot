@@ -39,6 +39,8 @@ fn main() -> miette::Result<()> {
     // Setup logging
     ferrishot::logging::initialize(&cli);
 
+    let save_path = cli.save_path.clone();
+
     if cli.dump_default_config {
         std::fs::create_dir_all(
             std::path::PathBuf::from(&cli.config_file)
@@ -85,16 +87,21 @@ fn main() -> miette::Result<()> {
     if let Some(saved_image) = ferrishot::SAVED_IMAGE.get() {
         // Open file explorer to choose where to save the image
 
-        if let Some(save_path) = rfd::FileDialog::new()
-            .set_title("Save Screenshot")
-            .save_file()
-        {
+        if let Some(save_path) = save_path.or_else(|| {
+            let dialog = rfd::FileDialog::new()
+                .set_title("Save Screenshot")
+                .save_file();
+
+            if dialog.is_none() {
+                log::info!("The file dialog was closed before a file was chosen");
+            }
+
+            dialog
+        }) {
             saved_image
                 .save(save_path)
                 .map_err(|err| miette!("Failed to save the screenshot: {err}"))?;
-        } else {
-            log::info!("The file dialog was closed before a file was chosen");
-        }
+        };
     }
 
     Ok(())

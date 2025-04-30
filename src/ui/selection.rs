@@ -1,4 +1,6 @@
 //! A `Selection` is the structure representing a selected area in the background image
+use crate::config::AcceptOnSelect;
+use crate::config::KeyAction;
 use crate::rect::Corners;
 use crate::rect::RectangleExt;
 use crate::rect::Side;
@@ -72,7 +74,13 @@ impl crate::message::Handler for Message {
         match self {
             Self::CreateSelection(point) => {
                 app.selection = Some(
-                    Selection::new(point, &app.config.theme).with_status(SelectionStatus::Create),
+                    Selection::new(
+                        point,
+                        &app.config.theme,
+                        app.selections_created == 0,
+                        app.cli.accept_on_select,
+                    )
+                    .with_status(SelectionStatus::Create),
                 );
                 app.selections_created += 1;
             }
@@ -235,6 +243,10 @@ impl Speed {
 /// The selected area of the desktop which will be captured
 #[derive(Debug, Copy, Clone)]
 pub struct Selection {
+    /// If this selection is the first one
+    pub is_first: bool,
+    /// Accept on select
+    pub accept_on_select: Option<AcceptOnSelect>,
     /// Theme of the app
     pub theme: crate::config::Theme,
     /// Area represented by the selection
@@ -433,11 +445,18 @@ impl Selection {
     }
 
     /// Create selection at a point with a size of zero
-    pub fn new(point: Point, theme: &crate::config::Theme) -> Self {
+    pub fn new(
+        point: Point,
+        theme: &crate::config::Theme,
+        is_first: bool,
+        accept_on_select: Option<AcceptOnSelect>,
+    ) -> Self {
         Self {
             rect: Rectangle::new(point, Size::default()),
             status: SelectionStatus::default(),
             theme: *theme,
+            is_first,
+            accept_on_select,
         }
     }
 
@@ -453,7 +472,7 @@ impl Selection {
         use iced::keyboard::Event::KeyPressed;
         use iced::keyboard::Event::KeyReleased;
         use iced::keyboard::Key::Named;
-        use iced::keyboard::key::Named::Shift;
+        use iced::keyboard::key::Named::{Control, Shift};
         use iced::mouse::Button::{Left, Right};
         use iced::mouse::Event::ButtonPressed;
         use iced::mouse::Event::ButtonReleased;
@@ -496,7 +515,39 @@ impl Selection {
             Mouse(ButtonReleased(Left)) => {
                 state.is_left_down = false;
 
-                crate::Message::Selection(Box::new(Message::EnterIdle))
+                self.accept_on_select.map_or_else(
+                    // stop the creating of the initial selection
+                    || crate::Message::Selection(Box::new(Message::EnterIdle)),
+                    |on_select| {
+                        if self.is_first && !state.is_ctrl_down {
+                            // we have created 1 selections in total, (the current one)
+                            let action = match on_select {
+                                AcceptOnSelect::Copy => KeyAction::CopyToClipboard,
+                                AcceptOnSelect::Save => KeyAction::SaveScreenshot,
+                                AcceptOnSelect::Upload => KeyAction::UploadScreenshot,
+                            };
+
+                            crate::Message::KeyBind { action, count: 1 }
+                        } else {
+                            // stop the creating of the initial selection
+                            crate::Message::Selection(Box::new(Message::EnterIdle))
+                        }
+                    },
+                )
+            }
+            Keyboard(KeyPressed {
+                key: Named(Control),
+                ..
+            }) => {
+                state.is_ctrl_down = true;
+                return None;
+            }
+            Keyboard(KeyReleased {
+                key: Named(Control),
+                ..
+            }) => {
+                state.is_ctrl_down = false;
+                return None;
             }
             Keyboard(KeyReleased {
                 key: Named(Shift), ..
@@ -689,6 +740,7 @@ impl Selection {
 
 /// Holds information about the mouse
 #[derive(Default, Debug, Clone)]
+#[expect(clippy::struct_excessive_bools, reason = "todo: refactor")]
 pub struct SelectionKeysState {
     /// Left mouse click is currently being held down
     pub is_left_down: bool,
@@ -696,4 +748,6 @@ pub struct SelectionKeysState {
     pub is_right_down: bool,
     /// Shift key is currently being held down
     pub is_shift_down: bool,
+    /// Control key is currently being held down
+    pub is_ctrl_down: bool,
 }
