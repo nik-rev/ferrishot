@@ -70,6 +70,12 @@ inputs.ferrishot.url = "github:nik-rev/ferrishot/main";
 inputs.ferrishot.packages.${pkgs.system}.default
 ```
 
+### Arch AUR
+
+```sh
+yay -S ferrishot-bin
+```
+
 ### Cargo
 
 If you use Linux, see [`CONTRIBUTING.md`](./CONTRIBUTING.md) for details on which dependencies you will need.
