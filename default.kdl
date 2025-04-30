@@ -2,7 +2,6 @@
 //
 // For more information about what each key does, see the docs
 
-default-image-upload-provider the-null-pointer
 size-indicator #true
 
 keys {

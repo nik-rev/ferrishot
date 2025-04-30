@@ -475,15 +475,12 @@ impl App {
                         self.errors.push(err.to_string());
                     }
 
-                    let image_upload_provider = self.config.default_image_upload_provider;
-
                     return Task::future(async move {
                         {
                             let file = tempfile;
                             let file_size = file.metadata().map(|meta| meta.len()).unwrap_or(0);
-                            let response = image_upload_provider.upload_image(&file).await;
 
-                            match response {
+                            match crate::image_upload::upload(&file).await {
                                 Ok(url) => Message::ImageUploaded(
                                     super::image_uploaded::Message::ImageUploaded(
                                         ui::image_uploaded::ImageUploadedData {
@@ -497,7 +494,9 @@ impl App {
                                         },
                                     ),
                                 ),
-                                Err(err) => Message::Error(err.to_string()),
+                                Err(err) => {
+                                    Message::Error(err.into_iter().next().unwrap_or_default())
+                                }
                             }
                         }
                     });
