@@ -3,12 +3,15 @@
 use std::iter;
 
 use iced::{
-    Background, Color, Element,
+    Background, Color, Element, Font,
     Length::Fill,
     Pixels, Point, Renderer, Size, Task, Theme, Vector,
     advanced::svg::Svg,
+    font::{Family, Weight},
+    never,
     widget::{
-        button, canvas, column, container, horizontal_space, row, stack, svg, vertical_space,
+        button, canvas, column, container, horizontal_space, rich_text, row, span, stack, svg,
+        text, text::Shaping, vertical_space,
     },
 };
 
@@ -61,13 +64,34 @@ impl KeybindingsCheatsheet {
                 //
                 // The actual cheatsheet
                 //
-                container(
+                container(column![
+                    text("Pick top left corner: t"),
+                    text("Pick bottom right corner: b"),
+                    text("Set height: <number>Y"),
+                    text("Set width: <number>X"),
+                    text("Clear selection: ctrl x"),
+                    vertical_space().height(10.0),
+                    container(text("Transform Selection by 1px:").size(30.0)).center_x(Fill),
+                    vertical_space().height(30.0),
                     canvas(self)
                         .width(CANVAS_SIZE.width)
-                        .height(CANVAS_SIZE.height)
-                )
+                        .height(CANVAS_SIZE.height),
+                    container(
+                        rich_text![
+                            span("TIP").font(Font {
+                                weight: Weight::Bold,
+                                ..Default::default()
+                            }),
+                            span(": Hold ALT while doing any of the above to transform by 125px!")
+                        ]
+                        .on_link_click(never)
+                        .size(20.0)
+                    )
+                    .center_x(Fill),
+                ])
                 .style(|_| container::Style {
                     background: Some(Background::Color(Color::BLACK)),
+                    text_color: Some(Color::WHITE),
                     ..Default::default()
                 }),
                 //
@@ -94,7 +118,7 @@ impl KeybindingsCheatsheet {
                     ]
                 ]
             ]
-            .height(800.0)
+            .height(1800.0)
             .width(1000.0),
         )
         .center(Fill)
@@ -117,17 +141,22 @@ const ARROW_ICON_SIZE: f32 = 18.0;
 const TOP_LEFT_OFFSET: Vector = Vector::new(180.0, 180.0);
 /// Estimated size of the canvas
 const CANVAS_SIZE: Size = Size::new(
-    TOP_LEFT_OFFSET.y
-        + (SEL_SIZE * HORIZONTAL_LABELS.len() as f32
-            + SPACE_BETWEEN * VERTICAL_LABELS.len() as f32),
     TOP_LEFT_OFFSET.x
         + (SEL_SIZE * HORIZONTAL_LABELS.len() as f32
-            + SPACE_BETWEEN * VERTICAL_LABELS.len() as f32),
+            + SPACE_BETWEEN * (HORIZONTAL_LABELS.len() - 1) as f32),
+    TOP_LEFT_OFFSET.y
+        + (SEL_SIZE * VERTICAL_LABELS.len() as f32
+            + (SPACE_BETWEEN * (VERTICAL_LABELS.len() - 1) as f32)),
 );
 /// Each of the 4 sides modified
 const SIDES: [Side; 4] = [Left, Right, Bottom, Top];
 /// Keys required
-const HORIZONTAL_LABELS: [&str; 4] = ["h or 🡰", "l or 🡲", "j or 🡳", "k or 🡱"];
+const HORIZONTAL_LABELS: [(&str, &str); 4] = [
+    ("LEFT", "h or 🡰"),
+    ("RIGHT", "l or 🡲"),
+    ("DOWN", "j or 🡳"),
+    ("UP", "k or 🡱"),
+];
 /// Modifier for eacrh the above keys, and what action it takes
 const VERTICAL_LABELS: [(&str, Action, [Side; 4]); 3] = [
     ("", Move, SIDES),
@@ -164,17 +193,31 @@ impl canvas::Program<crate::Message> for KeybindingsCheatsheet {
         let mut frame = canvas::Frame::new(renderer, bounds.size());
 
         // --- Column labels ---
-        for (x, label) in iter::successors(Some(-SEL_SIZE / 2.0 + TOP_LEFT_OFFSET.x), |x| {
-            Some(x + SPACE_BETWEEN + SEL_SIZE)
-        })
-        .zip(HORIZONTAL_LABELS)
+        for (x, (label, arrow)) in
+            iter::successors(Some(-SEL_SIZE / 2.0 + TOP_LEFT_OFFSET.x), |x| {
+                Some(x + SPACE_BETWEEN + SEL_SIZE)
+            })
+            .zip(HORIZONTAL_LABELS)
         {
             frame.fill_text(canvas::Text {
                 content: label.into(),
                 size: Pixels(LABEL_TEXT_SIZE),
+                color: self.theme.selection_frame,
+                position: Point::new(25.0 + x, 0.0),
+                font: Font {
+                    weight: Weight::Bold,
+                    family: Family::Monospace,
+                    ..Default::default()
+                },
+                shaping: Shaping::Basic,
+                ..Default::default()
+            });
+            frame.fill_text(canvas::Text {
+                content: arrow.into(),
+                size: Pixels(LABEL_TEXT_SIZE),
                 color: Color::WHITE,
                 position: Point::new(25.0 + x, 15.0),
-                shaping: iced::widget::text::Shaping::Advanced,
+                shaping: Shaping::Advanced,
                 ..Default::default()
             });
         }
