@@ -2,11 +2,35 @@
 //! - Corners
 //! - Point
 //! - Extension methods
-use iced::{Point, Rectangle, Size, mouse};
+use iced::{Point, Rectangle, Size, Vector, mouse};
 
 use std::str::FromStr;
 
 use strum::IntoEnumIterator;
+
+/// Extension methods for `iced::Size`
+#[easy_ext::ext(SizeExt)]
+pub impl Size<f32> {
+    /// Create a `Size` which is a square
+    fn square(size: f32) -> Self {
+        Self {
+            width: size,
+            height: size,
+        }
+    }
+}
+
+/// Extension methods for `iced::Vector`
+#[easy_ext::ext(VectorExt)]
+pub impl Vector<f32> {
+    /// Create a diagonal vector. X and Y is the same
+    fn diag(x_and_y: f32) -> Self {
+        Self {
+            x: x_and_y,
+            y: x_and_y,
+        }
+    }
+}
 
 /// Error parsing a rect
 #[derive(Debug, Clone, thiserror::Error, Eq, PartialEq)]
