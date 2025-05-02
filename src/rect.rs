@@ -2,11 +2,42 @@
 //! - Corners
 //! - Point
 //! - Extension methods
-use iced::{Point, Rectangle, Size, Vector, mouse};
+use iced::{Point, Rectangle, Size, Vector, advanced::graphics::geometry, mouse, widget as w};
 
 use std::str::FromStr;
 
 use strum::IntoEnumIterator;
+
+/// Extension methods for `Text`
+#[easy_ext::ext(TextExt)]
+pub impl geometry::Text {
+    /// Modify the text's position, based on the size that it is rendered with on a `canvas`
+    fn position(mut self, f: impl Fn(Size) -> Point) -> Self {
+        self.position = f(self.size());
+        self
+    }
+
+    /// The size of this text when rendered. Note, it is not the font size, rather
+    /// it is how many vertical and horizontal pixels this text will take up when render
+    /// on a `canvas`
+    fn size(&self) -> Size {
+        use iced::advanced::text::Paragraph as _;
+        let x = iced::advanced::text::Text {
+            content: self.content.as_str(),
+            bounds: Size::INFINITY,
+            size: self.size,
+            line_height: self.line_height,
+            font: self.font,
+            align_x: self.align_x.into(),
+            align_y: self.align_y,
+            shaping: self.shaping,
+            wrapping: w::text::Wrapping::None,
+        };
+        let para = iced::advanced::graphics::text::Paragraph::with_text(x);
+
+        para.min_bounds()
+    }
+}
 
 /// Extension methods for `iced::Size`
 #[easy_ext::ext(SizeExt)]
@@ -336,6 +367,14 @@ impl Corners {
 /// Extension methods for `iced::Point`
 #[easy_ext::ext(PointExt)]
 pub impl Point<f32> {
+    /// Convert this point into a vector of same magnitude as the point's coordinates
+    fn into_vector(self) -> Vector {
+        Vector {
+            x: self.x,
+            y: self.y,
+        }
+    }
+
     /// Update the x coordinate of the point
     fn with_x<F: FnOnce(f32) -> f32>(mut self, f: F) -> Self {
         self.x = f(self.x);
@@ -360,6 +399,28 @@ pub impl Point<f32> {
 /// Extension methods for `iced::Rectangle`
 #[easy_ext::ext(RectangleExt)]
 pub impl Rectangle<f32> {
+    /// x-coordinate for which the `size` would be horizontally
+    /// centered relative to the `Rectangle`
+    fn center_x_for(self, size: Size) -> f32 {
+        self.x + (self.width - size.width) / 2.0
+    }
+
+    /// y-coordinate for which the `size` would be vertically
+    /// centered relative to the `Rectangle`
+    fn center_y_for(self, size: Size) -> f32 {
+        self.y + (self.height - size.height) / 2.0
+    }
+
+    /// point for which the `size` would be centered
+    /// relative to the `Rectangle`
+    #[allow(dead_code, reason = "use later")]
+    fn center_for(self, size: Size) -> Point {
+        Point {
+            x: self.center_x_for(size),
+            y: self.center_y_for(size),
+        }
+    }
+
     /// make sure that the top-left corner is ALWAYS in the top left
     /// (it could be that top-left corner is actually on the bottom right,
     /// and we have a negative width and height):

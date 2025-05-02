@@ -5,14 +5,13 @@ use std::iter;
 use iced::{
     Background, Color, Element, Font,
     Length::Fill,
-    Pixels, Point, Renderer, Size, Task, Theme, Vector,
-    advanced::svg::Svg,
-    font::{Family, Weight},
-    never,
+    Pixels, Point, Rectangle, Renderer, Size, Task, Theme, Vector,
+    advanced::{graphics::geometry, svg::Svg},
+    font::{self, Family, Weight},
     widget::{
         self as w, button,
         canvas::{LineCap, LineJoin, Path, Stroke},
-        column, container, horizontal_space, rich_text, row, span, stack, svg,
+        column, container, horizontal_space, row, stack, svg,
         text::Shaping,
         vertical_space,
     },
@@ -21,8 +20,8 @@ use iced::{
 use crate::{
     icon,
     icons::Icon,
-    rect::{PointExt, Side, SizeExt, VectorExt},
-    ui::selection::Selection,
+    rect::{PointExt, RectangleExt, Side, SizeExt, VectorExt},
+    ui::{grid::GridBuilder, selection::Selection},
 };
 
 /// Keybinding cheatsheet state
@@ -68,29 +67,12 @@ impl KeybindingsCheatsheet {
                 // The actual cheatsheet
                 //
                 container(column![
-                    w::canvas(BasicMovements { theme: self.theme })
-                        .width(BASIC_MOVEMENTS_SIZE.width)
-                        .height(BASIC_MOVEMENTS_SIZE.height),
-                    container(
-                        rich_text![
-                            span("TIP").font(Font {
-                                weight: Weight::Bold,
-                                ..Default::default()
-                            }),
-                            span(": Hold ALT while doing any of the above to transform by 125px!")
-                        ]
-                        .on_link_click(never)
-                        .size(20.0)
-                    )
-                    .center_x(Fill),
-                    vertical_space().height(10.0),
-                    container(w::text("Move region in a direction as far as it can go").size(30.0))
-                        .center_x(Fill),
-                    vertical_space().height(30.0),
+                    w::canvas(self)
+                        .width(BASIC_MOVEMENTS_SIZE.width * 2.0)
+                        .height(BASIC_MOVEMENTS_SIZE.height + 400.0),
                 ])
                 .style(|_| container::Style {
                     background: Some(Background::Color(Color::BLACK)),
-                    text_color: Some(Color::WHITE),
                     ..Default::default()
                 }),
                 //
@@ -118,7 +100,7 @@ impl KeybindingsCheatsheet {
                 ]
             ]
             .height(1800.0)
-            .width(1000.0),
+            .width(2000.0),
         )
         .center(Fill)
         .into()
@@ -137,7 +119,7 @@ const SEL_NEW_OLD_OFFSET: f32 = 20.0;
 /// Size of each arrow
 const ARROW_ICON_SIZE: f32 = 18.0;
 /// Draw the cheatsheet with selections this far away from 0,0
-const TOP_LEFT_OFFSET: Vector = Vector::new(180.0, 550.0);
+const TOP_LEFT_OFFSET: Vector = Vector::new(180.0, 250.0);
 /// Size of the heading for the basic movements
 const BASIC_MOVEMENTS_HEADING_SIZE: f32 = 30.0;
 /// Estimated size of the canvas for the basic movements
@@ -179,16 +161,31 @@ enum Action {
     Move,
 }
 
-/// Shows the 12 movement types:
-/// - hjkl
-/// - move, extend and shrink
-#[derive(Debug, Copy, Clone)]
-struct BasicMovements {
-    /// Theme of the app
-    theme: crate::config::Theme,
+/// Teleport the selected region to a specific place
+#[derive(Clone)]
+enum GotoPlace {
+    /// X-center
+    XCenter,
+    /// Y-center
+    YCenter,
+    /// Center
+    Center,
+    /// Top Left
+    TopLeft,
+    /// Bottom Right
+    BottomRight,
 }
 
-impl w::canvas::Program<crate::Message> for BasicMovements {
+/// Where to go for the 3rd part
+#[derive(Clone)]
+enum Part3RectPlace {
+    /// Goto a specific place
+    GotoPlace(GotoPlace),
+    /// A side in the rectangle
+    Side(Side),
+}
+
+impl w::canvas::Program<crate::Message> for KeybindingsCheatsheet {
     type State = ();
 
     fn draw(
@@ -203,66 +200,13 @@ impl w::canvas::Program<crate::Message> for BasicMovements {
 
         let mut frame = w::canvas::Frame::new(renderer, bounds.size());
 
-        let sel = Selection::new(
-            Point::new(BASIC_MOVEMENTS_SIZE.width / 2.0 - SEL_SIZE / 2.0, 140.0),
-            &self.theme,
-            false,
-            None,
-        )
-        .with_size(|_| Size::square(SEL_SIZE));
-
-        sel.draw_border(&mut frame);
-        sel.draw_corners(&mut frame);
-
-        let stroke = Stroke {
-            style: w::canvas::Style::Solid(self.theme.selection_frame),
-            width: 3.0,
-            line_cap: LineCap::Round,
-            line_join: LineJoin::Round,
-            line_dash: w::canvas::LineDash {
-                segments: &[5.0],
-                offset: 0,
-            },
+        // the `Selection` uses `selection_frame` for the color.
+        // do this to avoid having to create a new theme key and having a switch for
+        // dark frame / light frame
+        let theme_with_dimmed_selection = crate::config::Theme {
+            selection_frame: self.theme.selection_frame.scale_alpha(0.3),
+            ..self.theme
         };
-
-        let radius = 25.0;
-
-        frame.stroke(&Path::circle(sel.top_left(), radius), stroke);
-        frame.stroke(&Path::circle(sel.bottom_right(), radius), stroke);
-
-        // --- heading ---
-        frame.fill_text(w::canvas::Text {
-            content: "Pick top and then bottom corners".into(),
-            position: Point::new(160.0, 0.0),
-            color: Color::WHITE,
-            size: Pixels(30.0),
-            font: Font::MONOSPACE,
-            ..Default::default()
-        });
-        // --- subheading ---
-        frame.fill_text(w::canvas::Text {
-            content: "select any area of the screen in 8 keystrokes!".into(),
-            position: Point::new(180.0, 40.0),
-            color: Color::WHITE.scale_alpha(0.8),
-            size: Pixels(20.0),
-            font: Font::MONOSPACE,
-            ..Default::default()
-        });
-
-        // --- top left label ---
-        frame.fill_text(w::canvas::Text {
-            content: "Pick top left corner: t".into(),
-            position: sel.top_left() - Vector::new(200.0, 20.0),
-            color: Color::WHITE,
-            ..Default::default()
-        });
-        // --- bottom right label ---
-        frame.fill_text(w::canvas::Text {
-            content: "Pick bottom right corner: b".into(),
-            position: sel.bottom_right() + Vector::x(50.0),
-            color: Color::WHITE,
-            ..Default::default()
-        });
 
         // --- Cheatsheet Part 2 ---
         //
@@ -369,19 +313,11 @@ impl w::canvas::Program<crate::Message> for BasicMovements {
                     + TOP_LEFT_OFFSET
                     + Vector::y(BASIC_MOVEMENTS_HEADING_SIZE);
 
-                // the `Selection` uses `selection_frame` for the color.
-                // do this to avoid having to create a new theme key and having a switch for
-                // dark frame / light frame
-                let dimmed_theme = crate::config::Theme {
-                    selection_frame: self.theme.selection_frame.scale_alpha(0.3),
-                    ..self.theme
-                };
-
                 // draw the old selection: Dimmed, represents what was before the action took place
                 //
                 // e.g. hit `j` to go down: this selection represents what it looked like
                 // before we hit `j`
-                Selection::new(old_pos, &dimmed_theme, false, None)
+                Selection::new(old_pos, &theme_with_dimmed_selection, false, None)
                     .with_size(|_| Size::square(SEL_SIZE))
                     .draw_border(&mut frame);
 
@@ -521,6 +457,256 @@ impl w::canvas::Program<crate::Message> for BasicMovements {
                 new_sel.draw_corners(&mut frame);
             }
         }
+
+        //
+        // --- tip ---
+        //
+        frame.fill_text(w::canvas::Text {
+            content: "TIP".into(),
+            position: Point::new(55.0, BASIC_MOVEMENTS_SIZE.height),
+            color: Color::WHITE,
+            size: Pixels(20.0),
+            font: Font {
+                family: Family::Monospace,
+                weight: Weight::Bold,
+                ..Default::default()
+            },
+            ..Default::default()
+        });
+        frame.fill_text(w::canvas::Text {
+            content: ": Hold ALT while doing any of the above to transform by 125px!".into(),
+            position: Point::new(90.0, BASIC_MOVEMENTS_SIZE.height),
+            color: Color::WHITE,
+            size: Pixels(20.0),
+            font: Font::MONOSPACE,
+            ..Default::default()
+        });
+
+        // --- part 2
+
+        let sel = Selection::new(
+            Point::new(
+                BASIC_MOVEMENTS_SIZE.width.mul_add(0.5, -(SEL_SIZE / 2.0)),
+                BASIC_MOVEMENTS_SIZE.height + 40.0,
+            ),
+            &self.theme,
+            false,
+            None,
+        )
+        .with_size(|_| Size::square(SEL_SIZE));
+
+        sel.draw_border(&mut frame);
+        sel.draw_corners(&mut frame);
+
+        let dotted_stroke = Stroke {
+            style: w::canvas::Style::Solid(self.theme.selection_frame),
+            width: 3.0,
+            line_cap: LineCap::Round,
+            line_join: LineJoin::Round,
+            line_dash: w::canvas::LineDash {
+                segments: &[5.0],
+                offset: 0,
+            },
+        };
+
+        let radius = 25.0;
+
+        frame.stroke(&Path::circle(sel.top_left(), radius), dotted_stroke);
+        frame.stroke(&Path::circle(sel.bottom_right(), radius), dotted_stroke);
+
+        // --- heading ---
+        frame.fill_text(w::canvas::Text {
+            content: "Pick top and then bottom corners".into(),
+            position: Point::new(160.0, BASIC_MOVEMENTS_SIZE.height + 100.0),
+            color: Color::WHITE,
+            size: Pixels(30.0),
+            font: Font::MONOSPACE,
+            ..Default::default()
+        });
+        // --- subheading ---
+        frame.fill_text(w::canvas::Text {
+            content: "select any area of the screen in 8 keystrokes!".into(),
+            position: Point::new(180.0, BASIC_MOVEMENTS_SIZE.height + 100.0),
+            color: Color::WHITE.scale_alpha(0.8),
+            size: Pixels(20.0),
+            font: Font::MONOSPACE,
+            ..Default::default()
+        });
+
+        // --- top left label ---
+        frame.fill_text(w::canvas::Text {
+            content: "Pick top left corner: t".into(),
+            position: sel.top_left() - Vector::new(200.0, 20.0),
+            color: Color::WHITE,
+            ..Default::default()
+        });
+        // --- bottom right label ---
+        frame.fill_text(w::canvas::Text {
+            content: "Pick bottom right corner: b".into(),
+            position: sel.bottom_right() + Vector::x(50.0),
+            color: Color::WHITE,
+            ..Default::default()
+        });
+
+        GridBuilder::default()
+            .top_left(Point::new(
+                BASIC_MOVEMENTS_SIZE.width + TOP_LEFT_OFFSET.x - 40.0,
+                TOP_LEFT_OFFSET.y - 40.0,
+            ))
+            .cell_size(Size::new(100.0, 100.0))
+            .spacing(Size::new(90.0, 100.0))
+            .columns(3)
+            .cells(
+                [
+                    // Row 1
+                    (Part3RectPlace::Side(Top), "gk", "go up as far\nas possible"),
+                    (
+                        Part3RectPlace::Side(Bottom),
+                        "gj",
+                        "go down as far\nas possible",
+                    ),
+                    (
+                        Part3RectPlace::Side(Right),
+                        "gl",
+                        "go right as far\nas possible",
+                    ),
+                    // Row 2
+                    (
+                        Part3RectPlace::Side(Left),
+                        "gh",
+                        "go left as far\nas possible",
+                    ),
+                    (
+                        Part3RectPlace::GotoPlace(GotoPlace::XCenter),
+                        "gx",
+                        "go to x-center",
+                    ),
+                    (
+                        Part3RectPlace::GotoPlace(GotoPlace::YCenter),
+                        "gy",
+                        "go to y-center",
+                    ),
+                    // Row 3
+                    (
+                        Part3RectPlace::GotoPlace(GotoPlace::Center),
+                        "gc",
+                        "go to center",
+                    ),
+                    (
+                        Part3RectPlace::GotoPlace(GotoPlace::TopLeft),
+                        "gg",
+                        "go to top left",
+                    ),
+                    (
+                        Part3RectPlace::GotoPlace(GotoPlace::BottomRight),
+                        "G",
+                        "go to bottom right",
+                    ),
+                ]
+                .iter()
+                .map(|(item_action, key, description)| {
+                    crate::ui::grid::CellBuilder::default()
+                        .draw(move |frame: &mut w::canvas::Frame, bounds: Rectangle| {
+                            let grid_cell_size = Size::new(100.0, 100.0);
+                            let sel_size_in_grid_item = 40.0;
+
+                            let sel_size = Size::square(sel_size_in_grid_item);
+                            let origin = bounds.top_left();
+
+                            let old_sel_pos = Point::new(
+                                sel_size_in_grid_item.mul_add(-1.5, grid_cell_size.width),
+                                sel_size_in_grid_item * 0.5,
+                            ) + origin.into_vector();
+
+                            let old_sel = Selection::new(
+                                old_sel_pos,
+                                &theme_with_dimmed_selection,
+                                false,
+                                None,
+                            )
+                            .with_size(|_| sel_size);
+
+                            old_sel.draw_border(frame);
+
+                            let mut new_sel = match item_action {
+                                Part3RectPlace::GotoPlace(goto_place) => match goto_place {
+                                    GotoPlace::XCenter => old_sel.with_x(|_| {
+                                        origin.x + grid_cell_size.width / 2.0 - sel_size.width / 2.0
+                                    }),
+                                    GotoPlace::YCenter => old_sel.with_y(|_| {
+                                        origin.y + grid_cell_size.height / 2.0
+                                            - sel_size.height / 2.0
+                                    }),
+                                    GotoPlace::Center => old_sel.with_pos(|_| {
+                                        Point::new(
+                                            grid_cell_size.width / 2.0 - sel_size.width / 2.0,
+                                            grid_cell_size.height / 2.0 - sel_size.height / 2.0,
+                                        ) + origin.into_vector()
+                                    }),
+                                    GotoPlace::TopLeft => old_sel.with_pos(|_| origin),
+                                    GotoPlace::BottomRight => old_sel.with_pos(|_| {
+                                        Point::new(
+                                            grid_cell_size.width - sel_size.width,
+                                            grid_cell_size.height - sel_size.height,
+                                        ) + origin.into_vector()
+                                    }),
+                                },
+                                Part3RectPlace::Side(side) => match side {
+                                    Top => old_sel.with_y(|_| origin.y),
+                                    Right => old_sel.with_x(|_| {
+                                        origin.x + grid_cell_size.width - sel_size.width
+                                    }),
+                                    Bottom => old_sel.with_y(|_| {
+                                        origin.y + grid_cell_size.height - sel_size.height
+                                    }),
+                                    Left => old_sel.with_x(|_| origin.x),
+                                },
+                            };
+
+                            new_sel.theme = self.theme;
+
+                            new_sel.draw_border(frame);
+                            new_sel.draw_corners(frame);
+                        })
+                        .stroke(Stroke {
+                            style: geometry::Style::Solid(Color::WHITE),
+                            width: 1.0,
+                            line_cap: LineCap::Round,
+                            line_join: LineJoin::Round,
+                            line_dash: w::canvas::LineDash {
+                                segments: &[10.0],
+                                offset: 0,
+                            },
+                        })
+                        .label(w::canvas::Text {
+                            content: (*key).to_string(),
+                            position: Point::new(0.0, 0.0),
+                            color: Color::WHITE,
+                            font: Font::MONOSPACE,
+                            shaping: Shaping::Advanced,
+                            ..Default::default()
+                        })
+                        .description(w::canvas::Text {
+                            content: (*description).to_string(),
+                            position: Point::new(0.0, 0.0),
+                            color: self.theme.selection_frame,
+                            font: Font {
+                                family: Family::Monospace,
+                                weight: Weight::Normal,
+                                style: font::Style::Italic,
+                                ..Default::default()
+                            },
+                            shaping: Shaping::Advanced,
+                            ..Default::default()
+                        })
+                        .build()
+                        .expect("valid build")
+                })
+                .collect::<Vec<_>>(),
+            )
+            .build()
+            .expect("required arguments passed")
+            .draw(&mut frame);
 
         vec![frame.into_geometry()]
     }

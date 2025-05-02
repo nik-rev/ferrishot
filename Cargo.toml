@@ -60,6 +60,7 @@ strum = { version = "0.27.1", features = ["derive"] }
 human_bytes = "0.4.3"
 humantime = "2.2.0"
 tokio = { version = "1.44.2", features = ["full"] }
+derive_builder = "0.20.2"
 
 [lints.rust]
 missing_docs = "warn"

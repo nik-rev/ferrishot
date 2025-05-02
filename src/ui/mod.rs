@@ -6,6 +6,7 @@ mod app;
 mod background_image;
 mod debug_overlay;
 mod errors;
+mod grid;
 mod selection_icons;
 mod welcome_message;
 
