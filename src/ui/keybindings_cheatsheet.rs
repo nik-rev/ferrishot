@@ -10,8 +10,11 @@ use iced::{
     font::{Family, Weight},
     never,
     widget::{
-        button, canvas, column, container, horizontal_space, rich_text, row, span, stack, svg,
-        text, text::Shaping, vertical_space,
+        self as w, button,
+        canvas::{LineCap, LineJoin, Path, Stroke},
+        column, container, horizontal_space, rich_text, row, span, stack, svg,
+        text::Shaping,
+        vertical_space,
     },
 };
 
@@ -65,17 +68,9 @@ impl KeybindingsCheatsheet {
                 // The actual cheatsheet
                 //
                 container(column![
-                    text("Pick top left corner: t"),
-                    text("Pick bottom right corner: b"),
-                    text("Set height: <number>Y"),
-                    text("Set width: <number>X"),
-                    text("Clear selection: ctrl x"),
-                    vertical_space().height(10.0),
-                    container(text("Transform Selection by 1px:").size(30.0)).center_x(Fill),
-                    vertical_space().height(30.0),
-                    canvas(self)
-                        .width(CANVAS_SIZE.width)
-                        .height(CANVAS_SIZE.height),
+                    w::canvas(BasicMovements { theme: self.theme })
+                        .width(BASIC_MOVEMENTS_SIZE.width)
+                        .height(BASIC_MOVEMENTS_SIZE.height),
                     container(
                         rich_text![
                             span("TIP").font(Font {
@@ -88,6 +83,10 @@ impl KeybindingsCheatsheet {
                         .size(20.0)
                     )
                     .center_x(Fill),
+                    vertical_space().height(10.0),
+                    container(w::text("Move region in a direction as far as it can go").size(30.0))
+                        .center_x(Fill),
+                    vertical_space().height(30.0),
                 ])
                 .style(|_| container::Style {
                     background: Some(Background::Color(Color::BLACK)),
@@ -133,18 +132,21 @@ use Side::{Bottom, Left, Right, Top};
 const SEL_SIZE: f32 = 100.0;
 /// How much space to put between the rendered selections
 const SPACE_BETWEEN: f32 = 100.0;
-/// How far away the new selection from the old selection should be
-const OFFSET: f32 = 20.0;
+/// How far away the `new` selection from the `old` selection should be
+const SEL_NEW_OLD_OFFSET: f32 = 20.0;
 /// Size of each arrow
 const ARROW_ICON_SIZE: f32 = 18.0;
 /// Draw the cheatsheet with selections this far away from 0,0
-const TOP_LEFT_OFFSET: Vector = Vector::new(180.0, 180.0);
-/// Estimated size of the canvas
-const CANVAS_SIZE: Size = Size::new(
+const TOP_LEFT_OFFSET: Vector = Vector::new(180.0, 550.0);
+/// Size of the heading for the basic movements
+const BASIC_MOVEMENTS_HEADING_SIZE: f32 = 30.0;
+/// Estimated size of the canvas for the basic movements
+const BASIC_MOVEMENTS_SIZE: Size = Size::new(
     TOP_LEFT_OFFSET.x
         + (SEL_SIZE * HORIZONTAL_LABELS.len() as f32
             + SPACE_BETWEEN * (HORIZONTAL_LABELS.len() - 1) as f32),
     TOP_LEFT_OFFSET.y
+        + BASIC_MOVEMENTS_HEADING_SIZE
         + (SEL_SIZE * VERTICAL_LABELS.len() as f32
             + (SPACE_BETWEEN * (VERTICAL_LABELS.len() - 1) as f32)),
 );
@@ -158,10 +160,10 @@ const HORIZONTAL_LABELS: [(&str, &str); 4] = [
     ("UP", "k or 🡱"),
 ];
 /// Modifier for eacrh the above keys, and what action it takes
-const VERTICAL_LABELS: [(&str, Action, [Side; 4]); 3] = [
-    ("", Move, SIDES),
-    ("shift", Extend, SIDES),
-    ("ctrl", Shrink, SIDES),
+const VERTICAL_LABELS: [(&str, &str, Action, [Side; 4]); 3] = [
+    ("", "MOVE", Move, SIDES),
+    ("shift", "EXTEND", Extend, SIDES),
+    ("ctrl", "SHRINK", Shrink, SIDES),
 ];
 /// Text size of each label
 const LABEL_TEXT_SIZE: f32 = 18.0;
@@ -177,7 +179,16 @@ enum Action {
     Move,
 }
 
-impl canvas::Program<crate::Message> for KeybindingsCheatsheet {
+/// Shows the 12 movement types:
+/// - hjkl
+/// - move, extend and shrink
+#[derive(Debug, Copy, Clone)]
+struct BasicMovements {
+    /// Theme of the app
+    theme: crate::config::Theme,
+}
+
+impl w::canvas::Program<crate::Message> for BasicMovements {
     type State = ();
 
     fn draw(
@@ -187,10 +198,96 @@ impl canvas::Program<crate::Message> for KeybindingsCheatsheet {
         _theme: &Theme,
         bounds: iced::Rectangle,
         _cursor: iced::advanced::mouse::Cursor,
-    ) -> Vec<canvas::Geometry> {
+    ) -> Vec<w::canvas::Geometry> {
         use Icon::{ArrowDown, ArrowLeft, ArrowRight, ArrowUp};
 
-        let mut frame = canvas::Frame::new(renderer, bounds.size());
+        let mut frame = w::canvas::Frame::new(renderer, bounds.size());
+
+        let sel = Selection::new(
+            Point::new(BASIC_MOVEMENTS_SIZE.width / 2.0 - SEL_SIZE / 2.0, 140.0),
+            &self.theme,
+            false,
+            None,
+        )
+        .with_size(|_| Size::square(SEL_SIZE));
+
+        sel.draw_border(&mut frame);
+        sel.draw_corners(&mut frame);
+
+        let stroke = Stroke {
+            style: w::canvas::Style::Solid(self.theme.selection_frame),
+            width: 3.0,
+            line_cap: LineCap::Round,
+            line_join: LineJoin::Round,
+            line_dash: w::canvas::LineDash {
+                segments: &[5.0],
+                offset: 0,
+            },
+        };
+
+        let radius = 25.0;
+
+        frame.stroke(&Path::circle(sel.top_left(), radius), stroke);
+        frame.stroke(&Path::circle(sel.bottom_right(), radius), stroke);
+
+        // --- heading ---
+        frame.fill_text(w::canvas::Text {
+            content: "Pick top and then bottom corners".into(),
+            position: Point::new(160.0, 0.0),
+            color: Color::WHITE,
+            size: Pixels(30.0),
+            font: Font::MONOSPACE,
+            ..Default::default()
+        });
+        // --- subheading ---
+        frame.fill_text(w::canvas::Text {
+            content: "select any area of the screen in 8 keystrokes!".into(),
+            position: Point::new(180.0, 40.0),
+            color: Color::WHITE.scale_alpha(0.8),
+            size: Pixels(20.0),
+            font: Font::MONOSPACE,
+            ..Default::default()
+        });
+
+        // --- top left label ---
+        frame.fill_text(w::canvas::Text {
+            content: "Pick top left corner: t".into(),
+            position: sel.top_left() - Vector::new(200.0, 20.0),
+            color: Color::WHITE,
+            ..Default::default()
+        });
+        // --- bottom right label ---
+        frame.fill_text(w::canvas::Text {
+            content: "Pick bottom right corner: b".into(),
+            position: sel.bottom_right() + Vector::x(50.0),
+            color: Color::WHITE,
+            ..Default::default()
+        });
+
+        // --- Cheatsheet Part 2 ---
+        //
+        // Keys: hjkl, arrow keys with mods:
+        // - Shift
+        // - No mods
+        // - Alt
+        // - Control
+        //
+        // Actions:
+        // - move selection in  direction
+        // - extend in direction
+        // - shrink in direction
+        //
+        //
+
+        // --- heading ---
+        frame.fill_text(w::canvas::Text {
+            content: "Transform region by 1px:".into(),
+            position: Point::new(TOP_LEFT_OFFSET.x + 30.0, TOP_LEFT_OFFSET.y - 240.0),
+            color: Color::WHITE,
+            font: Font::MONOSPACE,
+            size: Pixels(30.0),
+            ..Default::default()
+        });
 
         // --- Column labels ---
         for (x, (label, arrow)) in
@@ -199,11 +296,11 @@ impl canvas::Program<crate::Message> for KeybindingsCheatsheet {
             })
             .zip(HORIZONTAL_LABELS)
         {
-            frame.fill_text(canvas::Text {
+            frame.fill_text(w::canvas::Text {
                 content: label.into(),
                 size: Pixels(LABEL_TEXT_SIZE),
                 color: self.theme.selection_frame,
-                position: Point::new(25.0 + x, 0.0),
+                position: Point::new(25.0 + x, TOP_LEFT_OFFSET.y - 160.0),
                 font: Font {
                     weight: Weight::Bold,
                     family: Family::Monospace,
@@ -212,28 +309,42 @@ impl canvas::Program<crate::Message> for KeybindingsCheatsheet {
                 shaping: Shaping::Basic,
                 ..Default::default()
             });
-            frame.fill_text(canvas::Text {
+            frame.fill_text(w::canvas::Text {
                 content: arrow.into(),
                 size: Pixels(LABEL_TEXT_SIZE),
                 color: Color::WHITE,
-                position: Point::new(25.0 + x, 15.0),
+                position: Point::new(25.0 + x, TOP_LEFT_OFFSET.y - 136.0),
                 shaping: Shaping::Advanced,
                 ..Default::default()
             });
         }
 
-        for (y_count, (mods_label, action, sides)) in VERTICAL_LABELS.into_iter().enumerate() {
+        for (y_count, (mods_label, mods_action, action, sides)) in
+            VERTICAL_LABELS.into_iter().enumerate()
+        {
+            let label_y_offset = TOP_LEFT_OFFSET.y
+                + BASIC_MOVEMENTS_HEADING_SIZE
+                + (SPACE_BETWEEN + SEL_SIZE)
+                    .mul_add(y_count as f32, -(SEL_SIZE / HORIZONTAL_LABELS.len() as f32));
             // --- Row labels ---
-            frame.fill_text(canvas::Text {
+            frame.fill_text(w::canvas::Text {
                 content: mods_label.into(),
                 size: Pixels(LABEL_TEXT_SIZE),
                 color: Color::WHITE,
-                position: Point::new(
-                    15.0,
-                    15.0 + TOP_LEFT_OFFSET.y
-                        + (SPACE_BETWEEN + SEL_SIZE)
-                            .mul_add(y_count as f32, -(SEL_SIZE / HORIZONTAL_LABELS.len() as f32)),
-                ),
+                position: Point::new(15.0, 24.0 + label_y_offset),
+                ..Default::default()
+            });
+            frame.fill_text(w::canvas::Text {
+                content: mods_action.into(),
+                size: Pixels(LABEL_TEXT_SIZE),
+                color: self.theme.selection_frame,
+                position: Point::new(15.0, label_y_offset),
+                font: Font {
+                    weight: Weight::Bold,
+                    family: Family::Monospace,
+                    ..Default::default()
+                },
+                shaping: Shaping::Basic,
                 ..Default::default()
             });
 
@@ -254,7 +365,9 @@ impl canvas::Program<crate::Message> for KeybindingsCheatsheet {
                 );
 
                 // Top-left of the `old` selection
-                let old_pos = center - Vector::diag(SEL_SIZE / 2.0) + TOP_LEFT_OFFSET;
+                let old_pos = center - Vector::diag(SEL_SIZE / 2.0)
+                    + TOP_LEFT_OFFSET
+                    + Vector::y(BASIC_MOVEMENTS_HEADING_SIZE);
 
                 // the `Selection` uses `selection_frame` for the color.
                 // do this to avoid having to create a new theme key and having a switch for
@@ -289,7 +402,9 @@ impl canvas::Program<crate::Message> for KeybindingsCheatsheet {
                 let (new_sel, icon, icon_pos) = match side {
                     Top => match action {
                         Shrink => {
-                            let new = new_sel.with_y(|y| y + OFFSET).with_height(|h| h - OFFSET);
+                            let new = new_sel
+                                .with_y(|y| y + SEL_NEW_OLD_OFFSET)
+                                .with_height(|h| h - SEL_NEW_OLD_OFFSET);
                             (
                                 new,
                                 ArrowDown,
@@ -297,7 +412,9 @@ impl canvas::Program<crate::Message> for KeybindingsCheatsheet {
                             )
                         }
                         Extend => {
-                            let new = new_sel.with_y(|y| y - OFFSET).with_height(|h| h + OFFSET);
+                            let new = new_sel
+                                .with_y(|y| y - SEL_NEW_OLD_OFFSET)
+                                .with_height(|h| h + SEL_NEW_OLD_OFFSET);
                             (
                                 new,
                                 ArrowUp,
@@ -307,13 +424,13 @@ impl canvas::Program<crate::Message> for KeybindingsCheatsheet {
                             )
                         }
                         Move => {
-                            let new = new_sel.with_y(|y| y - OFFSET);
+                            let new = new_sel.with_y(|y| y - SEL_NEW_OLD_OFFSET);
                             (new, ArrowUp, center_icon(new))
                         }
                     },
                     Right => match action {
                         Shrink => {
-                            let new = new_sel.with_width(|w| w - OFFSET);
+                            let new = new_sel.with_width(|w| w - SEL_NEW_OLD_OFFSET);
                             (
                                 new,
                                 ArrowLeft,
@@ -323,7 +440,7 @@ impl canvas::Program<crate::Message> for KeybindingsCheatsheet {
                             )
                         }
                         Extend => {
-                            let new = new_sel.with_width(|w| w + OFFSET);
+                            let new = new_sel.with_width(|w| w + SEL_NEW_OLD_OFFSET);
                             (
                                 new,
                                 ArrowRight,
@@ -331,13 +448,13 @@ impl canvas::Program<crate::Message> for KeybindingsCheatsheet {
                             )
                         }
                         Move => {
-                            let new = new_sel.with_x(|x| x + OFFSET);
+                            let new = new_sel.with_x(|x| x + SEL_NEW_OLD_OFFSET);
                             (new, ArrowRight, center_icon(new))
                         }
                     },
                     Bottom => match action {
                         Shrink => {
-                            let new = new_sel.with_height(|h| h - OFFSET);
+                            let new = new_sel.with_height(|h| h - SEL_NEW_OLD_OFFSET);
                             (
                                 new,
                                 ArrowUp,
@@ -347,7 +464,7 @@ impl canvas::Program<crate::Message> for KeybindingsCheatsheet {
                             )
                         }
                         Extend => {
-                            let new = new_sel.with_height(|h| h + OFFSET);
+                            let new = new_sel.with_height(|h| h + SEL_NEW_OLD_OFFSET);
                             (
                                 new,
                                 ArrowDown,
@@ -355,13 +472,15 @@ impl canvas::Program<crate::Message> for KeybindingsCheatsheet {
                             )
                         }
                         Move => {
-                            let new = new_sel.with_y(|y| y + OFFSET);
+                            let new = new_sel.with_y(|y| y + SEL_NEW_OLD_OFFSET);
                             (new, ArrowDown, center_icon(new))
                         }
                     },
                     Left => match action {
                         Shrink => {
-                            let new = new_sel.with_x(|x| x + OFFSET).with_width(|w| w - OFFSET);
+                            let new = new_sel
+                                .with_x(|x| x + SEL_NEW_OLD_OFFSET)
+                                .with_width(|w| w - SEL_NEW_OLD_OFFSET);
                             (
                                 new,
                                 ArrowRight,
@@ -369,7 +488,9 @@ impl canvas::Program<crate::Message> for KeybindingsCheatsheet {
                             )
                         }
                         Extend => {
-                            let new = new_sel.with_x(|x| x - OFFSET).with_width(|w| w + OFFSET);
+                            let new = new_sel
+                                .with_x(|x| x - SEL_NEW_OLD_OFFSET)
+                                .with_width(|w| w + SEL_NEW_OLD_OFFSET);
                             (
                                 new,
                                 ArrowLeft,
@@ -379,7 +500,7 @@ impl canvas::Program<crate::Message> for KeybindingsCheatsheet {
                             )
                         }
                         Move => {
-                            let new = new_sel.with_x(|x| x - OFFSET);
+                            let new = new_sel.with_x(|x| x - SEL_NEW_OLD_OFFSET);
                             (new, ArrowLeft, center_icon(new))
                         }
                     },

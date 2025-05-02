@@ -584,7 +584,7 @@ impl canvas::Program<Message> for App {
         use iced::keyboard::Event::KeyPressed;
         use iced::keyboard::Key::Named;
         use iced::keyboard::Modifiers;
-        use iced::keyboard::key::Named::Shift;
+        use iced::keyboard::key::Named::{ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Shift};
         use iced::mouse::Button::Left;
         use iced::mouse::Event::ButtonPressed;
         use iced::mouse::Event::ButtonReleased;
@@ -636,6 +636,7 @@ impl canvas::Program<Message> for App {
         if let Keyboard(KeyPressed {
             modifiers,
             modified_key,
+            key,
             ..
         }) = event
         {
@@ -645,8 +646,11 @@ impl canvas::Program<Message> for App {
             // - pressing `<` and the `SHIFT` modifier will be pressed
             // - `G` will also trigger the `SHIFT` modifier
             //
-            // We also forbid the user from specifying `shift` as a modifier in their `config.kdl`
-            modifiers.remove(Modifiers::SHIFT);
+            // However, we are going to hard-code the shift modifier to not be removed for the
+            // arrow keys
+            if !matches!(key, Named(ArrowLeft | ArrowDown | ArrowRight | ArrowUp)) {
+                modifiers.remove(Modifiers::SHIFT);
+            }
 
             if let Some(action) = state
                 .last_key_pressed

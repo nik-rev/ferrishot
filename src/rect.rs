@@ -23,6 +23,15 @@ pub impl Size<f32> {
 /// Extension methods for `iced::Vector`
 #[easy_ext::ext(VectorExt)]
 pub impl Vector<f32> {
+    /// Create a vector with only an `x` direction
+    fn x(x: f32) -> Self {
+        Self { x, y: 0.0 }
+    }
+
+    /// Create a vector with only a `y` direction
+    fn y(y: f32) -> Self {
+        Self { x: 0.0, y }
+    }
     /// Create a diagonal vector. X and Y is the same
     fn diag(x_and_y: f32) -> Self {
         Self {
