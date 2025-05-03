@@ -8,6 +8,22 @@ use std::str::FromStr;
 
 use strum::IntoEnumIterator;
 
+/// Extension methods for `Stroke`
+#[easy_ext::ext(StrokeExt)]
+pub impl w::canvas::Stroke<'_> {
+    /// A red stroke, for debugging purposes
+    const RED: Self = Self {
+        style: geometry::Style::Solid(iced::color!(0xff_00_00)),
+        width: 2.0,
+        line_cap: geometry::LineCap::Butt,
+        line_join: geometry::LineJoin::Miter,
+        line_dash: geometry::LineDash {
+            segments: &[],
+            offset: 0,
+        },
+    };
+}
+
 /// Extension methods for `Text`
 #[easy_ext::ext(TextExt)]
 pub impl geometry::Text {

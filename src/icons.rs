@@ -14,7 +14,7 @@ macro_rules! load_icons {
     ) => {
         /// Icons for ferrishot
         #[expect(dead_code, reason = "not all icons are used at the moment")]
-        #[derive(PartialEq, Eq, PartialOrd, Ord, Hash)]
+        #[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Clone)]
         pub enum Icon {
             $(
                 #[$doc]

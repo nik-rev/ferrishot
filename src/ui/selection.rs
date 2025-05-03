@@ -327,6 +327,11 @@ pub impl Option<Selection> {
 }
 
 impl Selection {
+    pub fn with_theme(mut self, theme: crate::config::Theme) -> Self {
+        self.theme = theme;
+        self
+    }
+
     /// Draw the `Selection`
     pub fn draw(&self, frame: &mut canvas::Frame, bounds: Rectangle) {
         self.draw_shade(frame, bounds);

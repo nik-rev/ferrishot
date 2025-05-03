@@ -60,7 +60,7 @@ strum = { version = "0.27.1", features = ["derive"] }
 human_bytes = "0.4.3"
 humantime = "2.2.0"
 tokio = { version = "1.44.2", features = ["full"] }
-derive_builder = "0.20.2"
+bon = "3.6.3"
 
 [lints.rust]
 missing_docs = "warn"
@@ -69,6 +69,9 @@ missing_docs = "warn"
 pedantic = { priority = -1, level = "warn" }
 nursery = { priority = -1, level = "warn" }
 
+# $a * $b + $c is slower and less precise than $a.mul_add($b, $c) but it is more readable
+# the gain in speed / precision will be negligible in most situations
+suboptimal_flops = "allow"
 too_many_lines = "allow"
 # casts from floats -> int are common in the code, and in
 # most cases we don't care about precision as we are
