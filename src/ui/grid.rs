@@ -141,11 +141,11 @@ impl<Draw: FnOnce(&mut Frame, Rectangle)> Grid<'_, Draw> {
             let cell_top_left = Point::new(
                 (cols_drawn as f32).mul_add(
                     self.cell_size.width,
-                    self.spacing.width.mul_add(cols_drawn as f32, -1.0),
+                    self.spacing.width * cols_drawn as f32 + -1.0,
                 ),
                 (rows_drawn as f32).mul_add(
                     self.cell_size.height,
-                    self.spacing.height.mul_add(rows_drawn as f32, -1.0),
+                    self.spacing.height * rows_drawn as f32 + -1.0,
                 ) + title_height,
             ) + self.top_left.into_vector();
 

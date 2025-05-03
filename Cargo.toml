@@ -73,6 +73,8 @@ nursery = { priority = -1, level = "warn" }
 # the gain in speed / precision will be negligible in most situations
 suboptimal_flops = "allow"
 too_many_lines = "allow"
+# if we need it const, make it const. no need to make everything that can be const, const
+missing_const_for_fn = "allow"
 # casts from floats -> int are common in the code, and in
 # most cases we don't care about precision as we are
 # dealing with pixels which cannot be float.

@@ -493,7 +493,7 @@ impl w::canvas::Program<crate::Message> for KeybindingsCheatsheet {
                                 let origin = bounds.top_left();
 
                                 let old_pos = Point::new(
-                                    (-1.5f32).mul_add(sel_size.width, cell_size.width),
+                                    (-1.5f32) * sel_size.width + cell_size.width,
                                     0.5 * sel_size.height,
                                 ) + origin.into_vector();
 
@@ -502,7 +502,7 @@ impl w::canvas::Program<crate::Message> for KeybindingsCheatsheet {
 
                                 let new_sel =
                                     transform_old_sel(origin, sel_size, cell_size, old_sel)
-                                        .with_theme(self.theme);
+                                        .with_theme(&self.theme);
 
                                 new_sel.draw_border(frame);
                                 new_sel.draw_corners(frame);
@@ -546,7 +546,7 @@ impl w::canvas::Program<crate::Message> for KeybindingsCheatsheet {
 
         // let sel = Selection::new(
         //     Point::new(
-        //         BASIC_MOVEMENTS_SIZE.width.mul_add(0.5, -(SEL_SIZE / 2.0)),
+        //         BASIC_MOVEMENTS_SIZE.width * 0.5 + -(SEL_SIZE / 2.0),
         //         BASIC_MOVEMENTS_SIZE.height + 40.0,
         //     ),
         //     &self.theme,

@@ -327,8 +327,9 @@ pub impl Option<Selection> {
 }
 
 impl Selection {
-    pub fn with_theme(mut self, theme: crate::config::Theme) -> Self {
-        self.theme = theme;
+    /// Set a theme to the selection
+    pub fn with_theme(mut self, theme: &crate::config::Theme) -> Self {
+        self.theme = *theme;
         self
     }
 
