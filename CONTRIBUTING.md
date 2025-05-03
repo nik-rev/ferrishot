@@ -11,6 +11,55 @@ Some pointers:
 
 100% of the code is documented. To take advantage of that you can use `cargo doc --document-private-items --open`.
 
+Note: We use items `iced::widget` like `text`, `canvas` and `row` by doing `use iced::widget as w` then using `w::row`, `w::canvas` and `w::text`:
+
+```rs
+use iced::widget as w;
+
+fn example() -> Element<'static, Message> {
+    w::text("Hello, world!")
+}
+```
+
+<details>
+
+<summary>
+Why?
+</summary>
+
+This is done everywhere in the app and it can be confusing why we're doing that, instead of just `use iced::widget::{canvas, text, row}`.
+
+It is because `iced::widget::text` exports both an `fn text` as well as `mod text` and even `macro text`. When we have an import such as this:
+
+```rs
+use iced::{widget::{text::Shaping, text}}
+```
+
+rust-analyzer will automatically modify that to be (when using `auto-import` feature):
+
+```rs
+use iced::{
+  font::Family,
+  widget::{text::{self, Shaping}}
+}
+```
+
+The **problem** here is that before, perfectly valid usages of the `fn text` like so:
+
+```rs
+text("Hello world");
+```
+
+Will now throw an error:
+
+```
+expected function, found module `text`
+```
+
+There seems to be _no workarounds_ for this unfortunately. So what we're doing at the moment is avoid importing stuff from `iced::widget::*` and absolute path it instead with `w::*` for conciseness.
+
+</details>
+
 ## Building
 
 On Windows and MacOS there are no dependencies.

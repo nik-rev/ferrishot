@@ -21,6 +21,8 @@ keys {
   pick-top-left-corner key=t
   pick-bottom-right-corner key=b
 
+  open-keybindings-cheatsheet key=?
+
   // Set width/height to whatever is the current count.
   // You can change the count by just writing numbers. e.g. type `100`
   set-width key=X
@@ -38,13 +40,13 @@ keys {
 
   // extend a side by 1px
   extend left 1 key=H
-  extend left 1 key=<left>
+  extend left 1 mod=shift key=<left>
   extend down 1 key=J
-  extend down 1 key=<down>
+  extend down 1 mod=shift key=<down>
   extend up 1 key=K
-  extend up 1 key=<up>
+  extend up 1 mod=shift key=<up>
   extend right 1 key=L
-  extend right 1 key=<right>
+  extend right 1 mod=shift key=<right>
 
   // shrink a side by 1px
   shrink left 1 mod=ctrl key=h
@@ -68,13 +70,13 @@ keys {
 
   // extend a side by 125px
   extend left 125 mod=alt key=H
-  extend left 125 mod=alt key=<left>
+  extend left 125 mod=alt+shift key=<left>
   extend down 125 mod=alt key=J
-  extend down 125 mod=alt key=<down>
+  extend down 125 mod=alt+shift key=<down>
   extend up 125 mod=alt key=K
-  extend up 125 mod=alt key=<up>
+  extend up 125 mod=alt+shift key=<up>
   extend right 125 mod=alt key=L
-  extend right 125 mod=alt key=<right>
+  extend right 125 mod=alt+shift key=<right>
 
   // shrink a side by 125px
   shrink left 125 mod=ctrl+alt key=h

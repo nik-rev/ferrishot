@@ -6,10 +6,13 @@ mod app;
 mod background_image;
 mod debug_overlay;
 mod errors;
+mod grid;
 mod selection_icons;
 mod welcome_message;
 
 pub mod selection;
+
+pub mod keybindings_cheatsheet;
 
 use background_image::BackgroundImage;
 use debug_overlay::debug_overlay;

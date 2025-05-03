@@ -22,19 +22,14 @@ use crate::icon;
 
 use super::selection_icons::icon_tooltip;
 
-/// Data of the uploaded image
-#[derive(Clone, Debug)]
-pub struct ImageUploadedData {
-    /// link to the uploaded image
-    pub url: String,
-    /// the uploaded image
-    pub uploaded_image: iced::widget::image::Handle,
-    /// The height of the image
-    pub height: u32,
-    /// The width of the image
-    pub width: u32,
-    /// File size in bytes
-    pub file_size: u64,
+/// State for the uploaded image popup
+#[derive(Debug, Default)]
+pub struct State {
+    /// A link to the uploaded image
+    pub url: Option<(qr_code::Data, ImageUploadedData)>,
+    /// When clicking on "Copy" button, change it to be a green tick for a few seconds before
+    /// reverting back
+    pub has_copied_link: bool,
 }
 
 /// Message for the image uploaded
@@ -51,12 +46,12 @@ pub enum Message {
 impl crate::message::Handler for Message {
     fn handle(self, app: &mut super::App) -> Task<crate::Message> {
         match self {
-            Self::CopyLinkTimeout => app.has_copied_uploaded_image_link = false,
+            Self::CopyLinkTimeout => app.image_uploaded.has_copied_link = false,
             Self::CopyLink(url) => {
                 if let Err(err) = crate::clipboard::set_text(&url) {
                     app.errors.push(err.to_string());
                 } else {
-                    app.has_copied_uploaded_image_link = true;
+                    app.image_uploaded.has_copied_link = true;
                     return Task::future(async move {
                         thread::sleep(Duration::from_secs(3));
                         crate::Message::ImageUploaded(Self::CopyLinkTimeout)
@@ -65,7 +60,7 @@ impl crate::message::Handler for Message {
             }
             Self::ImageUploaded(data) => match iced::widget::qr_code::Data::new(data.url.clone()) {
                 Ok(qr_code) => {
-                    app.uploaded_url = Some((qr_code, data));
+                    app.image_uploaded.url = Some((qr_code, data));
                     app.selection = None;
                 }
                 Err(err) => {
@@ -76,6 +71,21 @@ impl crate::message::Handler for Message {
 
         Task::none()
     }
+}
+
+/// Data of the uploaded image
+#[derive(Clone, Debug)]
+pub struct ImageUploadedData {
+    /// link to the uploaded image
+    pub url: String,
+    /// the uploaded image
+    pub uploaded_image: iced::widget::image::Handle,
+    /// The height of the image
+    pub height: u32,
+    /// The width of the image
+    pub width: u32,
+    /// File size in bytes
+    pub file_size: u64,
 }
 
 /// Data for the uploaded image

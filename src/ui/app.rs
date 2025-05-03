@@ -13,7 +13,6 @@ use iced::Renderer;
 use iced::Theme;
 use iced::mouse::Interaction;
 use iced::widget::Canvas;
-use iced::widget::qr_code;
 use iced::{
     Rectangle,
     widget::{Action, canvas},
@@ -29,6 +28,7 @@ use crate::rect::RectangleExt;
 use crate::ui::selection::Selection;
 
 use super::Errors;
+use super::keybindings_cheatsheet::KeybindingsCheatsheet;
 use super::selection::OptionalSelectionExt as _;
 use super::selection::SelectionKeysState;
 
@@ -89,15 +89,18 @@ pub struct App {
     /// Shows a grid of letters on the screen, pressing 3 letters in a row
     /// allows accessing 25 * 25 * 25 = 15,625 different locations
     pub picking_corner: Option<PickCorner>,
-    /// A link to the uploaded image
-    pub uploaded_url: Option<(qr_code::Data, ui::image_uploaded::ImageUploadedData)>,
-    /// When clicking on "Copy" button, change it to be a green tick for a few seconds before
-    /// reverting back
-    pub has_copied_uploaded_image_link: bool,
     /// Whether to show an overlay with additional information (F12)
     pub show_debug_overlay: bool,
     /// Command line arguments passed
     pub cli: Arc<Cli>,
+
+    //
+    // ui component-specific state, which must be stored globally
+    //
+    /// Keybinding cheat sheet state
+    pub keybinding_cheatsheet: ui::keybindings_cheatsheet::State,
+    /// Image uploaded popup state
+    pub image_uploaded: ui::image_uploaded::State,
 }
 
 impl App {
@@ -126,11 +129,14 @@ impl App {
                 .unwrap_or_default(),
             errors: Errors::default(),
             picking_corner: None,
-            uploaded_url: None,
-            has_copied_uploaded_image_link: false,
             show_debug_overlay: cli.debug,
             config,
             cli,
+            //
+            // --- ui-specific state ---
+            //
+            keybinding_cheatsheet: ui::keybindings_cheatsheet::State::default(),
+            image_uploaded: ui::image_uploaded::State::default(),
         }
     }
 
@@ -153,7 +159,7 @@ impl App {
             .push(Canvas::new(self).width(Fill).height(Fill))
             // information popup, when there is no selection
             .push_maybe(
-                (self.uploaded_url.is_none() && self.selection.is_none())
+                (self.image_uploaded.url.is_none() && self.selection.is_none())
                     .then(|| super::welcome_message(self)),
             )
             // errors
@@ -186,12 +192,23 @@ impl App {
                     }),
             )
             // output when uploading image
-            .push_maybe(self.uploaded_url.as_ref().map(|(qr_code_data, data)| {
-                super::ImageUploaded {
-                    app: self,
-                    qr_code_data,
-                    data,
-                    url_copied: self.has_copied_uploaded_image_link,
+            .push_maybe(
+                self.image_uploaded
+                    .url
+                    .as_ref()
+                    .map(|(qr_code_data, data)| {
+                        super::ImageUploaded {
+                            app: self,
+                            qr_code_data,
+                            data,
+                            url_copied: self.image_uploaded.has_copied_link,
+                        }
+                        .view()
+                    }),
+            )
+            .push_maybe((!self.keybinding_cheatsheet.is_open).then(|| {
+                KeybindingsCheatsheet {
+                    theme: self.config.theme,
                 }
                 .view()
             }))
@@ -205,6 +222,9 @@ impl App {
         use crate::message::Handler as _;
 
         match message {
+            Message::KeyCheatsheet(key_cheatsheet) => {
+                return key_cheatsheet.handle(self);
+            }
             Message::Selection(selection) => {
                 return selection.handle(self);
             }
@@ -219,6 +239,9 @@ impl App {
             }
             Message::NoOp => (),
             Message::KeyBind { action, count } => match action {
+                KeyAction::OpenKeybindingsCheatsheet => {
+                    self.keybinding_cheatsheet.is_open = !self.keybinding_cheatsheet.is_open;
+                }
                 KeyAction::CopyToClipboard => {
                     let Some(selection) = self.selection.map(Selection::norm) else {
                         self.errors.push("There is no selection to copy");
@@ -561,7 +584,7 @@ impl canvas::Program<Message> for App {
         use iced::keyboard::Event::KeyPressed;
         use iced::keyboard::Key::Named;
         use iced::keyboard::Modifiers;
-        use iced::keyboard::key::Named::Shift;
+        use iced::keyboard::key::Named::{ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Shift};
         use iced::mouse::Button::Left;
         use iced::mouse::Event::ButtonPressed;
         use iced::mouse::Event::ButtonReleased;
@@ -613,6 +636,7 @@ impl canvas::Program<Message> for App {
         if let Keyboard(KeyPressed {
             modifiers,
             modified_key,
+            key,
             ..
         }) = event
         {
@@ -622,8 +646,11 @@ impl canvas::Program<Message> for App {
             // - pressing `<` and the `SHIFT` modifier will be pressed
             // - `G` will also trigger the `SHIFT` modifier
             //
-            // We also forbid the user from specifying `shift` as a modifier in their `config.kdl`
-            modifiers.remove(Modifiers::SHIFT);
+            // However, we are going to hard-code the shift modifier to not be removed for the
+            // arrow keys
+            if !matches!(key, Named(ArrowLeft | ArrowDown | ArrowRight | ArrowUp)) {
+                modifiers.remove(Modifiers::SHIFT);
+            }
 
             if let Some(action) = state
                 .last_key_pressed
@@ -691,7 +718,7 @@ impl canvas::Program<Message> for App {
         _bounds: Rectangle,
         cursor: iced::advanced::mouse::Cursor,
     ) -> Interaction {
-        if self.uploaded_url.is_some() {
+        if self.image_uploaded.url.is_some() {
             Interaction::default()
         } else {
             self.selection

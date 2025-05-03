@@ -21,6 +21,8 @@ pub enum Message {
     SizeIndicator(ui::size_indicator::Message),
     /// Selection message
     Selection(Box<ui::selection::Message>),
+    /// Keybinding cheatsheet message
+    KeyCheatsheet(ui::keybindings_cheatsheet::Message),
     /// An error occured, display to the user
     Error(String),
     /// Do nothing

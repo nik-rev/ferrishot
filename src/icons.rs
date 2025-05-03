@@ -14,7 +14,7 @@ macro_rules! load_icons {
     ) => {
         /// Icons for ferrishot
         #[expect(dead_code, reason = "not all icons are used at the moment")]
-        #[derive(PartialEq, Eq, PartialOrd, Ord, Hash)]
+        #[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Clone)]
         pub enum Icon {
             $(
                 #[$doc]
@@ -49,6 +49,14 @@ macro_rules! load_icons {
 }
 
 load_icons! {
+    /// Arrow pointing up
+    ArrowUp,
+    /// Arrow pointing right
+    ArrowRight,
+    /// Arrow pointing down
+    ArrowDown,
+    /// Arrow pointing left
+    ArrowLeft,
     /// Save the image to a path by opening the file dialog
     Save,
     /// Drawing a circle

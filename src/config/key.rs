@@ -84,17 +84,13 @@ impl FromStr for KeyMods {
             return Ok(Self(Modifiers::empty()));
         }
         for modifier_str in s.split('+') {
-            let modifier =
-                match modifier_str.trim() {
-                    "ctrl" => Modifiers::CTRL,
-                    "alt" => Modifiers::ALT,
-                    "super" | "windows" | "command" => Modifiers::LOGO,
-                    "shift" => return Err(
-                        "The `shift` is not supported. Use `G` instead of `g + shift` for example (or `<` instead of `, + shift`)"
-                            .to_owned(),
-                    ),
-                    invalid => return Err(format!("Invalid modifier: {invalid}")),
-                };
+            let modifier = match modifier_str.trim() {
+                "ctrl" => Modifiers::CTRL,
+                "alt" => Modifiers::ALT,
+                "super" | "windows" | "command" => Modifiers::LOGO,
+                "shift" => Modifiers::SHIFT,
+                invalid => return Err(format!("Invalid modifier: {invalid}")),
+            };
             if mods.contains(modifier) {
                 return Err(format!("Duplicate modifier: {modifier_str}"));
             }

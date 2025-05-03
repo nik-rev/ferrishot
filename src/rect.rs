@@ -2,11 +2,82 @@
 //! - Corners
 //! - Point
 //! - Extension methods
-use iced::{Point, Rectangle, Size, mouse};
+use iced::{Point, Rectangle, Size, Vector, advanced::graphics::geometry, mouse, widget as w};
 
 use std::str::FromStr;
 
 use strum::IntoEnumIterator;
+
+/// Extension methods for `Stroke`
+#[easy_ext::ext(StrokeExt)]
+pub impl w::canvas::Stroke<'_> {
+    /// A red stroke, for debugging purposes
+    const RED: Self = Self {
+        style: geometry::Style::Solid(iced::color!(0xff_00_00)),
+        width: 2.0,
+        line_cap: geometry::LineCap::Butt,
+        line_join: geometry::LineJoin::Miter,
+        line_dash: geometry::LineDash {
+            segments: &[],
+            offset: 0,
+        },
+    };
+}
+
+/// Extension methods for `Text`
+#[easy_ext::ext(TextExt)]
+pub impl geometry::Text {
+    /// Modify the text's position, based on the size that it is rendered with on a `canvas`
+    fn position(mut self, f: impl Fn(Size) -> Point) -> Self {
+        self.position = f(self.size());
+        self
+    }
+
+    /// The size of this text when rendered. Note, it is not the font size, rather
+    /// it is how many vertical and horizontal pixels this text will take up when render
+    /// on a `canvas`
+    fn size(&self) -> Size {
+        use iced::advanced::text::Paragraph as _;
+        let x = iced::advanced::text::Text {
+            content: self.content.as_str(),
+            bounds: Size::INFINITY,
+            size: self.size,
+            line_height: self.line_height,
+            font: self.font,
+            align_x: self.align_x.into(),
+            align_y: self.align_y,
+            shaping: self.shaping,
+            wrapping: w::text::Wrapping::None,
+        };
+        let para = iced::advanced::graphics::text::Paragraph::with_text(x);
+
+        para.min_bounds()
+    }
+}
+
+/// Extension methods for `iced::Size`
+#[easy_ext::ext(SizeExt)]
+pub impl Size<f32> {
+    /// Create a `Size` which is a square
+    fn square(size: f32) -> Self {
+        Self {
+            width: size,
+            height: size,
+        }
+    }
+}
+
+/// Extension methods for `iced::Vector`
+#[easy_ext::ext(VectorExt)]
+pub impl Vector<f32> {
+    /// Create a diagonal vector. X and Y is the same
+    fn diag(x_and_y: f32) -> Self {
+        Self {
+            x: x_and_y,
+            y: x_and_y,
+        }
+    }
+}
 
 /// Error parsing a rect
 #[derive(Debug, Clone, thiserror::Error, Eq, PartialEq)]
@@ -69,6 +140,18 @@ pub enum Side {
     Bottom,
     /// Left side
     Left,
+}
+
+impl Side {
+    /// Default keybinding (letter, arrow) for this
+    pub const fn default_keys(self) -> (&'static str, &'static str) {
+        match self {
+            Self::Top => ("k", "🡱"),
+            Self::Right => ("l", "🡲"),
+            Self::Bottom => ("j", "🡳"),
+            Self::Left => ("h", "🡰"),
+        }
+    }
 }
 
 /// Where to resize / shrink / extend rectangle
@@ -291,6 +374,14 @@ impl Corners {
 /// Extension methods for `iced::Point`
 #[easy_ext::ext(PointExt)]
 pub impl Point<f32> {
+    /// Convert this point into a vector of same magnitude as the point's coordinates
+    fn into_vector(self) -> Vector {
+        Vector {
+            x: self.x,
+            y: self.y,
+        }
+    }
+
     /// Update the x coordinate of the point
     fn with_x<F: FnOnce(f32) -> f32>(mut self, f: F) -> Self {
         self.x = f(self.x);
@@ -302,11 +393,41 @@ pub impl Point<f32> {
         self.y = f(self.y);
         self
     }
+
+    /// Find the midpoint of two points
+    fn mid(self, other: Self) -> Self {
+        Self {
+            x: (self.x + other.x) / 2.0,
+            y: (self.y + other.y) / 2.0,
+        }
+    }
 }
 
 /// Extension methods for `iced::Rectangle`
 #[easy_ext::ext(RectangleExt)]
 pub impl Rectangle<f32> {
+    /// x-coordinate for which the `size` would be horizontally
+    /// centered relative to the `Rectangle`
+    fn center_x_for(self, size: Size) -> f32 {
+        self.x + (self.width - size.width) / 2.0
+    }
+
+    /// y-coordinate for which the `size` would be vertically
+    /// centered relative to the `Rectangle`
+    fn center_y_for(self, size: Size) -> f32 {
+        self.y + (self.height - size.height) / 2.0
+    }
+
+    /// point for which the `size` would be centered
+    /// relative to the `Rectangle`
+    #[allow(dead_code, reason = "use later")]
+    fn center_for(self, size: Size) -> Point {
+        Point {
+            x: self.center_x_for(size),
+            y: self.center_y_for(size),
+        }
+    }
+
     /// make sure that the top-left corner is ALWAYS in the top left
     /// (it could be that top-left corner is actually on the bottom right,
     /// and we have a negative width and height):
@@ -346,6 +467,26 @@ pub impl Rectangle<f32> {
     /// Position of the top left corner
     fn pos(self) -> Point {
         self.position()
+    }
+
+    /// Top Center
+    fn top_center(&self) -> Point {
+        self.top_left().mid(self.top_right())
+    }
+
+    /// Bottom Center
+    fn bottom_center(&self) -> Point {
+        self.bottom_left().mid(self.bottom_right())
+    }
+
+    /// Right Center
+    fn right_center(&self) -> Point {
+        self.top_right().mid(self.bottom_right())
+    }
+
+    /// Left Center
+    fn left_center(&self) -> Point {
+        self.top_left().mid(self.bottom_left())
     }
 
     /// Position of the top left corner

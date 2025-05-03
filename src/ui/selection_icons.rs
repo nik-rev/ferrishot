@@ -139,9 +139,7 @@ fn position_icons_in_line<'a>(
 
     // if there is just 0 element it will take away the icon padding so it can be negative
     // ensure it is positive
-    let space_used = (icons.len() as f32)
-        .mul_add(PX_PER_ICON, -SPACE_BETWEEN_ICONS)
-        .max(0.0);
+    let space_used = (icons.len() as f32) * PX_PER_ICON + -SPACE_BETWEEN_ICONS.max(0.0);
 
     let padding = (space_available - space_used) / 2.0;
 
@@ -462,7 +460,7 @@ impl<'app> SelectionIcons<'app> {
             .collect();
 
         // include the frame so the icons do not touch the frame
-        let selection_height = FRAME_WIDTH.mul_add(2.0, self.selection_rect.height);
+        let selection_height = FRAME_WIDTH * 2.0 + self.selection_rect.height;
 
         // the left and right rows should be large enough to have at least 1 icon
         // always.
@@ -471,8 +469,8 @@ impl<'app> SelectionIcons<'app> {
         iced::widget::column![
             // just whitespace necessary to align the icons to the selection
             Space::with_height(Length::Fixed(
-                (top_icon_rows_count as f32)
-                    .mul_add(-PX_PER_ICON, self.selection_rect.y - height_added / 2.0)
+                (top_icon_rows_count as f32) * -PX_PER_ICON + self.selection_rect.y
+                    - height_added / 2.0
             ))
             .width(Fill),
             // top icon row
@@ -480,10 +478,7 @@ impl<'app> SelectionIcons<'app> {
             // right icon row + left icon row
             row![Space::with_width(self.selection_rect.x - PX_PER_ICON).height(Fill),]
                 .push_maybe(left_icons)
-                .push(
-                    Space::with_width(FRAME_WIDTH.mul_add(2.0, self.selection_rect.width))
-                        .height(Fill)
-                )
+                .push(Space::with_width(FRAME_WIDTH * 2.0 + self.selection_rect.width).height(Fill))
                 .push_maybe(right_icons)
                 .padding(Padding::default().top(height_added / 2.0))
                 .height(selection_height + height_added),

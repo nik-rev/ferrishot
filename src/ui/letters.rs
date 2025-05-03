@@ -123,8 +123,8 @@ fn draw_boxes(
         for y in iter::successors(Some(y_start), |y| {
             (*y + ERROR_MARGIN < y_start + height - box_height).then_some(y + box_height)
         }) {
-            let boxes_drawn = ((x - x_start) / box_width)
-                .mul_add(HORIZONTAL_COUNT, (y - y_start) / box_height)
+            let boxes_drawn = (((x - x_start) / box_width) * HORIZONTAL_COUNT
+                + ((y - y_start) / box_height))
                 .round() as u32;
 
             frame.fill_text(iced::widget::canvas::Text {
@@ -367,8 +367,8 @@ impl canvas::Program<crate::Message> for Letters<'_> {
 
                         *state = LetterLevel::Third {
                             point: Point {
-                                x: horizontal_steps.mul_add(box_width, point.x),
-                                y: vertical_steps.mul_add(box_height, point.y),
+                                x: horizontal_steps * box_width + point.x,
+                                y: vertical_steps * box_height + point.y,
                             },
                         };
 
@@ -382,8 +382,8 @@ impl canvas::Program<crate::Message> for Letters<'_> {
                             // INFO: We want the point to be in the center, unlike in the previous levels where
                             // we wanted the top-left corner
                             point: Point {
-                                x: horizontal_steps.mul_add(box_width, point.x) + box_width / 2.0,
-                                y: vertical_steps.mul_add(box_height, point.y) + box_height / 2.0,
+                                x: horizontal_steps * box_width + point.x + box_width / 2.0,
+                                y: vertical_steps * box_height + point.y + box_height / 2.0,
                             },
                             corner: self.pick_corner,
                         })));
