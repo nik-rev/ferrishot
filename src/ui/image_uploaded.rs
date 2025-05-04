@@ -41,11 +41,16 @@ pub enum Message {
     CopyLink(String),
     /// Some time has passed after the link was copied
     CopyLinkTimeout,
+    /// Close the image uploaded popup
+    Close,
 }
 
 impl crate::message::Handler for Message {
     fn handle(self, app: &mut super::App) -> Task<crate::Message> {
         match self {
+            Self::Close => {
+                app.image_uploaded.url = None;
+            }
             Self::CopyLinkTimeout => app.image_uploaded.has_copied_link = false,
             Self::CopyLink(url) => {
                 if let Err(err) = crate::clipboard::set_text(&url) {

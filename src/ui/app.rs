@@ -615,7 +615,7 @@ impl canvas::Program<Message> for App {
         use iced::mouse::Event::ButtonPressed;
         use iced::mouse::Event::ButtonReleased;
 
-        // Handle popups
+        // Handle popups. Esc = close popup
         //
         // Events will still be forwarded to the canvas even if we have a popup
         if self.picking_corner.is_some() {
@@ -626,6 +626,30 @@ impl canvas::Program<Message> for App {
             {
                 return Some(Action::publish(Message::Letters(
                     ui::letters::Message::Abort,
+                )));
+            }
+
+            return None;
+        } else if self.keybinding_cheatsheet.is_open {
+            if let Keyboard(KeyPressed {
+                key: iced::keyboard::Key::Named(iced::keyboard::key::Named::Escape),
+                ..
+            }) = event
+            {
+                return Some(Action::publish(Message::KeyCheatsheet(
+                    ui::keybindings_cheatsheet::Message::Close,
+                )));
+            }
+
+            return None;
+        } else if self.image_uploaded.url.is_some() {
+            if let Keyboard(KeyPressed {
+                key: iced::keyboard::Key::Named(iced::keyboard::key::Named::Escape),
+                ..
+            }) = event
+            {
+                return Some(Action::publish(Message::ImageUploaded(
+                    ui::image_uploaded::Message::Close,
                 )));
             }
 
