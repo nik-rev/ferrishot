@@ -48,7 +48,7 @@ reqwest = { version = "0.12.15", default-features = false, features = [
   "stream",
 ] }
 base64 = "0.22.1"
-serde = "1.0.219"
+serde = { version = "1.0.219", features = ["derive"] }
 serde_json = "1.0.140"
 
 documented = "0.9.1"
