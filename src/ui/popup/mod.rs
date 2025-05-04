@@ -6,7 +6,6 @@
 use iced::widget as w;
 pub mod keybindings_cheatsheet;
 use iced::Background;
-use iced::Color;
 use iced::Element;
 use iced::Length::Fill;
 pub use keybindings_cheatsheet::KeybindingsCheatsheet;
