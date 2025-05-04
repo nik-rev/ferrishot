@@ -9,6 +9,12 @@
     </h1>
     <h4>Screenshot app written in Rust, inspired by <a href="https://github.com/flameshot-org/flameshot">flameshot<a />.</h4>
   </p>
+  <p align="center">
+    <img src="https://github.com/nik-rev/ferrishot/releases" alt="latest release" />
+    <a href="https://discord.gg/hvaNHymCVy">
+      <img src="https://img.shields.io/discord/1366137972763787354?logo=discord&logoColor=white" alt="Chat on Discord">
+    </a>
+  </p>
 </div>
 
 ## Showcase
