@@ -24,7 +24,7 @@ pub enum AcceptOnSelect {
 #[command(version, about, author = "Nik Revenco")]
 #[expect(clippy::struct_excessive_bools, reason = "normal for CLIs")]
 pub struct Cli {
-    /// [internal] Print markdown of the command line interface
+    /// (internal) Print markdown of the command line interface
     #[arg(long, hide = true)]
     pub markdown_help: bool,
 
