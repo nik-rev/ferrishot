@@ -1,30 +1,42 @@
 // Default config for ferrishot
 //
-// For more information about what each key does, see the docs
+// You can remove all of the defaults, and just keep your overrides
+// if you want to do that
 
+// Show the size indicator
 size-indicator #true
+// Show icons around the selection
+selection-icons #true
 
 keys {
+  // Leave the app
   exit key=<esc>
 
+  // Copies selected region to clipboard, exiting
   copy-to-clipboard mod=ctrl key=c
   copy-to-clipboard key=<enter>
 
+  // Save to a file
   save-screenshot mod=ctrl key=s
 
+  // Upload and make a link
   upload-screenshot mod=ctrl key=u
 
+  // Set selection to be the entire screen
   select-full-screen key=<f11>
 
+  // Remove the selection
   clear-selection mod=ctrl key=x
 
+  // These 2 commands let you pick any area on the screen in 8 keystrokes
   pick-top-left-corner key=t
   pick-bottom-right-corner key=b
 
   open-keybindings-cheatsheet key=?
 
   // Set width/height to whatever is the current count.
-  // You can change the count by just writing numbers. e.g. type `100`
+  // You can change the count by just writing numbers. e.g. type `100X` to set
+  // the width to 100px
   set-width key=X
   set-height key=Y
 
@@ -109,13 +121,20 @@ keys {
   toggle-debug-overlay key=<f12>
 }
 
+// editing the `theme` section allows you to fully customize the appearance of ferrishot
+
 theme {
+  // color of the frame around the selection
   selection-frame 0xab_61_37
   
+  // background color of the region that is not selected
   non-selected-region 0x00_00_00 opacity=0.5
   
+  // small drop shadow used, an example is around the selection and also
+  // around icons surrounding the selection
   drop-shadow 0x00_00_00 opacity=0.5
   
+  // selected text, for instance when editing the size indicator
   text-selection 0xab_61_37 opacity=0.3
   
   size-indicator-fg 0xff_ff_ff
@@ -134,12 +153,8 @@ theme {
   icon-fg 0xff_ff_ff
   icon-bg 0xab_61_37
 
-  // debug menu (F12)
-  debug-fg 0xff_ff_ff
-  debug-label 0xff_00_00
-  debug-bg 0x00_00_00 opacity=0.9
-
-  // letters (t, b)
+  // letters let you pick any region of the screen in 8 clicks
+  // keys: t (top left corner), b (bottom right corner)
   letters-lines 0xff_ff_ff
   letters-bg 0x00_00_00 opacity=0.6
   letters-fg 0xff_ff_ff
@@ -147,5 +162,18 @@ theme {
   // image uploaded popup (ctrl + U)
   image-uploaded-fg 0xff_ff_ff
   image-uploaded-bg 0x00_00_00 opacity=0.9
+
+  // for example, the checkmark when you copy to clipboard
   success 0x00_ff_00
+
+  cheatsheet-bg 0x00_00_00
+  cheatsheet-fg 0xff_ff_ff
+
+  popup-close-icon-bg 0x00_00_00 opacity=0
+  popup-close-icon-fg 0xff_ff_ff
+
+  // debug menu, for development (F12)
+  debug-fg 0xff_ff_ff
+  debug-label 0xff_00_00
+  debug-bg 0x00_00_00 opacity=0.9
 }

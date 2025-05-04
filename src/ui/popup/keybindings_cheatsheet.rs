@@ -1,7 +1,7 @@
 //! Keybindings cheatsheet
 
 use iced::{
-    Background, Color, Element, Font,
+    Background, Element, Font,
     Length::Fill,
     Pixels, Point, Rectangle, Renderer, Size, Task, Theme, Vector,
     advanced::{graphics::geometry, svg::Svg},
@@ -57,7 +57,7 @@ impl<'app> KeybindingsCheatsheet<'app> {
             size,
             w::container(w::column![w::canvas(self).width(Fill).height(Fill)])
                 .style(|_| container::Style {
-                    background: Some(Background::Color(Color::BLACK)),
+                    background: Some(Background::Color(self.theme.cheatsheet_bg)),
                     ..Default::default()
                 })
                 .width(size.width)
@@ -264,7 +264,7 @@ impl w::canvas::Program<crate::Message> for KeybindingsCheatsheet<'_> {
                                 width: ARROW_ICON_SIZE,
                                 height: ARROW_ICON_SIZE,
                             },
-                            Svg::new(icon.svg()).color(Color::WHITE),
+                            Svg::new(icon.svg()).color(self.theme.cheatsheet_fg),
                         );
 
                         // draw selection AFTER transformation
@@ -273,7 +273,7 @@ impl w::canvas::Program<crate::Message> for KeybindingsCheatsheet<'_> {
                     })
                     .label(w::canvas::Text {
                         content: key.to_string(),
-                        color: Color::WHITE,
+                        color: self.theme.cheatsheet_fg,
                         font: Font::MONOSPACE,
                         shaping: Shaping::Advanced,
                         ..Default::default()
@@ -302,7 +302,7 @@ impl w::canvas::Program<crate::Message> for KeybindingsCheatsheet<'_> {
             .title((
                 geometry::Text {
                     content: "Transform region by 1px:".to_string(),
-                    color: Color::WHITE,
+                    color: self.theme.cheatsheet_fg,
                     font: Font::MONOSPACE,
                     size: Pixels(30.0),
                     shaping: Shaping::Advanced,
@@ -314,7 +314,7 @@ impl w::canvas::Program<crate::Message> for KeybindingsCheatsheet<'_> {
                 geometry::Text {
                     content: "Hold ALT while doing any of the above to transform by 125px!"
                         .to_string(),
-                    color: Color::WHITE,
+                    color: self.theme.cheatsheet_fg,
                     size: Pixels(20.0),
                     font: Font::MONOSPACE,
                     shaping: Shaping::Advanced,
@@ -405,7 +405,7 @@ impl w::canvas::Program<crate::Message> for KeybindingsCheatsheet<'_> {
                 w::canvas::Text {
                     content: "Move region:".to_string(),
                     size: 30.0.into(),
-                    color: Color::WHITE,
+                    color: self.theme.cheatsheet_fg,
                     font: Font::MONOSPACE,
                     shaping: Shaping::Advanced,
                     ..Default::default()
@@ -442,7 +442,7 @@ impl w::canvas::Program<crate::Message> for KeybindingsCheatsheet<'_> {
                                 new_sel.draw_corners(frame);
                             })
                             .stroke(Stroke {
-                                style: geometry::Style::Solid(Color::WHITE),
+                                style: geometry::Style::Solid(self.theme.cheatsheet_fg),
                                 width: 1.0,
                                 line_cap: LineCap::Round,
                                 line_join: LineJoin::Round,
@@ -453,7 +453,7 @@ impl w::canvas::Program<crate::Message> for KeybindingsCheatsheet<'_> {
                             })
                             .label(w::canvas::Text {
                                 content: (*key).to_string(),
-                                color: Color::WHITE,
+                                color: self.theme.cheatsheet_fg,
                                 font: Font::MONOSPACE,
                                 shaping: Shaping::Advanced,
                                 ..Default::default()
@@ -484,7 +484,7 @@ impl w::canvas::Program<crate::Message> for KeybindingsCheatsheet<'_> {
             .title((
                 w::canvas::Text {
                     content: "Pick top and then bottom corners".into(),
-                    color: Color::WHITE,
+                    color: self.theme.cheatsheet_fg,
                     size: Pixels(30.0),
                     font: Font::MONOSPACE,
                     ..Default::default()
@@ -494,7 +494,7 @@ impl w::canvas::Program<crate::Message> for KeybindingsCheatsheet<'_> {
             .description((
                 w::canvas::Text {
                     content: "select any area of the screen in 8 keystrokes!".into(),
-                    color: Color::WHITE.scale_alpha(0.8),
+                    color: self.theme.cheatsheet_fg,
                     size: Pixels(20.0),
                     font: Font::MONOSPACE,
                     ..Default::default()
@@ -541,7 +541,7 @@ impl w::canvas::Program<crate::Message> for KeybindingsCheatsheet<'_> {
                         frame.fill_text(w::canvas::Text {
                             content: "Pick top left corner: t".into(),
                             position: sel.top_left() - Vector::new(200.0, 20.0),
-                            color: Color::WHITE,
+                            color: self.theme.cheatsheet_fg,
                             ..Default::default()
                         });
 
@@ -549,7 +549,7 @@ impl w::canvas::Program<crate::Message> for KeybindingsCheatsheet<'_> {
                         frame.fill_text(w::canvas::Text {
                             content: "Pick bottom right corner: b".into(),
                             position: sel.bottom_right() + Vector::x(50.0),
-                            color: Color::WHITE,
+                            color: self.theme.cheatsheet_fg,
                             ..Default::default()
                         });
                     })

@@ -51,14 +51,14 @@ fn popup<'app>(
                     w::button(
                         crate::icon!(Close)
                             .style(|_, _| w::svg::Style {
-                                color: Some(Color::WHITE)
+                                color: Some(theme.popup_close_icon_fg)
                             })
                             .width(24.0)
                             .height(24.0)
                     )
                     .on_press(crate::Message::ClosePopup)
                     .style(|_, _| w::button::Style {
-                        background: Some(Background::Color(Color::TRANSPARENT)),
+                        background: Some(Background::Color(theme.popup_close_icon_bg)),
                         ..Default::default()
                     }),
                     "Close",

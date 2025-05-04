@@ -9,6 +9,8 @@ crate::declare_config_options! {
     ///
     /// You can manually enter a value to change the selection by hand.
     size_indicator: bool,
+    /// Render icons around the selection
+    selection_icons: bool,
 }
 
 crate::declare_key_options! {
@@ -60,6 +62,16 @@ crate::declare_key_options! {
 }
 
 crate::declare_theme_options! {
+    // Cheatsheet background
+    cheatsheet_bg,
+    // Cheatsheet text color
+    cheatsheet_fg,
+
+    // Close the popup
+    popup_close_icon_bg,
+    // Cheatsheet text color
+    popup_close_icon_fg,
+
     /// Color of the border around the selection
     selection_frame,
     /// Color of the region outside of the selected area

@@ -56,17 +56,13 @@ pub struct Cli {
 
     //
     // --- Config ---
-    //
-    // Currently these options are hidden. You *can* configure ferrishot,
-    // but I'd like to expose this a bit later when I am sure this is the config I'd like to commit to
-    //
     /// Write the default config file
-    #[arg(long, hide = true, help = format!("Write the default config to {}", DEFAULT_CONFIG_FILE_PATH.display()))]
+    #[arg(help_heading = "Config", long, help = format!("Write the default config to {}", DEFAULT_CONFIG_FILE_PATH.display()))]
     pub dump_default_config: bool,
     /// Specifies the config file to use
     #[arg(
         long,
-        hide = true,
+        help_heading = "Config",
         value_name = "file.kdl",
         default_value_t = DEFAULT_CONFIG_FILE_PATH.to_string_lossy().to_string()
     )]

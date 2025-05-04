@@ -28,8 +28,13 @@ Run by typing `ferrishot` on the command line.
 The selection is surrounded by buttons, each with their own keybinding. Most notably:
 
 - `Enter` copies screenshot to clipboard
-- `Ctrl s` saves screenshot to a file
-- `Ctrl u` uploads the screenshot to the internet
+- `Ctrl u` uploads the screenshot to the internet, giving you the link and QR Code - so you can easily send it to your phone!
+- `Ctrl s` saves screenshot to a file. You can choose any valid extension like `.png`, `.webp`, `.jpg`
+
+### Size Indicator
+
+In the bottom-right corner, is a small box showing the height and width of the selection.
+You can manually edit it to set a specific size.
 
 ### Keyboard Control
 
@@ -46,13 +51,15 @@ You can see all of the keybindings declared in the default config file [`default
 
 ### Config
 
-Ferrishot is very customizable! You have _full_ control over the color scheme and keybindings.
+Ferrishot is very customizable! You have _full_ control over the UI, color scheme and keybindings.
 
 Create the default config file `ferrishot.kdl` by doing `ferrishot --dump-default-config`.
 
 For reference, see the [default config file (`default.kdl`)](./default.kdl) which contains comments describing each option.
 
 ### Command-line interface
+
+You can use `ferrishot` in scripts, too
 
 ```
 $ ferrishot --help

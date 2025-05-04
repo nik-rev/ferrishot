@@ -172,15 +172,19 @@ impl App {
             // errors
             .push(self.errors.view(self))
             // icons around the selection
-            .push_maybe(self.selection.filter(|sel| sel.is_idle()).map(|sel| {
-                super::SelectionIcons {
-                    app: self,
-                    image_width: self.image.width() as f32,
-                    image_height: self.image.height() as f32,
-                    selection_rect: sel.rect.norm(),
-                }
-                .view()
-            }))
+            .push_maybe(
+                self.selection
+                    .filter(|sel| sel.is_idle() && self.config.selection_icons)
+                    .map(|sel| {
+                        super::SelectionIcons {
+                            app: self,
+                            image_width: self.image.width() as f32,
+                            image_height: self.image.height() as f32,
+                            selection_rect: sel.rect.norm(),
+                        }
+                        .view()
+                    }),
+            )
             // size indicator
             .push_maybe(
                 self.selection
