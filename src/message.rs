@@ -1,5 +1,7 @@
 //! A message represents some event in the app that mutates the state
 
+use std::time::Instant;
+
 use crate::ui;
 
 use crate::config::KeyAction;
@@ -13,16 +15,20 @@ pub trait Handler {
 /// Represents an action happening in the application
 #[derive(Debug, Clone)]
 pub enum Message {
+    /// Close the current popup
+    ClosePopup,
     /// Image uploaded message
-    ImageUploaded(ui::image_uploaded::Message),
+    ImageUploaded(ui::popup::image_uploaded::Message),
+    /// A certain moment. This message is used for animations
+    Tick(Instant),
     /// Letters message
-    Letters(ui::letters::Message),
+    Letters(ui::popup::letters::Message),
     /// Size indicator message
     SizeIndicator(ui::size_indicator::Message),
     /// Selection message
     Selection(Box<ui::selection::Message>),
     /// Keybinding cheatsheet message
-    KeyCheatsheet(ui::keybindings_cheatsheet::Message),
+    KeyCheatsheet(ui::popup::keybindings_cheatsheet::Message),
     /// An error occured, display to the user
     Error(String),
     /// Do nothing

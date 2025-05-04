@@ -1,9 +1,11 @@
 //! Icons around the selection rectangle
 
+use core::f32;
+
 use iced::{
     Element,
     Length::{self, Fill},
-    Padding, Rectangle,
+    Padding, Radians, Rectangle, Rotation,
     widget::{Column, Row, Space, row, tooltip},
 };
 
@@ -37,7 +39,7 @@ pub fn icon_tooltip<'a, Message>(
     content: impl Into<Element<'a, Message>>,
     tooltip: impl Into<Element<'a, Message>>,
     position: widget::tooltip::Position,
-    theme: &'a crate::config::Theme,
+    theme: &'a crate::Theme,
 ) -> widget::Tooltip<'a, Message> {
     widget::Tooltip::new(content, tooltip, position)
         .style(move |_| widget::container::Style {
@@ -52,7 +54,7 @@ pub fn icon_tooltip<'a, Message>(
 /// Styled icon as a button
 pub fn selection_icon<'a, Message>(
     icon: widget::Svg<'a>,
-    theme: &'a crate::config::Theme,
+    theme: &'a crate::Theme,
 ) -> widget::Button<'a, Message> {
     /// Width and height for icons *inside* of buttons
     const ICON_SIZE: f32 = 32.0;
@@ -100,7 +102,7 @@ fn add_icons_until_there_is_at_least_n_of_them<'a, const MIN_ELEMENTS: usize>(
     mut padding: f32,
     total_icons_positioned: &mut usize,
     tooltip_position: tooltip::Position,
-    theme: &'a crate::config::Theme,
+    theme: &'a crate::Theme,
 ) -> (Vec<Element<'a, Message>>, f32) {
     while icons.len() < MIN_ELEMENTS {
         if let Some((next, tooltip_str)) = iter.by_ref().next() {
@@ -121,7 +123,7 @@ fn position_icons_in_line<'a>(
     total_icons_positioned: &mut usize,
     mut icons_iter: impl Iterator<Item = (Element<'a, Message>, &'static str)>,
     icons_len: usize,
-    theme: &'a crate::config::Theme,
+    theme: &'a crate::Theme,
 ) -> (Vec<Element<'a, Message>>, f32) {
     let icons_left_to_position = icons_len - *total_icons_positioned;
     let icons_rendered_here =
@@ -155,51 +157,57 @@ impl<'app> SelectionIcons<'app> {
     pub fn view(self) -> Element<'app, Message> {
         let icons = vec![
             (
-                selection_icon(icon!(Fullscreen), &self.app.config.theme)
-                    .on_press(Message::KeyBind {
-                        action: KeyAction::SelectFullScreen,
-                        count: 1,
-                    })
-                    .into(),
+                icon!(Fullscreen),
+                KeyAction::SelectFullScreen,
                 "Select entire monitor (F11)",
             ),
             (
-                selection_icon(icon!(Clipboard), &self.app.config.theme)
-                    .on_press(Message::KeyBind {
-                        action: KeyAction::CopyToClipboard,
-                        count: 1,
-                    })
-                    .into(),
+                icon!(Clipboard),
+                KeyAction::CopyToClipboard,
                 "Copy to Clipboard (Enter)",
             ),
             (
-                selection_icon(icon!(Save), &self.app.config.theme)
-                    .on_press(Message::KeyBind {
-                        action: KeyAction::SaveScreenshot,
-                        count: 1,
-                    })
-                    .into(),
+                icon!(Save),
+                KeyAction::SaveScreenshot,
                 "Save Screenshot (Ctrl + s)",
             ),
+            (icon!(Close), KeyAction::Exit, "Exit (esc)"),
+            if self.app.is_uploading_image {
+                // how many seconds we are into the current spin
+                let current_spin_secs = self.app.time_elapsed.as_secs_f32() % 2.0;
+                // how much % we are through the current spin
+                let current_spin_percent = current_spin_secs / 2.0;
+
+                (
+                    icon!(Spinner).rotation(Rotation::Floating(Radians(
+                        current_spin_percent * f32::consts::TAU,
+                    ))),
+                    // TODO: Clicking this should cancel the image upload
+                    KeyAction::NoOp,
+                    "Screenshot is being uploaded...",
+                )
+            } else {
+                (
+                    icon!(Upload),
+                    KeyAction::UploadScreenshot,
+                    "Upload Screenshot (Ctrl + u)",
+                )
+            },
+        ]
+        .into_iter()
+        .map(|(icon, action, label)| {
             (
-                selection_icon(icon!(Close), &self.app.config.theme)
+                selection_icon(icon, &self.app.config.theme)
                     .on_press(Message::KeyBind {
-                        action: KeyAction::Exit,
+                        action,
+                        // Count does not actually matter at all, since it does not make sense to
+                        // do any of the buttons multiple times.
                         count: 1,
                     })
                     .into(),
-                "Exit (esc)",
-            ),
-            (
-                selection_icon(icon!(Upload), &self.app.config.theme)
-                    .on_press(Message::KeyBind {
-                        action: KeyAction::UploadScreenshot,
-                        count: 1,
-                    })
-                    .into(),
-                "Upload Screenshot (Ctrl + u)",
-            ),
-        ];
+                label,
+            )
+        });
 
         let is_enough_space_at_bottom = self.image_height
             - (self.selection_rect.y + self.selection_rect.height)

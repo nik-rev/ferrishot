@@ -77,7 +77,7 @@ impl crate::message::Handler for Message {
 fn dimension_indicator<'a>(
     value: u32,
     on_change: impl Fn(u32) -> crate::Message + 'a,
-    theme: &'a crate::config::Theme,
+    theme: &'a crate::Theme,
 ) -> widget::TextInput<'a, crate::Message> {
     let content = value.to_string();
     let input = iced::widget::text_input(Default::default(), content.as_str())
