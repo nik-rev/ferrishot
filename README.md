@@ -32,10 +32,16 @@ Run by writing `ferrishot` on the command line.
 
 ### Keyboard Control
 
-We have vim motions! Cheatsheet:
+Ferrishot can be fully keyboard controlled, with no mouse! You can select any region on the screen in just
+8 keystrokes. Pick a top-left corner by typing `t`, and pick a bottom-right corner by typing `b`:
+
+![showcase](./assets/instant-shot.mp4)
+
+We also have vim motions! There is a cheatsheet available by pressing `?` to view the motions:
 
 ![cheatsheet](./assets/cheatsheet.webp)
 
+You can see all of the keybindings declared in the default config file [`default.kdl`](./default.kdl)
 
 ## Platform Support
 
