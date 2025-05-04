@@ -474,7 +474,7 @@ impl Selection {
         _bounds: Rectangle,
         cursor: iced::advanced::mouse::Cursor,
     ) -> Option<Action<crate::Message>> {
-        use iced::Event::{Keyboard, Mouse};
+        use iced::Event::{Keyboard, Mouse, Touch};
         use iced::keyboard::Event::KeyPressed;
         use iced::keyboard::Event::KeyReleased;
         use iced::keyboard::Key::Named;
@@ -483,9 +483,10 @@ impl Selection {
         use iced::mouse::Event::ButtonPressed;
         use iced::mouse::Event::ButtonReleased;
         use iced::mouse::Event::CursorMoved;
+        use iced::touch::Event::{FingerLifted, FingerMoved, FingerPressed};
 
         let message = match event {
-            Mouse(ButtonPressed(Left)) => {
+            Touch(FingerPressed { .. }) | Mouse(ButtonPressed(Left)) => {
                 state.is_left_down = true;
 
                 if let Some((cursor, side)) = cursor.position().and_then(|cursor_pos| {
@@ -518,7 +519,7 @@ impl Selection {
                     return None;
                 }
             }
-            Mouse(ButtonReleased(Left)) => {
+            Touch(FingerLifted { .. }) | Mouse(ButtonReleased(Left)) => {
                 state.is_left_down = false;
 
                 self.accept_on_select.map_or_else(
@@ -561,31 +562,19 @@ impl Selection {
                 state.is_shift_down = false;
                 return None;
             }
-            Mouse(CursorMoved { position }) if self.is_resize() => {
-                // FIXME: this will not be necessary when we have `let_chains`
-                let SelectionStatus::Resize {
-                    resize_side,
-                    initial_rect,
-                    initial_cursor_pos,
-                } = self.status
-                else {
-                    unreachable!("has `.is_some_and(is_resized)` guard");
-                };
+            Mouse(ButtonPressed(Right)) => {
+                state.is_right_down = true;
 
-                crate::Message::Selection(Box::new(Message::Resize {
-                    current_cursor_pos: *position,
-                    resize_side,
-                    initial_cursor_pos,
-                    initial_rect,
+                crate::Message::Selection(Box::new(Message::ResizeToCursor {
+                    cursor_pos: cursor.position()?,
+                    selection: self.norm(),
                     sel_is_some: SelectionIsSome { _private: () },
-                    speed: if state.is_shift_down {
-                        Speed::Slow {
-                            has_speed_changed: false,
-                        }
-                    } else {
-                        Speed::Regular
-                    },
                 }))
+            }
+            Mouse(ButtonReleased(Right)) => {
+                state.is_right_down = false;
+
+                crate::Message::Selection(Box::new(Message::EnterIdle))
             }
             Keyboard(KeyPressed {
                 key: Named(Shift), ..
@@ -626,7 +615,37 @@ impl Selection {
                     _ => return None,
                 }
             }
-            Mouse(CursorMoved { position }) if self.is_move() => {
+            Touch(FingerMoved { position, .. }) | Mouse(CursorMoved { position })
+                if self.is_resize() =>
+            {
+                // FIXME: this will not be necessary when we have `let_chains`
+                let SelectionStatus::Resize {
+                    resize_side,
+                    initial_rect,
+                    initial_cursor_pos,
+                } = self.status
+                else {
+                    unreachable!("has `.is_some_and(is_resized)` guard");
+                };
+
+                crate::Message::Selection(Box::new(Message::Resize {
+                    current_cursor_pos: *position,
+                    resize_side,
+                    initial_cursor_pos,
+                    initial_rect,
+                    sel_is_some: SelectionIsSome { _private: () },
+                    speed: if state.is_shift_down {
+                        Speed::Slow {
+                            has_speed_changed: false,
+                        }
+                    } else {
+                        Speed::Regular
+                    },
+                }))
+            }
+            Touch(FingerMoved { position, .. }) | Mouse(CursorMoved { position })
+                if self.is_move() =>
+            {
                 let current_selection = self.norm();
 
                 // FIXME: this will not be necessary when we have `if_let_guard`
@@ -652,21 +671,9 @@ impl Selection {
                     },
                 }))
             }
-            Mouse(ButtonPressed(Right)) => {
-                state.is_right_down = true;
-
-                crate::Message::Selection(Box::new(Message::ResizeToCursor {
-                    cursor_pos: cursor.position()?,
-                    selection: self.norm(),
-                    sel_is_some: SelectionIsSome { _private: () },
-                }))
-            }
-            Mouse(ButtonReleased(Right)) => {
-                state.is_right_down = false;
-
-                crate::Message::Selection(Box::new(Message::EnterIdle))
-            }
-            Mouse(CursorMoved { position }) if self.is_create() => {
+            Touch(FingerMoved { position, .. }) | Mouse(CursorMoved { position })
+                if self.is_create() =>
+            {
                 crate::Message::Selection(Box::new(Message::ExtendNewSelection(*position)))
             }
             _ => return None,
