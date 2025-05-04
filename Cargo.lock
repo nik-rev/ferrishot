@@ -1454,7 +1454,6 @@ dependencies = [
  "ferrishot_iced",
  "ferrishot_knus",
  "human_bytes",
- "humantime",
  "image 0.25.6",
  "log",
  "miette",
@@ -2273,12 +2272,6 @@ name = "human_bytes"
 version = "0.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "91f255a4535024abf7640cb288260811fc14794f62b063652ed349f9a6c2348e"
-
-[[package]]
-name = "humantime"
-version = "2.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9b112acc8b3adf4b107a8ec20977da0273a8c386765a3ec0229bd500a1443f9f"
 
 [[package]]
 name = "hyper"

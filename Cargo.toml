@@ -96,7 +96,6 @@ easy-ext = "1.0.2"
 derive_more = { version = "2.0.1", features = ["is_variant"] }
 strum = { version = "0.27.1", features = ["derive"] }
 human_bytes = "0.4.3"
-humantime = "2.2.0"
 bon = "3.6.3"
 
 
