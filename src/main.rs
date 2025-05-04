@@ -70,6 +70,7 @@ fn main() -> miette::Result<()> {
         App::update,
         App::view,
     )
+    .subscription(App::subscription)
     .window(iced::window::Settings {
         level: iced::window::Level::Normal,
         fullscreen: true,

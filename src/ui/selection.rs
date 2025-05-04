@@ -248,7 +248,7 @@ pub struct Selection {
     /// Accept on select
     pub accept_on_select: Option<AcceptOnSelect>,
     /// Theme of the app
-    pub theme: crate::config::Theme,
+    pub theme: crate::Theme,
     /// Area represented by the selection
     pub rect: Rectangle,
     /// Status of the selection
@@ -328,7 +328,7 @@ pub impl Option<Selection> {
 
 impl Selection {
     /// Set a theme to the selection
-    pub fn with_theme(mut self, theme: &crate::config::Theme) -> Self {
+    pub fn with_theme(mut self, theme: &crate::Theme) -> Self {
         self.theme = *theme;
         self
     }
@@ -453,7 +453,7 @@ impl Selection {
     /// Create selection at a point with a size of zero
     pub fn new(
         point: Point,
-        theme: &crate::config::Theme,
+        theme: &crate::Theme,
         is_first: bool,
         accept_on_select: Option<AcceptOnSelect>,
     ) -> Self {

@@ -12,6 +12,8 @@ crate::declare_config_options! {
 }
 
 crate::declare_key_options! {
+    /// Do nothing
+    NoOp,
     /// Open the keybindings cheatsheet
     OpenKeybindingsCheatsheet,
     /// Upload screenshot to the internet

@@ -19,12 +19,13 @@ use tokio::sync::oneshot;
 /// # Errors
 ///
 /// If none succeed, return error for all the services
-pub async fn upload(file_path: &Path) -> Result<String, Vec<String>> {
+pub async fn upload(file_path: &Path) -> Result<ImageUploaded, Vec<String>> {
     let mut handles = Vec::new();
 
     // Channel for results
     // Each uploader sends either Ok(url) or Err(err), tagged with index of the uploader
-    let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel::<(usize, Result<String, String>)>();
+    let (tx, mut rx) =
+        tokio::sync::mpsc::unbounded_channel::<(usize, Result<ImageUploaded, String>)>();
 
     // Channel for cancellation
     // Sending end `cancel_tx` triggered by the first successful uploader
@@ -110,25 +111,40 @@ pub async fn upload(file_path: &Path) -> Result<String, Vec<String>> {
 pub enum ImageUploadService {
     /// - Website: `https://litterbox.catbox.moe`
     /// - Max upload size: 1 GB
-    /// - Link expires after: 1 hour - 3 days (manual choice)
     Litterbox,
     /// - Website: `https://catbox.moe`
     /// - Max upload size: 200 MB
-    /// - Link never expires
     Catbox,
     /// - Website: `https://0x0.st`
     /// - Max upload size: 512 MiB
-    /// - Link expires after: 30 days - 1 year (chosen by formula)
     TheNullPointer,
     /// - Website: `https://uguu.se`
     /// - Max upload size: 128 Mib
-    /// - Link expires after: 3 hours
     Uguu,
 }
 
+/// Data of the uploaded image
+#[derive(Debug, Clone)]
+pub struct ImageUploaded {
+    /// Link to the uploaded image
+    pub link: String,
+    /// How long until the image expires (rough estimate - purely for visualization)
+    pub expires_in: &'static str,
+}
+
 impl ImageUploadService {
+    /// Conservative estimate for how long until images expire
+    fn expires_in(self) -> &'static str {
+        match self {
+            Self::Litterbox => "3 days",
+            Self::Catbox => "2 weeks",
+            Self::TheNullPointer => "30 days",
+            Self::Uguu => "3 hours",
+        }
+    }
+
     /// The base URL where image files should be uploaded
-    const fn post_url(self) -> &'static str {
+    fn post_url(self) -> &'static str {
         match self {
             Self::TheNullPointer => "https://0x0.st",
             Self::Uguu => "https://uguu.se/upload",
@@ -138,15 +154,18 @@ impl ImageUploadService {
     }
 
     /// Upload the image to the given upload service
-    pub async fn upload_image(self, file_path: &std::path::Path) -> Result<String, Box<dyn Error>> {
-        let request = crate::CLIENT
+    pub async fn upload_image(
+        self,
+        file_path: &std::path::Path,
+    ) -> Result<ImageUploaded, Box<dyn Error>> {
+        let request = crate::HTTP_CLIENT
             .request(reqwest::Method::POST, self.post_url())
             .header(
                 "User-Agent",
                 format!("ferrishot/{:?}", env!("CARGO_PKG_VERSION")),
             );
 
-        Ok(match self {
+        let link = match self {
             Self::TheNullPointer => {
                 request
                     .multipart(Form::new().file("file", file_path).await?)
@@ -207,6 +226,11 @@ impl ImageUploadService {
                     .text()
                     .await?
             }
+        };
+
+        Ok(ImageUploaded {
+            link,
+            expires_in: self.expires_in(),
         })
     }
 }
