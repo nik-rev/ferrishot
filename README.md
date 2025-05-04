@@ -61,7 +61,7 @@ For reference, see the [default config file (`default.kdl`)](./default.kdl) whic
 
 You can use `ferrishot` in scripts, too
 
-##### ferrishot
+#### ferrishot
 
 A cross-platform desktop screenshot app
 
