@@ -1,5 +1,7 @@
 //! Popups are overlaid on top of the screen.
 //! They block any inputs
+//!
+//! Only one of the popups can be active at any time (see `Popup` enum)
 
 use iced::widget as w;
 pub mod keybindings_cheatsheet;
