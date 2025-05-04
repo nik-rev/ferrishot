@@ -30,7 +30,12 @@ Run by writing `ferrishot` on the command line.
 - Size indicator allows setting an absolute width and height for the screenshot
 - `Esc` exits
 
-This project is under heavy development, and we have a lot of plans. A list of planned features can be found in [`TODO.md`](./TODO.md).
+### Keyboard Control
+
+We have vim motions! Cheatsheet:
+
+![cheatsheet](./assets/cheatsheet.webp)
+
 
 ## Platform Support
 
