@@ -35,7 +35,7 @@ The selection is surrounded by buttons, each with their own keybinding. Most not
 
 You get a link and a QR Code, so you can easily send it to another device!
 
-![uploaded image](assets/image_uploaded_online.webp)
+<img height="250px" src="assets/image_uploaded_online.webp" />
 
 ### Size Indicator
 
