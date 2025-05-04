@@ -18,6 +18,17 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - run: cargo check
 
+  nix:
+    name: Nix Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Nix
+        uses: cachix/install-nix-action@v27
+
+      - name: Nix build
+        run: nix build
+
   format:
     name: Format
     runs-on: ubuntu-latest
