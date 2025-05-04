@@ -101,7 +101,7 @@ fn main() -> miette::Result<()> {
             saved_image
                 .save(save_path)
                 .map_err(|err| miette!("Failed to save the screenshot: {err}"))?;
-        };
+        }
     }
 
     Ok(())

@@ -74,11 +74,11 @@ pub struct Grid<'frame, Draw: FnOnce(&mut Frame, Rectangle)> {
     /// Title of the grid. Drawn above the grid
     title: Option<geometry::Text>,
     /// Description of the grid. Drawn below the grid
-    description: Option<geometry::Text>,
+    _description: Option<geometry::Text>,
     /// Labels of the rows
-    row_labels: Option<Vec<String>>,
+    _row_labels: Option<Vec<String>>,
     /// Labels of the columns
-    col_labels: Option<Vec<String>>,
+    _col_labels: Option<Vec<String>>,
     /// Draw red border around grid items, for debugging purposes
     #[builder(default, with = || true)]
     dbg: bool,
