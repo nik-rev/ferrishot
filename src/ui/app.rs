@@ -265,27 +265,27 @@ impl App {
                         bytes: std::borrow::Cow::Borrowed(cropped_image.as_bytes()),
                     };
 
-                    #[cfg_attr(
-                        target_os = "macos",
-                        expect(unused_variables, reason = "it is used on other platforms")
-                    )]
+                    // #[cfg_attr(
+                    //     target_os = "macos",
+                    //     expect(unused_variables, reason = "it is used on other platforms")
+                    // )]
                     match crate::clipboard::set_image(image_data) {
-                        Ok(img_path) => {
+                        Ok(_img_path) => {
                             // send desktop notification if possible, this is
                             // just a decoration though so it's ok if we fail to do this
-                            let mut notify = notify_rust::Notification::new();
+                            // let mut notify = notify_rust::Notification::new();
 
-                            notify.summary(&format!(
-                                "Copied image to clipboard {w}px * {h}px",
-                                w = cropped_image.width(),
-                                h = cropped_image.height()
-                            ));
+                            // notify.summary(&format!(
+                            //     "Copied image to clipboard {w}px * {h}px",
+                            //     w = cropped_image.width(),
+                            //     h = cropped_image.height()
+                            // ));
 
                             // images are not supported on macos
-                            #[cfg(not(target_os = "macos"))]
-                            notify.image_path(&img_path.to_string_lossy());
+                            // #[cfg(not(target_os = "macos"))]
+                            // notify.image_path(&img_path.to_string_lossy());
 
-                            let _ = notify.show();
+                            // let _ = notify.show();
 
                             return Self::exit();
                         }

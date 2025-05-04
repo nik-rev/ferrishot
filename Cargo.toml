@@ -11,11 +11,27 @@ categories = ["visualization", "multimedia"]
 authors = ["Nik Revenco"]
 
 [build-dependencies]
+# to generate the RGBA bytes for logo of ferrishot
 image = "0.25.6"
 
 [dependencies]
+
+# --- core crates ---
+# obtain position of the mouse
 mouse_position = "0.1.4"
+
+# cross-platform "take a screenshot of the monitor" UI.
 xcap = { version = "0.4.1", features = ["image", "vendored"] }
+
+# Iced is the native UI framework that ferrishot uses
+# 
+# We need iced 0.14 (currently just `master`) for the app to function properly. This is because
+# prior to iced 0.14, there is no way to create a full-screen window. That means we'd have to
+# - create the window
+# - THEN make it full screen
+#
+# This makes a "flash" for a split second which is very noticable and makes the experience worse
+# And we need this iced 0.14 available on crates.io because I'd like to publish ferrishot to crates.io
 iced = { package = "ferrishot_iced", version = "0.14.1", features = [
   "canvas",
   "image",
@@ -26,41 +42,63 @@ iced = { package = "ferrishot_iced", version = "0.14.1", features = [
   "tokio",
   "qr_code",
 ] }
+# provider a cross-platform clipboard API
+arboard = { version = "3.5", features = ["wayland-data-control"] }
+# image encoding, transformations and decoding
 image = "0.25.6"
-thiserror = "2.0.12"
-delegate = "0.13"
+# command line argument parser
+clap = { version = "4.5.35", features = ["derive"] }
+# file dialog
+rfd = "0.15.3"
+# cross-platform API to get locations like config directory, cache directory...
+etcetera = "0.10.0"
+# tempfile for data transmission of the image bytes
+tempfile = "3.19.1"
+# async runtime
+tokio = { version = "1.44.2", features = ["full"] }
+# knus is the serde-like derive macro to parse KDL into Rust structs
+# 
+# This is a fork simply so we can publish the branch https://github.com/nik-rev/knus/tree/kdl-v2
+# to crates.io, required to be able to use kdl-v2
+#
+# I'd like to just use kdl-v2 to avoid breaking users' configs in the future when we'll
+# migrate from kdl v1 -> kdl v2 anyways
+ferrishot_knus = "3.2"
+# pretty error messages for KDL derive
+miette = { version = "7.5.0", features = ["fancy"] }
+
+# --- logging ---
 env_logger = "0.11.8"
 log = "0.4.27"
-easy-ext = "1.0.2"
-derive_more = { version = "2.0.1", features = ["is_variant"] }
-arboard = { version = "3.5", features = ["wayland-data-control"] }
-notify-rust = { version = "4.11.7", features = ["images"] }
-clap = { version = "4.5.35", features = ["derive"] }
-rfd = "0.15.3"
+chrono = "0.4.40"     # used only for time stamp 
 
-etcetera = "0.10.0"
-chrono = "0.4.40"
-tempfile = "3.19.1"
+# --- send web requsts --- 
 reqwest = { version = "0.12.15", default-features = false, features = [
+  # this + `default-features = false` removes dependency on OpenSSL
   "rustls-tls",
   "json",
   "multipart",
   "stream",
 ] }
-base64 = "0.22.1"
 serde = { version = "1.0.219", features = ["derive"] }
 serde_json = "1.0.140"
 
-documented = "0.9.1"
+# --- helper crates ---
 
-# configuration
-knus = { version = "3.2.0", git = "https://github.com/jaxter184/knus", rev = "01348798018b2e8443eaf40ef357775a6aba0ac6" }
-miette = { version = "7.5.0", features = ["fancy"] }
+# typed error enum generation
+thiserror = "2.0.12"
+# avoid boilerplate when writing methods that just call methods on fields in the same struct
+delegate = "0.13"
+# Allows implementing methods for external types via extension traits
+# this crate allows skipping the definition of the extension trait which means we
+# don't have to write signatures of the functions twice which is awesome
+easy-ext = "1.0.2"
+derive_more = { version = "2.0.1", features = ["is_variant"] }
 strum = { version = "0.27.1", features = ["derive"] }
 human_bytes = "0.4.3"
 humantime = "2.2.0"
-tokio = { version = "1.44.2", features = ["full"] }
 bon = "3.6.3"
+
 
 [lints.rust]
 missing_docs = "warn"

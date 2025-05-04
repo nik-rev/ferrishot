@@ -3,7 +3,7 @@
 use std::{error::Error, path::Path};
 
 use iced::futures::future::join_all;
-use knus::DecodeScalar;
+use ferrishot_knus::DecodeScalar;
 use reqwest::multipart::{Form, Part};
 use serde::{Deserialize, Serialize};
 use strum::{EnumCount, IntoEnumIterator as _};

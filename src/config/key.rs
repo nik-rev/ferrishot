@@ -46,10 +46,10 @@ impl KeyMap {
 }
 
 /// Keybindings for ferrishot
-#[derive(knus::Decode, Debug, Default)]
+#[derive(ferrishot_knus::Decode, Debug, Default)]
 pub struct Keys {
     /// A list of raw keybindings for ferrishot, directly as read from the config file
-    #[knus(children)]
+    #[ferrishot_knus(children)]
     pub keys: Vec<Key>,
 }
 
