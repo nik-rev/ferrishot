@@ -31,6 +31,11 @@ fn main() -> miette::Result<()> {
     // Parse command line arguments
     let cli = Arc::new(ferrishot::Cli::parse());
 
+    if cli.markdown_help {
+        clap_markdown::print_help_markdown::<ferrishot::Cli>();
+        return Ok(());
+    }
+
     if cli.print_log_file_path {
         println!("{}", ferrishot::DEFAULT_LOG_FILE_PATH.display());
         return Ok(());

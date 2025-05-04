@@ -24,6 +24,10 @@ pub enum AcceptOnSelect {
 #[command(version, about, author = "Nik Revenco")]
 #[expect(clippy::struct_excessive_bools, reason = "normal for CLIs")]
 pub struct Cli {
+    /// [internal] Print markdown of the command line interface
+    #[arg(long, hide = true)]
+    pub markdown_help: bool,
+
     /// Instead of taking a screenshot of the desktop, open this image instead
     // Currently disabled because if the screenshot is not the same size as the desktop,
     // it will cause bugs as we consider 0,0 in the Canvas to be the

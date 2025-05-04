@@ -61,42 +61,42 @@ For reference, see the [default config file (`default.kdl`)](./default.kdl) whic
 
 You can use `ferrishot` in scripts, too
 
-```
-$ ferrishot --help
+##### ferrishot
 
 A cross-platform desktop screenshot app
 
-Usage: ferrishot [OPTIONS]
+**Usage:** `ferrishot [OPTIONS]`
 
-Options:
-      --region <WxH+X+Y>
-          Screenshot region to select
+###### **Arguments:**
 
-          Format: `<width>x<height>+<top-left-x>+<top-left-y>`
+- `<FILE>` — Instead of taking a screenshot of the desktop, open this image instead
 
-      --delay <MILLISECONDS>
-          Wait this long before launching
+###### **Options:**
 
-      --save-path <PATH>
-          Instead of opening a file picker to save the screenshot, save it to this path instead
+- `--region <WxH+X+Y>` — Screenshot region to select
 
-  -a, --accept-on-select <ACTION>
-          Accept capture as soon as a selection is made
+  Format: `<width>x<height>+<top-left-x>+<top-left-y>`
 
-          If holding `ctrl` while you are releasing the left mouse button on the
-          first selection, the behaviour is cancelled
+- `--delay <MILLISECONDS>` — Wait this long before launching
+- `--save-path <PATH>` — Instead of opening a file picker to save the screenshot, save it to this path instead
+- `-a`, `--accept-on-select <ACTION>` — Accept capture as soon as a selection is made
 
-          Possible values:
-          - copy:   Copy the selected region to the clipboard
-          - save:   Save the selected region as a file
-          - upload: Upload the selected region to the internet
+  If holding `ctrl` while you are releasing the left mouse button on the
+  first selection, the behaviour is cancelled
 
-  -h, --help
-          Print help (see a summary with '-h')
+  Possible values:
 
-  -V, --version
-          Print version
-```
+  - `copy`:
+    Copy the selected region to the clipboard
+  - `save`:
+    Save the selected region as a file
+  - `upload`:
+    Upload the selected region to the internet
+
+- `--dump-default-config` — Write the default config to ~/.config/ferrishot.kdl
+- `--config-file <file.kdl>` — Specifies the config file to use
+
+  Default value: `~/.config/ferrishot.kdl`
 
 ## Platform Support
 
