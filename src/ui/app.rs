@@ -206,7 +206,7 @@ impl App {
                         .view()
                     }),
             )
-            .push_maybe((!self.keybinding_cheatsheet.is_open).then(|| {
+            .push_maybe((self.keybinding_cheatsheet.is_open).then(|| {
                 KeybindingsCheatsheet {
                     theme: self.config.theme,
                 }
