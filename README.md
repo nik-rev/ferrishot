@@ -17,18 +17,19 @@
 
 ## Features
 
-Run by writing `ferrishot` on the command line.
+Run by typing `ferrishot` on the command line.
 
-- Select a region on the screen by left clicking and dragging
-- Resize the region by dragging on any of the sides or corners and dragging
+### Basic usage
+
+- Select a region on the screen by left clicking and dragging.
+- Resize the region by dragging on any of the sides and dragging
 - Move the region around by dragging in the center
-- `Enter` copies screenshot region to clipboard
-- `Ctrl s` saves screenshot region as a file
-- `F11` selects the entire monitor
-- Instantly copy region to clipboard with `--instant` flag
-- Holding `Shift` while resizing or dragging will resize or move the selection 10 times slower
-- Size indicator allows setting an absolute width and height for the screenshot
-- `Esc` exits
+
+The selection is surrounded by buttons, each with their own keybinding. Most notably:
+
+- `Enter` copies screenshot to clipboard
+- `Ctrl s` saves screenshot to a file
+- `Ctrl u` uploads the screenshot to the internet
 
 ### Keyboard Control
 
@@ -42,6 +43,53 @@ We also have vim motions! There is a cheatsheet available by pressing `?` to vie
 ![cheatsheet](./assets/cheatsheet.webp)
 
 You can see all of the keybindings declared in the default config file [`default.kdl`](./default.kdl)
+
+### Config
+
+Ferrishot is very customizable! You have _full_ control over the color scheme and keybindings.
+
+Create the default config file `ferrishot.kdl` by doing `ferrishot --dump-default-config`.
+
+For reference, see the [default config file (`default.kdl`)](./default.kdl) which contains comments describing each option.
+
+### Command-line interface
+
+```
+$ ferrishot --help
+
+A cross-platform desktop screenshot app
+
+Usage: ferrishot [OPTIONS]
+
+Options:
+      --region <WxH+X+Y>
+          Screenshot region to select
+
+          Format: `<width>x<height>+<top-left-x>+<top-left-y>`
+
+      --delay <MILLISECONDS>
+          Wait this long before launching
+
+      --save-path <PATH>
+          Instead of opening a file picker to save the screenshot, save it to this path instead
+
+  -a, --accept-on-select <ACTION>
+          Accept capture as soon as a selection is made
+
+          If holding `ctrl` while you are releasing the left mouse button on the
+          first selection, the behaviour is cancelled
+
+          Possible values:
+          - copy:   Copy the selected region to the clipboard
+          - save:   Save the selected region as a file
+          - upload: Upload the selected region to the internet
+
+  -h, --help
+          Print help (see a summary with '-h')
+
+  -V, --version
+          Print version
+```
 
 ## Platform Support
 
