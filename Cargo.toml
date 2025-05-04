@@ -10,6 +10,12 @@ keywords = ["screenshot", "screen-capture", "capture", "flameshot"]
 categories = ["visualization", "multimedia"]
 authors = ["Nik Revenco"]
 
+[package.metadata.wix]
+upgrade-guid = "338F87CB-7559-4755-9DC7-889308AFCC72"
+path-guid = "B2F84121-9832-457D-AD64-A5598BCD4AA7"
+license = false
+eula = false
+
 [build-dependencies]
 # to generate the RGBA bytes for logo of ferrishot
 image = "0.25.6"
