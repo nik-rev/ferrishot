@@ -1,2 +1,2 @@
-[alias]
-docgen = "run --manifest-path ./docgen/Cargo.toml --"
+[target.aarch64-apple-darwin]
+rustflags = ["-C", "link-arg=-fuse-ld=lld"]
