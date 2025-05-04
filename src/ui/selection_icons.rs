@@ -9,9 +9,8 @@ use iced::{
     widget::{Column, Row, Space, row, tooltip},
 };
 
+use crate::ui::selection::ICON_BUTTON_SIZE;
 use crate::{config::KeyAction, icon, message::Message, ui::selection::FRAME_WIDTH};
-use crate::{icons::Icon, ui::selection::ICON_BUTTON_SIZE};
-use iced::widget as w;
 use iced::{Background, Border, Shadow, widget};
 
 // Here is the behaviour that we want

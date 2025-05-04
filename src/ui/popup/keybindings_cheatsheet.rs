@@ -7,28 +7,28 @@ use iced::{
     advanced::{graphics::geometry, svg::Svg},
     font::{self, Family, Weight},
     widget::{
-        self as w, button,
+        self as w,
         canvas::{LineCap, LineJoin, Stroke},
-        column, container, horizontal_space, row, stack, svg,
+        container,
         text::Shaping,
-        vertical_space,
     },
 };
 
 use crate::{
-    icon,
     icons::Icon,
     rect::{PointExt, RectangleExt, SizeExt, VectorExt},
     ui::{grid::Grid, selection::Selection},
 };
 
-use super::app::Popup;
+use super::Popup;
 
 /// Keybindings cheatsheet message
 #[derive(Debug, Clone)]
 pub enum Message {
     /// Open the keybindings menu
     Open,
+    /// Close the keybindings menu
+    Close,
 }
 
 impl crate::message::Handler for Message {
@@ -52,46 +52,17 @@ pub struct KeybindingsCheatsheet {
 impl KeybindingsCheatsheet {
     /// Show the keybinding cheatsheet
     pub fn view(self) -> Element<'static, crate::Message> {
-        container(
-            stack![
-                //
-                // The actual cheatsheet
-                //
-                container(column![w::canvas(self).width(Fill).height(Fill)]).style(|_| {
-                    container::Style {
-                        background: Some(Background::Color(Color::BLACK)),
-                        ..Default::default()
-                    }
-                }),
-                //
-                // Close Button 'x' in the top right corner
-                //
-                column![
-                    vertical_space().height(10.0),
-                    row![
-                        horizontal_space().width(Fill),
-                        button(
-                            icon!(Close)
-                                .style(|_, _| svg::Style {
-                                    color: Some(Color::WHITE)
-                                })
-                                .width(24.0)
-                                .height(24.0)
-                        )
-                        .on_press(crate::Message::KeyCheatsheet(Message::Close))
-                        .style(|_, _| button::Style {
-                            background: Some(Background::Color(Color::TRANSPARENT)),
-                            ..Default::default()
-                        }),
-                        horizontal_space().width(10.0)
-                    ]
-                ]
-            ]
-            .height(1000.0)
-            .width(1550.0),
+        let size = Size::new(1550.0, 1000.0);
+        super::popup(
+            size,
+            w::container(w::column![w::canvas(self).width(Fill).height(Fill)])
+                .style(|_| container::Style {
+                    background: Some(Background::Color(Color::BLACK)),
+                    ..Default::default()
+                })
+                .width(size.width)
+                .height(size.height),
         )
-        .center(Fill)
-        .into()
     }
 }
 

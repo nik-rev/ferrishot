@@ -12,21 +12,20 @@ use std::{thread, time::Duration};
 use iced::{
     Background, Element,
     Length::{self, Fill},
-    Task,
-    widget::{
-        button, column, container, horizontal_rule, opaque, qr_code, row, svg, text, tooltip,
-    },
+    Size, Task,
+    widget::{button, column, container, horizontal_rule, qr_code, row, svg, text, tooltip},
 };
 
 use crate::icon;
 
-use super::selection_icons::icon_tooltip;
+use super::Popup;
+use crate::ui::selection_icons::icon_tooltip;
 
 /// State for the uploaded image popup
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct State {
     /// A link to the uploaded image
-    pub url: Option<(qr_code::Data, ImageUploadedData)>,
+    pub url: (qr_code::Data, ImageUploadedData),
     /// When clicking on "Copy" button, change it to be a green tick for a few seconds before
     /// reverting back
     pub has_copied_link: bool,
@@ -41,22 +40,31 @@ pub enum Message {
     CopyLink(String),
     /// Some time has passed after the link was copied
     CopyLinkTimeout,
-    /// Close the image uploaded popup
-    Close,
 }
 
 impl crate::message::Handler for Message {
-    fn handle(self, app: &mut super::App) -> Task<crate::Message> {
+    fn handle(self, app: &mut crate::App) -> Task<crate::Message> {
         match self {
-            Self::Close => {
-                app.image_uploaded.url = None;
+            Self::CopyLinkTimeout => {
+                if let Some(image_uploaded) = app
+                    .popup
+                    .as_mut()
+                    .and_then(|p| p.try_as_image_uploaded_mut())
+                {
+                    image_uploaded.has_copied_link = false;
+                }
             }
-            Self::CopyLinkTimeout => app.image_uploaded.has_copied_link = false,
             Self::CopyLink(url) => {
                 if let Err(err) = crate::clipboard::set_text(&url) {
                     app.errors.push(err.to_string());
                 } else {
-                    app.image_uploaded.has_copied_link = true;
+                    if let Some(image_uploaded) = app
+                        .popup
+                        .as_mut()
+                        .and_then(|p| p.try_as_image_uploaded_mut())
+                    {
+                        image_uploaded.has_copied_link = true;
+                    }
                     return Task::future(async move {
                         thread::sleep(Duration::from_secs(3));
                         crate::Message::ImageUploaded(Self::CopyLinkTimeout)
@@ -67,7 +75,10 @@ impl crate::message::Handler for Message {
                 app.is_uploading_image = false;
                 match iced::widget::qr_code::Data::new(data.image_uploaded.link.clone()) {
                     Ok(qr_code) => {
-                        app.image_uploaded.url = Some((qr_code, data));
+                        app.popup = Some(Popup::ImageUploaded(State {
+                            url: (qr_code, data),
+                            has_copied_link: false,
+                        }));
                         app.selection = None;
                     }
                     Err(err) => {
@@ -99,7 +110,7 @@ pub struct ImageUploadedData {
 /// Data for the uploaded image
 pub struct ImageUploaded<'app> {
     /// The App
-    pub app: &'app super::App,
+    pub app: &'app crate::App,
     /// Data for the URL to the uploaded image
     pub qr_code_data: &'app qr_code::Data,
     /// When the URL Was copied
@@ -111,7 +122,9 @@ pub struct ImageUploaded<'app> {
 impl<'app> ImageUploaded<'app> {
     /// Render the QR Code
     pub fn view(&self) -> Element<'app, crate::Message> {
-        container(opaque(
+        let size = Size::new(700.0, 1200.0);
+        super::popup(
+            size,
             container(
                 column![
                     //
@@ -232,16 +245,14 @@ impl<'app> ImageUploaded<'app> {
                 ]
                 .spacing(30.0),
             )
-            .width(Length::Fixed(700.0))
-            .height(Length::Fixed(1200.0))
+            .width(size.width)
+            .height(size.height)
             .style(|_| container::Style {
                 text_color: Some(self.app.config.theme.image_uploaded_fg),
                 background: Some(Background::Color(self.app.config.theme.image_uploaded_bg)),
                 ..Default::default()
             })
             .padding(30.0),
-        ))
-        .center(Fill)
-        .into()
+        )
     }
 }
