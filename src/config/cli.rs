@@ -32,7 +32,7 @@ pub struct Cli {
 
     /// Screenshot region to select
     ///
-    /// Format: <width>x<height>+<top-left-x>+<top-left-y>
+    /// Format: `<width>x<height>+<top-left-x>+<top-left-y>`
     #[arg(long, value_parser = Rectangle::from_str, value_name = "WxH+X+Y")]
     pub region: Option<Rectangle>,
 

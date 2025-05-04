@@ -39,11 +39,15 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
 
-      - name: Install libxcb
+      - name: Install linux deps
         if: matrix.os == 'ubuntu-latest'
         run: |
           sudo apt-get update
           sudo apt-get install -y libgl-dev libx11-dev libx11-xcb-dev libwayland-dev
+
+      # ld linker fails with `ld`
+      - if: runner.os == 'macOS'
+        run: brew install lld
 
       - run: cargo test --workspace
 

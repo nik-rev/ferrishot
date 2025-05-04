@@ -1,22 +1,27 @@
 //! Main logic for the application, handling of events and mutation of the state
 
 use std::sync::Arc;
+use std::time::Duration;
+use std::time::Instant;
 
 use crate::Cli;
 use crate::Config;
 use crate::config::KeyAction;
 use crate::config::Place;
 use crate::ui;
-use crate::ui::PickCorner;
+use crate::ui::popup;
 use iced::Length::Fill;
 use iced::Renderer;
+use iced::Subscription;
 use iced::Theme;
 use iced::mouse::Interaction;
 use iced::widget::Canvas;
+use iced::window;
 use iced::{
     Rectangle,
     widget::{Action, canvas},
 };
+use ui::popup::PickCorner;
 
 use crate::message::Message;
 use crate::screenshot::Screenshot;
@@ -28,7 +33,7 @@ use crate::rect::RectangleExt;
 use crate::ui::selection::Selection;
 
 use super::Errors;
-use super::keybindings_cheatsheet::KeybindingsCheatsheet;
+use super::popup::Popup;
 use super::selection::OptionalSelectionExt as _;
 use super::selection::SelectionKeysState;
 
@@ -70,6 +75,12 @@ pub static SAVED_IMAGE: std::sync::OnceLock<image::DynamicImage> = std::sync::On
 /// Holds the state for ferrishot
 #[derive(Debug)]
 pub struct App {
+    /// If an image is in the process of being uploaded (but hasn't yet)
+    pub is_uploading_image: bool,
+    /// When the application was launched
+    pub time_started: Instant,
+    /// How long has passed since starting ferrishot
+    pub time_elapsed: Duration,
     /// Config of the app
     pub config: Arc<Config>,
     /// A list of messages which obtained while the debug overlay is active
@@ -86,21 +97,13 @@ pub struct App {
     pub selection: Option<Selection>,
     /// Errors to display to the user
     pub errors: Errors,
-    /// Shows a grid of letters on the screen, pressing 3 letters in a row
-    /// allows accessing 25 * 25 * 25 = 15,625 different locations
-    pub picking_corner: Option<PickCorner>,
     /// Whether to show an overlay with additional information (F12)
     pub show_debug_overlay: bool,
     /// Command line arguments passed
     pub cli: Arc<Cli>,
 
-    //
-    // ui component-specific state, which must be stored globally
-    //
-    /// Keybinding cheat sheet state
-    pub keybinding_cheatsheet: ui::keybindings_cheatsheet::State,
-    /// Image uploaded popup state
-    pub image_uploaded: ui::image_uploaded::State,
+    /// Currently opened popup
+    pub popup: Option<Popup>,
 }
 
 impl App {
@@ -108,6 +111,9 @@ impl App {
     #[must_use]
     pub fn new(cli: Arc<Cli>, config: Arc<Config>) -> Self {
         Self {
+            is_uploading_image: false,
+            time_started: Instant::now(),
+            time_elapsed: Duration::default(),
             selection: cli.region.map(|rect| Selection {
                 theme: config.theme,
                 is_first: true,
@@ -128,15 +134,10 @@ impl App {
                 // Default is taking a screenshot of the desktop
                 .unwrap_or_default(),
             errors: Errors::default(),
-            picking_corner: None,
             show_debug_overlay: cli.debug,
             config,
             cli,
-            //
-            // --- ui-specific state ---
-            //
-            keybinding_cheatsheet: ui::keybindings_cheatsheet::State::default(),
-            image_uploaded: ui::image_uploaded::State::default(),
+            popup: None,
         }
     }
 
@@ -148,6 +149,12 @@ impl App {
         iced::window::get_latest().then(|id| iced::window::close(id.expect("window to exist")))
     }
 
+    /// This method is used to keep track of time / how much time has passed since start
+    /// of the program, using this for animations.
+    pub fn subscription(&self) -> Subscription<crate::Message> {
+        window::frames().map(crate::Message::Tick)
+    }
+
     /// Renders the app
     pub fn view(&self) -> iced::Element<Message> {
         Stack::new()
@@ -157,9 +164,9 @@ impl App {
             })
             // Shade in the background + global event handler + selection renderer
             .push(Canvas::new(self).width(Fill).height(Fill))
-            // information popup, when there is no selection
+            // information popup with basic tips
             .push_maybe(
-                (self.image_uploaded.url.is_none() && self.selection.is_none())
+                (self.popup.is_none() && self.selection.is_none())
                     .then(|| super::welcome_message(self)),
             )
             // errors
@@ -171,14 +178,6 @@ impl App {
                     image_width: self.image.width() as f32,
                     image_height: self.image.height() as f32,
                     selection_rect: sel.rect.norm(),
-                }
-                .view()
-            }))
-            // grid of letters to precisely choose a location
-            .push_maybe(self.picking_corner.map(|pick_corner| {
-                super::Letters {
-                    app: self,
-                    pick_corner,
                 }
                 .view()
             }))
@@ -209,8 +208,25 @@ impl App {
             .push_maybe((self.keybinding_cheatsheet.is_open).then(|| {
                 KeybindingsCheatsheet {
                     theme: self.config.theme,
+            .push_maybe(self.popup.as_ref().map(|popup| {
+                match popup {
+                    Popup::Letters(state) => ui::popup::Letters {
+                        app: self,
+                        pick_corner: state.picking_corner,
+                    }
+                    .view(),
+                    Popup::ImageUploaded(state) => ui::popup::ImageUploaded {
+                        app: self,
+                        qr_code_data: &state.url.0,
+                        data: &state.url.1,
+                        url_copied: state.has_copied_link,
+                    }
+                    .view(),
+                    Popup::KeyCheatsheet => ui::popup::KeybindingsCheatsheet {
+                        theme: &self.config.theme,
+                    }
+                    .view(),
                 }
-                .view()
             }))
             // debug overlay
             .push_maybe(self.show_debug_overlay.then(|| super::debug_overlay(self)))
@@ -222,6 +238,12 @@ impl App {
         use crate::message::Handler as _;
 
         match message {
+            Message::ClosePopup => {
+                self.popup = None;
+            }
+            Message::Tick(instant) => {
+                self.time_elapsed = instant.duration_since(self.time_started);
+            }
             Message::KeyCheatsheet(key_cheatsheet) => {
                 return key_cheatsheet.handle(self);
             }
@@ -239,8 +261,9 @@ impl App {
             }
             Message::NoOp => (),
             Message::KeyBind { action, count } => match action {
+                KeyAction::NoOp => {}
                 KeyAction::OpenKeybindingsCheatsheet => {
-                    self.keybinding_cheatsheet.is_open = !self.keybinding_cheatsheet.is_open;
+                    self.popup = Some(Popup::KeyCheatsheet);
                 }
                 KeyAction::CopyToClipboard => {
                     let Some(selection) = self.selection.map(Selection::norm) else {
@@ -260,27 +283,27 @@ impl App {
                         bytes: std::borrow::Cow::Borrowed(cropped_image.as_bytes()),
                     };
 
-                    #[cfg_attr(
-                        target_os = "macos",
-                        expect(unused_variables, reason = "it is used on other platforms")
-                    )]
+                    // #[cfg_attr(
+                    //     target_os = "macos",
+                    //     expect(unused_variables, reason = "it is used on other platforms")
+                    // )]
                     match crate::clipboard::set_image(image_data) {
-                        Ok(img_path) => {
+                        Ok(_img_path) => {
                             // send desktop notification if possible, this is
                             // just a decoration though so it's ok if we fail to do this
-                            let mut notify = notify_rust::Notification::new();
+                            // let mut notify = notify_rust::Notification::new();
 
-                            notify.summary(&format!(
-                                "Copied image to clipboard {w}px * {h}px",
-                                w = cropped_image.width(),
-                                h = cropped_image.height()
-                            ));
+                            // notify.summary(&format!(
+                            //     "Copied image to clipboard {w}px * {h}px",
+                            //     w = cropped_image.width(),
+                            //     h = cropped_image.height()
+                            // ));
 
                             // images are not supported on macos
-                            #[cfg(not(target_os = "macos"))]
-                            notify.image_path(&img_path.to_string_lossy());
+                            // #[cfg(not(target_os = "macos"))]
+                            // notify.image_path(&img_path.to_string_lossy());
 
-                            let _ = notify.show();
+                            // let _ = notify.show();
 
                             return Self::exit();
                         }
@@ -464,10 +487,14 @@ impl App {
                     }
                 }
                 KeyAction::PickTopLeftCorner => {
-                    self.picking_corner = Some(PickCorner::TopLeft);
+                    self.popup = Some(Popup::Letters(popup::letters::State {
+                        picking_corner: PickCorner::TopLeft,
+                    }));
                 }
                 KeyAction::PickBottomRightCorner => {
-                    self.picking_corner = Some(PickCorner::BottomRight);
+                    self.popup = Some(Popup::Letters(popup::letters::State {
+                        picking_corner: PickCorner::BottomRight,
+                    }));
                 }
                 KeyAction::UploadScreenshot => {
                     let Some(selection) = self.selection.as_ref().map(|sel| Selection::norm(*sel))
@@ -476,6 +503,8 @@ impl App {
                             .push("Select something on the screen to upload it");
                         return Task::none();
                     };
+
+                    self.is_uploading_image = true;
 
                     let cropped_image = selection.process_image(
                         self.image.width(),
@@ -487,6 +516,7 @@ impl App {
                         Ok(tempdir) => tempdir.into_path().join("ferrishot-screenshot.png"),
                         Err(err) => {
                             self.errors.push(err.to_string());
+                            self.is_uploading_image = false;
                             return Task::none();
                         }
                     };
@@ -504,10 +534,10 @@ impl App {
                             let file_size = file.metadata().map(|meta| meta.len()).unwrap_or(0);
 
                             match crate::image_upload::upload(&file).await {
-                                Ok(url) => Message::ImageUploaded(
-                                    super::image_uploaded::Message::ImageUploaded(
-                                        ui::image_uploaded::ImageUploadedData {
-                                            url,
+                                Ok(image_uploaded) => Message::ImageUploaded(
+                                    popup::image_uploaded::Message::ImageUploaded(
+                                        popup::image_uploaded::ImageUploadedData {
+                                            image_uploaded,
                                             uploaded_image: iced::widget::image::Handle::from_path(
                                                 &file,
                                             ),
@@ -589,18 +619,16 @@ impl canvas::Program<Message> for App {
         use iced::mouse::Event::ButtonPressed;
         use iced::mouse::Event::ButtonReleased;
 
-        // Handle popups
+        // Handle popups. Esc = close popup
         //
         // Events will still be forwarded to the canvas even if we have a popup
-        if self.picking_corner.is_some() {
+        if self.popup.is_some() {
             if let Keyboard(KeyPressed {
                 key: iced::keyboard::Key::Named(iced::keyboard::key::Named::Escape),
                 ..
             }) = event
             {
-                return Some(Action::publish(Message::Letters(
-                    ui::letters::Message::Abort,
-                )));
+                return Some(Action::publish(Message::ClosePopup));
             }
 
             return None;
@@ -718,7 +746,7 @@ impl canvas::Program<Message> for App {
         _bounds: Rectangle,
         cursor: iced::advanced::mouse::Cursor,
     ) -> Interaction {
-        if self.image_uploaded.url.is_some() {
+        if let Some(Popup::ImageUploaded(_)) = self.popup {
             Interaction::default()
         } else {
             self.selection

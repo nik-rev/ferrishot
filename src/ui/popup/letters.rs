@@ -14,13 +14,19 @@ use iced::{
     },
 };
 
-use super::selection::Selection;
+use crate::ui::selection::Selection;
+
+/// State of the letters
+#[derive(Debug)]
+pub struct State {
+    /// Shows a grid of letters on the screen, pressing 3 letters in a row
+    /// allows accessing 25 * 25 * 25 = 15,625 different locations
+    pub picking_corner: PickCorner,
+}
 
 /// Letters message
 #[derive(Clone, Debug)]
 pub enum Message {
-    /// Abort selecting a letter
-    Abort,
     /// A region was picked using `Letters` widget
     ///
     /// See `LetterLevel` for more info on "level" and "region"
@@ -35,9 +41,6 @@ pub enum Message {
 impl crate::message::Handler for Message {
     fn handle(self, app: &mut crate::App) -> Task<crate::Message> {
         match self {
-            Self::Abort => {
-                app.picking_corner = None;
-            }
             Self::Pick { point, corner } => {
                 let sel = app.selection.map_or_else(
                     || {
@@ -70,7 +73,7 @@ impl crate::message::Handler for Message {
                         );
                     }
                 }
-                app.picking_corner = None;
+                app.popup = None;
             }
         }
 
@@ -108,7 +111,7 @@ fn draw_boxes(
     frame: &mut canvas::Frame,
     font_size: FontSize,
     line_width: f32,
-    app: &super::App,
+    app: &crate::App,
 ) {
     // We need to offset drawing each line, otherwise it will draw *half* of the line at each side
     let line_offset = line_width / 2.0;
@@ -259,7 +262,7 @@ pub enum PickCorner {
 #[derive(Clone, Copy, Debug)]
 pub struct Letters<'app> {
     /// The App
-    pub app: &'app super::App,
+    pub app: &'app crate::App,
     /// Corner to pick the position for
     pub pick_corner: PickCorner,
 }
@@ -395,7 +398,7 @@ impl canvas::Program<crate::Message> for Letters<'_> {
             ..
         }) = event
         {
-            return Some(Action::publish(crate::Message::Letters(Message::Abort)));
+            return Some(Action::publish(crate::Message::ClosePopup));
         }
 
         // Any unrecognized event should not propagate to the `App`

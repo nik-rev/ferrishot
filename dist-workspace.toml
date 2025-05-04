@@ -30,6 +30,9 @@ x86_64-unknown-linux-gnu = "ubuntu-24.04"
 aarch64-unknown-linux-gnu = "ubuntu-24.04"
 global = "ubuntu-latest"
 
+[dist.dependencies.homebrew]
+lld = "*"
+
 [dist.dependencies.apt]
 libgl-dev = "*"
 libx11-dev = "*"

@@ -47,9 +47,9 @@ impl Config {
         let config_file_path = PathBuf::from(user_config);
 
         let default_config =
-            knus::parse::<DefaultKdlConfig>("<default-config>", DEFAULT_KDL_CONFIG_STR)?;
+            ferrishot_knus::parse::<DefaultKdlConfig>("<default-config>", DEFAULT_KDL_CONFIG_STR)?;
 
-        let user_config = knus::parse::<UserKdlConfig>(
+        let user_config = ferrishot_knus::parse::<UserKdlConfig>(
             &user_config,
             // if there is no config file, act as if it's simply empty
             &fs::read_to_string(&config_file_path).unwrap_or_default(),

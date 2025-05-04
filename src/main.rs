@@ -70,6 +70,7 @@ fn main() -> miette::Result<()> {
         App::update,
         App::view,
     )
+    .subscription(App::subscription)
     .window(iced::window::Settings {
         level: iced::window::Level::Normal,
         fullscreen: true,
@@ -101,7 +102,7 @@ fn main() -> miette::Result<()> {
             saved_image
                 .save(save_path)
                 .map_err(|err| miette!("Failed to save the screenshot: {err}"))?;
-        };
+        }
     }
 
     Ok(())

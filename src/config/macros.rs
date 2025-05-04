@@ -13,23 +13,23 @@
 ///   foreground 000000 opacity=0.5
 /// }
 /// ```
-#[derive(knus::Decode, Debug)]
+#[derive(ferrishot_knus::Decode, Debug)]
 pub struct Color {
     /// Hex color. Examples:
     ///
     /// - `ff0000`: Red
     /// - `000000`: Black
-    #[knus(argument)]
+    #[ferrishot_knus(argument)]
     pub color: u32,
     /// The opacity for this color.
     /// - `1.0`: Opaque
     /// - `0.0`: Transparent
-    #[knus(default = 1.0, property)]
+    #[ferrishot_knus(default = 1.0, property)]
     pub opacity: f32,
 }
 
 /// A place on the rectangle
-#[derive(knus::DecodeScalar, Debug, Clone)]
+#[derive(ferrishot_knus::DecodeScalar, Debug, Clone)]
 pub enum Place {
     /// Center
     Center,
@@ -69,17 +69,17 @@ macro_rules! declare_config_options {
     ) => {
         /// The default config as read from the default config file, included as a static string in the binary.
         /// All values are required and must be specified
-        #[derive(knus::Decode, Debug)]
+        #[derive(ferrishot_knus::Decode, Debug)]
         pub struct DefaultKdlConfig {
             /// The default keybindings of ferrishot
-            #[knus(child)]
+            #[ferrishot_knus(child)]
             pub keys: $crate::config::key::Keys,
             /// The default theme of ferrishot
-            #[knus(child)]
+            #[ferrishot_knus(child)]
             pub theme: DefaultKdlTheme,
             $(
                 $(#[$doc])*
-                #[knus(child, unwrap(argument))]
+                #[ferrishot_knus(child, unwrap(argument))]
                 pub $key: $typ,
             )*
         }
@@ -145,17 +145,17 @@ macro_rules! declare_config_options {
 
         /// User's config. Everything is optional. Values will be merged with `DefaultKdlConfig`.
         /// And will take priority over the default values.
-        #[derive(knus::Decode, Debug)]
+        #[derive(ferrishot_knus::Decode, Debug)]
         pub struct UserKdlConfig {
             /// User-defined keybindings
-            #[knus(child)]
+            #[ferrishot_knus(child)]
             pub keys: Option<$crate::config::key::Keys>,
             /// User-defined colors
-            #[knus(child)]
+            #[ferrishot_knus(child)]
             pub theme: Option<UserKdlTheme>,
             $(
                 $(#[$doc])*
-                #[knus(child, unwrap(argument))]
+                #[ferrishot_knus(child, unwrap(argument))]
                 pub $key: Option<$typ>,
             )*
         }
@@ -187,11 +187,11 @@ macro_rules! declare_theme_options {
         ),* $(,)?
     ) => {
         /// Ferrishot's default theme and colors
-        #[derive(knus::Decode, Debug)]
+        #[derive(ferrishot_knus::Decode, Debug)]
         pub struct DefaultKdlTheme {
             $(
                 $(#[$doc])*
-                #[knus(child)]
+                #[ferrishot_knus(child)]
                 pub $key: $crate::config::Color,
             )*
         }
@@ -227,11 +227,11 @@ macro_rules! declare_theme_options {
 
         /// The user's custom theme and color overrides
         /// All values are optional and will override whatever is the default
-        #[derive(knus::Decode, Debug)]
+        #[derive(ferrishot_knus::Decode, Debug)]
         pub struct UserKdlTheme {
             $(
                 $(#[$doc])*
-                #[knus(child)]
+                #[ferrishot_knus(child)]
                 pub $key: Option<$crate::config::Color>,
             )*
         }
@@ -287,20 +287,20 @@ macro_rules! declare_key_options {
         /// A list of keybindings which exist in the app
         ///
         /// These have just been parsed, they are
-        #[derive(knus::Decode, Debug, Clone)]
+        #[derive(ferrishot_knus::Decode, Debug, Clone)]
         pub enum Key {
             $(
                 $(#[$key_attr])*
                 $KeyOption(
                     $($(
                         $(#[$arg_attr])*
-                        $(#[knus(default = $default)])?
-                        #[knus(argument)]
+                        $(#[ferrishot_knus(default = $default)])?
+                        #[ferrishot_knus(argument)]
                         $Argument,
                     )+)?
-                    #[knus(property(name = "key"), str)]
+                    #[ferrishot_knus(property(name = "key"), str)]
                     $crate::config::key::KeySequence,
-                    #[knus(default, property(name = "mod"), str)]
+                    #[ferrishot_knus(default, property(name = "mod"), str)]
                     $crate::config::key::KeyMods,
                 ),
             )*
