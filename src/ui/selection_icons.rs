@@ -39,7 +39,7 @@ pub fn icon_tooltip<'a, Message>(
     content: impl Into<Element<'a, Message>>,
     tooltip: impl Into<Element<'a, Message>>,
     position: widget::tooltip::Position,
-    theme: &'a crate::config::Theme,
+    theme: &'a crate::Theme,
 ) -> widget::Tooltip<'a, Message> {
     widget::Tooltip::new(content, tooltip, position)
         .style(move |_| widget::container::Style {
@@ -54,7 +54,7 @@ pub fn icon_tooltip<'a, Message>(
 /// Styled icon as a button
 pub fn selection_icon<'a, Message>(
     icon: widget::Svg<'a>,
-    theme: &'a crate::config::Theme,
+    theme: &'a crate::Theme,
 ) -> widget::Button<'a, Message> {
     /// Width and height for icons *inside* of buttons
     const ICON_SIZE: f32 = 32.0;
@@ -102,7 +102,7 @@ fn add_icons_until_there_is_at_least_n_of_them<'a, const MIN_ELEMENTS: usize>(
     mut padding: f32,
     total_icons_positioned: &mut usize,
     tooltip_position: tooltip::Position,
-    theme: &'a crate::config::Theme,
+    theme: &'a crate::Theme,
 ) -> (Vec<Element<'a, Message>>, f32) {
     while icons.len() < MIN_ELEMENTS {
         if let Some((next, tooltip_str)) = iter.by_ref().next() {
@@ -123,7 +123,7 @@ fn position_icons_in_line<'a>(
     total_icons_positioned: &mut usize,
     mut icons_iter: impl Iterator<Item = (Element<'a, Message>, &'static str)>,
     icons_len: usize,
-    theme: &'a crate::config::Theme,
+    theme: &'a crate::Theme,
 ) -> (Vec<Element<'a, Message>>, f32) {
     let icons_left_to_position = icons_len - *total_icons_positioned;
     let icons_rendered_here =

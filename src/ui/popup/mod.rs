@@ -34,7 +34,7 @@ pub enum Popup {
 fn popup<'app>(
     size: iced::Size,
     contents: impl Into<Element<'app, crate::Message>>,
-    theme: &'app crate::config::Theme,
+    theme: &'app crate::Theme,
 ) -> Element<'app, crate::Message> {
     w::container(w::stack![
         contents.into(),

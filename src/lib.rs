@@ -14,6 +14,7 @@ mod rect;
 mod screenshot;
 mod ui;
 
+use config::Theme;
 use message::Message;
 
 #[cfg(target_os = "linux")]

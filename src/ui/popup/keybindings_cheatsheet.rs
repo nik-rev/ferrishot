@@ -46,7 +46,7 @@ impl crate::message::Handler for Message {
 #[derive(Debug, Copy, Clone)]
 pub struct KeybindingsCheatsheet<'app> {
     /// Theme of the app
-    pub theme: &'app crate::config::Theme,
+    pub theme: &'app crate::Theme,
 }
 
 impl<'app> KeybindingsCheatsheet<'app> {
@@ -105,7 +105,7 @@ impl w::canvas::Program<crate::Message> for KeybindingsCheatsheet<'_> {
 
         let mut frame = w::canvas::Frame::new(renderer, bounds.size());
 
-        let theme_with_dimmed_sel = crate::config::Theme {
+        let theme_with_dimmed_sel = crate::Theme {
             selection_frame: self.theme.selection_frame.scale_alpha(0.3),
             ..*self.theme
         };
