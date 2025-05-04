@@ -29,7 +29,7 @@ const TIPS: [(&str, &str); 7] = [
 ];
 /// Height of the welcome message box
 const HEIGHT: f32 =
-    10.0 + TIPS.len() as f32 * FONT_SIZE + (TIPS.len() - 1) as f32 * SPACING + (PADDING * 2.0);
+    30.0 + TIPS.len() as f32 * FONT_SIZE + (TIPS.len() - 1) as f32 * SPACING + (PADDING * 2.0);
 
 /// Renders the welcome message that the user sees when they first launch the program
 pub fn welcome_message(app: &super::App) -> Element<Message> {

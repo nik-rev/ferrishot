@@ -18,7 +18,7 @@ use iced::{
 use crate::{
     icon,
     icons::Icon,
-    rect::{PointExt, RectangleExt, Side, SizeExt, VectorExt},
+    rect::{PointExt, RectangleExt, SizeExt, VectorExt},
     ui::{grid::Grid, selection::Selection},
 };
 
@@ -64,14 +64,11 @@ impl KeybindingsCheatsheet {
                 //
                 // The actual cheatsheet
                 //
-                container(column![
-                    w::canvas(self)
-                        .width(BASIC_MOVEMENTS_SIZE.width * 2.0)
-                        .height(BASIC_MOVEMENTS_SIZE.height + 400.0),
-                ])
-                .style(|_| container::Style {
-                    background: Some(Background::Color(Color::BLACK)),
-                    ..Default::default()
+                container(column![w::canvas(self).width(Fill).height(Fill)]).style(|_| {
+                    container::Style {
+                        background: Some(Background::Color(Color::BLACK)),
+                        ..Default::default()
+                    }
                 }),
                 //
                 // Close Button 'x' in the top right corner
@@ -97,64 +94,12 @@ impl KeybindingsCheatsheet {
                     ]
                 ]
             ]
-            .height(1800.0)
-            .width(2000.0),
+            .height(1000.0)
+            .width(1550.0),
         )
         .center(Fill)
         .into()
     }
-}
-
-use Action::{Extend, Move, Shrink};
-use Side::{Bottom, Left, Right, Top};
-
-/// Size of each selection
-const SEL_SIZE: f32 = 100.0;
-/// How much space to put between the rendered selections
-const SPACE_BETWEEN: f32 = 100.0;
-/// How far away the `new` selection from the `old` selection should be
-const SEL_NEW_OLD_OFFSET: f32 = 20.0;
-/// Size of each arrow
-const ARROW_ICON_SIZE: f32 = 18.0;
-/// Draw the cheatsheet with selections this far away from 0,0
-const TOP_LEFT_OFFSET: Vector = Vector::new(180.0, 250.0);
-/// Size of the heading for the basic movements
-const BASIC_MOVEMENTS_HEADING_SIZE: f32 = 30.0;
-/// Estimated size of the canvas for the basic movements
-const BASIC_MOVEMENTS_SIZE: Size = Size::new(
-    TOP_LEFT_OFFSET.x
-        + (SEL_SIZE * HORIZONTAL_LABELS.len() as f32
-            + SPACE_BETWEEN * (HORIZONTAL_LABELS.len() - 1) as f32),
-    TOP_LEFT_OFFSET.y
-        + BASIC_MOVEMENTS_HEADING_SIZE
-        + (SEL_SIZE * VERTICAL_LABELS.len() as f32
-            + (SPACE_BETWEEN * (VERTICAL_LABELS.len() - 1) as f32)),
-);
-/// Each of the 4 sides modified
-const SIDES: [Side; 4] = [Left, Right, Bottom, Top];
-/// Keys required
-const HORIZONTAL_LABELS: [(&str, &str); 4] = [
-    ("LEFT", "h or 🡰"),
-    ("RIGHT", "l or 🡲"),
-    ("DOWN", "j or 🡳"),
-    ("UP", "k or 🡱"),
-];
-/// Modifier for eacrh the above keys, and what action it takes
-const VERTICAL_LABELS: [(&str, &str, Action, [Side; 4]); 3] = [
-    ("", "MOVE", Move, SIDES),
-    ("shift", "EXTEND", Extend, SIDES),
-    ("ctrl", "SHRINK", Shrink, SIDES),
-];
-
-/// What to do for a given side
-#[derive(Clone, Copy)]
-enum Action {
-    /// Shrink a side
-    Shrink,
-    /// Extend a side
-    Extend,
-    /// Move the entire selection in a direction
-    Move,
 }
 
 /// Applies a transformation to the old selection, yielding the new selection
@@ -162,11 +107,19 @@ enum Action {
 type SelectionTransformer =
     fn(origin: Point, sel_size: Size, cell_size: Size, old_sel: Selection) -> Selection;
 
-/// Type alias for the cell definition tuple for clarity
-type CellDefinition = (
-    fn(Selection) -> Selection, // Transform function
-    Icon,                       // Icon enum variant
-    fn(Selection) -> Point,     // Icon position function
+/// Cell definiton
+type CellDefinition<'a> = (
+    // keybinding
+    &'a str,
+    // label
+    &'a str,
+    // Compute the new selection
+    fn(Selection) -> Selection,
+    (
+        Icon,
+        // Compute position of icon
+        fn(Selection) -> Point,
+    ),
 );
 
 impl w::canvas::Program<crate::Message> for KeybindingsCheatsheet {
@@ -180,155 +133,165 @@ impl w::canvas::Program<crate::Message> for KeybindingsCheatsheet {
         bounds: iced::Rectangle,
         _cursor: iced::advanced::mouse::Cursor,
     ) -> Vec<w::canvas::Geometry> {
+        /// How far away the `new` selection from the `old` selection should be
+        const SEL_NEW_OLD_OFFSET: f32 = 20.0;
+        /// Size of each arrow
+        const ARROW_ICON_SIZE: f32 = 18.0;
+
         let mut frame = w::canvas::Frame::new(renderer, bounds.size());
 
-        let dimmed_theme = crate::config::Theme {
+        let theme_with_dimmed_sel = crate::config::Theme {
             selection_frame: self.theme.selection_frame.scale_alpha(0.3),
             ..self.theme
         };
 
         let cell_definitions: [CellDefinition; 12] = [
-            // --- MOVE ---
             (
-                // Left
+                "h or 🡰",
+                "Nudge Left",
                 |sel| sel.with_x(|x| x - SEL_NEW_OLD_OFFSET),
-                Icon::ArrowLeft,
-                |new_sel| new_sel.center() - Vector::diag(ARROW_ICON_SIZE / 2.0),
+                (Icon::ArrowLeft, |new_sel| {
+                    new_sel.center() - Vector::diag(ARROW_ICON_SIZE / 2.0)
+                }),
             ),
             (
-                // Right
+                "l or 🡲",
+                "Nudge Right",
                 |sel| sel.with_x(|x| x + SEL_NEW_OLD_OFFSET),
-                Icon::ArrowRight,
-                |new_sel| new_sel.center() - Vector::diag(ARROW_ICON_SIZE / 2.0),
+                (Icon::ArrowRight, |new_sel| {
+                    new_sel.center() - Vector::diag(ARROW_ICON_SIZE / 2.0)
+                }),
             ),
             (
-                // Down
+                "j or 🡳",
+                "Nudge Down",
                 |sel| sel.with_y(|y| y + SEL_NEW_OLD_OFFSET),
-                Icon::ArrowDown,
-                |new_sel| new_sel.center() - Vector::diag(ARROW_ICON_SIZE / 2.0),
+                (Icon::ArrowDown, |new_sel| {
+                    new_sel.center() - Vector::diag(ARROW_ICON_SIZE / 2.0)
+                }),
             ),
             (
-                // Up
+                "k or 🡱",
+                "Nudge Up",
                 |sel| sel.with_y(|y| y - SEL_NEW_OLD_OFFSET),
-                Icon::ArrowUp,
-                |new_sel| new_sel.center() - Vector::diag(ARROW_ICON_SIZE / 2.0),
+                (Icon::ArrowUp, |new_sel| {
+                    new_sel.center() - Vector::diag(ARROW_ICON_SIZE / 2.0)
+                }),
             ),
-            // --- EXTEND ---
             (
-                // Left
+                "shift h or 🡰",
+                "Extend Left",
                 |sel| {
                     sel.with_x(|x| x - SEL_NEW_OLD_OFFSET)
                         .with_width(|w| w + SEL_NEW_OLD_OFFSET)
                 },
-                Icon::ArrowLeft,
-                |new_sel| {
+                (Icon::ArrowLeft, |new_sel| {
                     new_sel
                         .left_center()
                         .with_y(|y| y - ARROW_ICON_SIZE / 2.0)
                         .with_x(|x| x - ARROW_ICON_SIZE)
-                },
+                }),
             ),
             (
-                // Right
+                "shift l or 🡲",
+                "Extend Right",
                 |sel| sel.with_width(|w| w + SEL_NEW_OLD_OFFSET),
-                Icon::ArrowRight,
-                |new_sel| new_sel.right_center().with_y(|y| y - ARROW_ICON_SIZE / 2.0),
+                (Icon::ArrowRight, |new_sel| {
+                    new_sel.right_center().with_y(|y| y - ARROW_ICON_SIZE / 2.0)
+                }),
             ),
             (
-                // Bottom
+                "shift j or 🡳",
+                "Extend Bottom",
                 |sel| sel.with_height(|h| h + SEL_NEW_OLD_OFFSET),
-                Icon::ArrowDown,
-                |new_sel| {
+                (Icon::ArrowDown, |new_sel| {
                     new_sel
                         .bottom_center()
                         .with_x(|x| x - ARROW_ICON_SIZE / 2.0)
-                },
+                }),
             ),
             (
-                // Top
+                "shift k or 🡱",
+                "Extend Top",
                 |sel| {
                     sel.with_y(|y| y - SEL_NEW_OLD_OFFSET)
                         .with_height(|h| h + SEL_NEW_OLD_OFFSET)
                 },
-                Icon::ArrowUp,
-                |new_sel| {
+                (Icon::ArrowUp, |new_sel| {
                     new_sel
                         .top_center()
                         .with_x(|x| x - ARROW_ICON_SIZE / 2.0)
                         .with_y(|y| y - ARROW_ICON_SIZE)
-                },
+                }),
             ),
-            // --- SHRINK ---
             (
-                // Left
+                "ctrl l or 🡲",
+                "Shrink Left",
                 |sel| {
                     sel.with_x(|x| x + SEL_NEW_OLD_OFFSET)
                         .with_width(|w| w - SEL_NEW_OLD_OFFSET)
                 },
-                Icon::ArrowRight,
-                |new_sel| new_sel.left_center().with_y(|y| y - ARROW_ICON_SIZE / 2.0),
+                (Icon::ArrowRight, |new_sel| {
+                    new_sel.left_center().with_y(|y| y - ARROW_ICON_SIZE / 2.0)
+                }),
             ),
             (
-                // Right
+                "ctrl h or 🡰",
+                "Shrink Right",
                 |sel| sel.with_width(|w| w - SEL_NEW_OLD_OFFSET),
-                Icon::ArrowLeft,
-                |new_sel| {
+                (Icon::ArrowLeft, |new_sel| {
                     new_sel
                         .right_center()
                         .with_y(|y| y - ARROW_ICON_SIZE / 2.0)
                         .with_x(|x| x - ARROW_ICON_SIZE)
-                },
+                }),
             ),
             (
-                // Bottom
+                "ctrl j or 🡳",
+                "Shrink Down",
                 |sel| sel.with_height(|h| h - SEL_NEW_OLD_OFFSET),
-                Icon::ArrowUp,
-                |new_sel| {
+                (Icon::ArrowUp, |new_sel| {
                     new_sel
                         .bottom_center()
                         .with_x(|x| x - ARROW_ICON_SIZE / 2.0)
                         .with_y(|y| y - ARROW_ICON_SIZE)
-                },
+                }),
             ),
             (
-                // Top
+                "ctrl k or 🡱",
+                "Shrink Up",
                 |sel| {
                     sel.with_y(|y| y + SEL_NEW_OLD_OFFSET)
                         .with_height(|h| h - SEL_NEW_OLD_OFFSET)
                 },
-                Icon::ArrowDown,
-                |new_sel| new_sel.top_center().with_x(|x| x - ARROW_ICON_SIZE / 2.0),
+                (Icon::ArrowDown, |new_sel| {
+                    new_sel.top_center().with_x(|x| x - ARROW_ICON_SIZE / 2.0)
+                }),
             ),
         ];
 
         let cells = cell_definitions
             .into_iter()
-            .map(|(transform_func, icon, icon_pos_func)| {
-                // Capture data specific to this cell definition for the closure
-                // Note: Function pointers are Copy. Icons might need Clone if not Copy.
-                // Themes need to be cloned if not Copy and captured.
-
+            .map(|(key, label, compute_new_sel, (icon, icon_pos_fn))| {
                 crate::ui::grid::Cell::builder()
                     .draw(move |frame: &mut w::canvas::Frame, bounds: Rectangle| {
-                        // --- Cell Drawing Logic (Relative Coordinates) ---
-                        let old_pos_relative = bounds.center() - Vector::diag(SEL_SIZE / 2.0);
+                        let sel_size = 100.0;
+                        let old_sel = Selection::new(
+                            bounds.center() - Vector::diag(sel_size / 2.0),
+                            &theme_with_dimmed_sel,
+                            false,
+                            None,
+                        )
+                        .with_size(|_| Size::square(sel_size));
 
-                        let old_sel = Selection::new(old_pos_relative, &dimmed_theme, false, None)
-                            .with_size(|_| Size::square(SEL_SIZE));
+                        let new_sel = compute_new_sel(old_sel).with_theme(&self.theme);
 
-                        let new_sel_base =
-                            Selection::new(old_pos_relative, &self.theme, false, None)
-                                .with_size(|_| Size::square(SEL_SIZE));
+                        let icon_pos_relative = icon_pos_fn(new_sel);
 
-                        // Apply the transformation specific to this cell
-                        let new_sel = transform_func(new_sel_base);
+                        // draw selection BEFORE transformation
+                        old_sel.draw_border(frame);
 
-                        // Calculate the icon position based on the *new* selection's geometry
-                        let icon_pos_relative = icon_pos_func(new_sel); // Function calculates relative pos
-
-                        // --- Draw elements relative to cell bounds ---
-                        old_sel.draw_border(frame); // Draw dimmed border
-
+                        // draw the arrow
                         frame.draw_svg(
                             iced::Rectangle {
                                 x: icon_pos_relative.x,
@@ -336,79 +299,93 @@ impl w::canvas::Program<crate::Message> for KeybindingsCheatsheet {
                                 width: ARROW_ICON_SIZE,
                                 height: ARROW_ICON_SIZE,
                             },
-                            Svg::new(icon.svg()).color(Color::WHITE), // Assuming icon.svg() exists
+                            Svg::new(icon.svg()).color(Color::WHITE),
                         );
 
+                        // draw selection AFTER transformation
                         new_sel.draw_border(frame);
-                        new_sel.draw_corners(frame); // Assuming draw_corners exists
+                        new_sel.draw_corners(frame);
+                    })
+                    .label(w::canvas::Text {
+                        content: key.to_string(),
+                        color: Color::WHITE,
+                        font: Font::MONOSPACE,
+                        shaping: Shaping::Advanced,
+                        ..Default::default()
+                    })
+                    .description(w::canvas::Text {
+                        content: label.to_string(),
+                        color: self.theme.selection_frame,
+                        font: Font {
+                            family: Family::Monospace,
+                            weight: Weight::Normal,
+                            style: font::Style::Italic,
+                            ..Default::default()
+                        },
+                        shaping: Shaping::Advanced,
+                        ..Default::default()
                     })
                     .build()
             })
             .collect::<Vec<_>>();
 
-        let grid = Grid::builder()
-            .top_left(Point::new(180.0, 250.0))
-            .cell_size(Size::square(SEL_SIZE))
-            .spacing(Size::square(100.0))
+        let basic_bindings = Grid::builder()
+            .top_left(Point::new(60.0, 0.0))
+            .cell_size(Size::new(100.0, 160.0))
+            .spacing(Size::new(100.0, 140.0))
             .columns(4)
-            .title(geometry::Text {
-                content: "Transform region by 1px:".to_string(),
-                color: Color::WHITE,
-                font: Font::MONOSPACE,
-                size: Pixels(30.0),
-                shaping: Shaping::Advanced,
-                ..Default::default()
-            })
-            .dbg()
-            .description(geometry::Text {
-                content: "TIP: Hold ALT while doing any of the above to transform by 125px!"
-                    .to_string(),
-                color: Color::WHITE,
-                size: Pixels(20.0),
-                font: Font::MONOSPACE,
-                shaping: Shaping::Advanced,
-                ..Default::default()
-            })
-            .row_labels(vec![
-                "MOVE".to_string(),
-                "shift\nEXTEND".to_string(),
-                "ctrl\nSHRINK".to_string(),
-            ])
-            .col_labels(vec![
-                "LEFT\nh or 🡰".to_string(),
-                "RIGHT\nl or 🡲".to_string(),
-                "DOWN\nj or 🡳".to_string(),
-                "UP\nk or 🡱".to_string(),
-            ])
+            .title((
+                geometry::Text {
+                    content: "Transform region by 1px:".to_string(),
+                    color: Color::WHITE,
+                    font: Font::MONOSPACE,
+                    size: Pixels(30.0),
+                    shaping: Shaping::Advanced,
+                    ..Default::default()
+                },
+                75.0,
+            ))
+            .description((
+                geometry::Text {
+                    content: "Hold ALT while doing any of the above to transform by 125px!"
+                        .to_string(),
+                    color: Color::WHITE,
+                    size: Pixels(20.0),
+                    font: Font::MONOSPACE,
+                    shaping: Shaping::Advanced,
+                    ..Default::default()
+                },
+                75.0,
+            ))
             .cells(cells)
             .build();
 
-        let grid_size = grid.size();
+        let basic_bindings_size = basic_bindings.size();
 
-        grid.draw(&mut frame);
+        basic_bindings.draw(&mut frame);
 
-        let cell_data: &[(&str, &str, SelectionTransformer)] = &[
+        let region_movement_bindings_data: &[(&str, &str, SelectionTransformer)] = &[
             (
-                "gk",
+                "gk or g🡱",
                 "go up as far\nas possible",
                 |origin, _, _, old_sel| old_sel.with_y(|_| origin.y),
             ),
             (
-                "gj",
+                "gj or g🡳",
                 "go down as far\nas possible",
                 |origin, sel_size, cell_size, old_sel| {
                     old_sel.with_y(|_| origin.y + cell_size.height - sel_size.height)
                 },
             ),
             (
-                "gl",
+                "gl or g🡲",
                 "go right as far\nas possible",
                 |origin, sel_size, cell_size, old_sel| {
                     old_sel.with_x(|_| origin.x + cell_size.width - sel_size.width)
                 },
             ),
             (
-                "gh",
+                "gh or g🡰",
                 "go left as far\nas possible",
                 |origin, _, _, old_sel| old_sel.with_x(|_| origin.x),
             ),
@@ -455,35 +432,24 @@ impl w::canvas::Program<crate::Message> for KeybindingsCheatsheet {
             ),
         ];
 
-        frame.stroke_rectangle(
-            Point::new(0.0, 0.0) + TOP_LEFT_OFFSET,
-            grid_size,
-            Stroke {
-                style: geometry::Style::Solid(iced::color!(0xff_00_00)),
-                width: 2.0,
-                ..Default::default()
-            },
-        );
-
-        Grid::builder()
-            .top_left(Point::new(
-                grid_size.width + TOP_LEFT_OFFSET.x * 2.0,
-                TOP_LEFT_OFFSET.y,
-            ))
+        let region_movement_bindings = Grid::builder()
+            .top_left(Point::new(basic_bindings_size.width + 270.0, 0.0))
             .cell_size(Size::new(100.0, 100.0))
             .spacing(Size::new(90.0, 100.0))
-            .title(w::canvas::Text {
-                content: "title of the grid...".to_string(),
-                size: 30.0.into(),
-                color: Color::WHITE,
-                font: Font::MONOSPACE,
-                shaping: Shaping::Advanced,
-                ..Default::default()
-            })
-            .dbg()
+            .title((
+                w::canvas::Text {
+                    content: "Move region:".to_string(),
+                    size: 30.0.into(),
+                    color: Color::WHITE,
+                    font: Font::MONOSPACE,
+                    shaping: Shaping::Advanced,
+                    ..Default::default()
+                },
+                75.0,
+            ))
             .columns(3)
             .cells(
-                cell_data
+                region_movement_bindings_data
                     .iter()
                     .map(|(key, desc, transform_old_sel)| {
                         crate::ui::grid::Cell::builder()
@@ -497,8 +463,11 @@ impl w::canvas::Program<crate::Message> for KeybindingsCheatsheet {
                                     0.5 * sel_size.height,
                                 ) + origin.into_vector();
 
-                                let old_sel = Selection::new(old_pos, &dimmed_theme, false, None)
-                                    .with_size(|_| sel_size);
+                                let old_sel =
+                                    Selection::new(old_pos, &theme_with_dimmed_sel, false, None)
+                                        .with_size(|_| sel_size);
+
+                                old_sel.draw_border(frame);
 
                                 let new_sel =
                                     transform_old_sel(origin, sel_size, cell_size, old_sel)
@@ -540,73 +509,93 @@ impl w::canvas::Program<crate::Message> for KeybindingsCheatsheet {
                     })
                     .collect::<Vec<_>>(),
             )
+            .build();
+
+        let region_movement_bindings_rect = region_movement_bindings.rect();
+        region_movement_bindings.draw(&mut frame);
+
+        Grid::builder()
+            .top_left(region_movement_bindings_rect.bottom_left() + Vector::y(60.0))
+            .title((
+                w::canvas::Text {
+                    content: "Pick top and then bottom corners".into(),
+                    color: Color::WHITE,
+                    size: Pixels(30.0),
+                    font: Font::MONOSPACE,
+                    ..Default::default()
+                },
+                15.0,
+            ))
+            .description((
+                w::canvas::Text {
+                    content: "select any area of the screen in 8 keystrokes!".into(),
+                    color: Color::WHITE.scale_alpha(0.8),
+                    size: Pixels(20.0),
+                    font: Font::MONOSPACE,
+                    ..Default::default()
+                },
+                15.0,
+            ))
+            .cell_size(Size::new(region_movement_bindings_rect.size().width, 200.0))
+            .columns(1)
+            .cells(vec![
+                crate::ui::grid::Cell::builder()
+                    .draw(|frame, cell_rect| {
+                        let sel_size = Size::square(100.0);
+
+                        let sel = Selection::new(
+                            cell_rect.center_for(sel_size),
+                            &self.theme,
+                            false,
+                            None,
+                        )
+                        .with_size(|_| sel_size);
+
+                        sel.draw_border(frame);
+                        sel.draw_corners(frame);
+
+                        let dotted_stroke = Stroke {
+                            style: w::canvas::Style::Solid(self.theme.selection_frame),
+                            width: 3.0,
+                            line_cap: LineCap::Round,
+                            line_join: LineJoin::Round,
+                            line_dash: w::canvas::LineDash {
+                                segments: &[5.0],
+                                offset: 0,
+                            },
+                        };
+
+                        let radius = 25.0;
+
+                        frame.stroke(
+                            &geometry::Path::circle(sel.top_left(), radius),
+                            dotted_stroke,
+                        );
+                        frame.stroke(
+                            &geometry::Path::circle(sel.bottom_right(), radius),
+                            dotted_stroke,
+                        );
+
+                        // top left label
+                        frame.fill_text(w::canvas::Text {
+                            content: "Pick top left corner: t".into(),
+                            position: sel.top_left() - Vector::new(200.0, 20.0),
+                            color: Color::WHITE,
+                            ..Default::default()
+                        });
+
+                        // bottom right label
+                        frame.fill_text(w::canvas::Text {
+                            content: "Pick bottom right corner: b".into(),
+                            position: sel.bottom_right() + Vector::x(50.0),
+                            color: Color::WHITE,
+                            ..Default::default()
+                        });
+                    })
+                    .build(),
+            ])
             .build()
             .draw(&mut frame);
-        // --- part 2
-
-        // let sel = Selection::new(
-        //     Point::new(
-        //         BASIC_MOVEMENTS_SIZE.width * 0.5 + -(SEL_SIZE / 2.0),
-        //         BASIC_MOVEMENTS_SIZE.height + 40.0,
-        //     ),
-        //     &self.theme,
-        //     false,
-        //     None,
-        // )
-        // .with_size(|_| Size::square(SEL_SIZE));
-
-        // sel.draw_border(&mut frame);
-        // sel.draw_corners(&mut frame);
-
-        // let dotted_stroke = Stroke {
-        //     style: w::canvas::Style::Solid(self.theme.selection_frame),
-        //     width: 3.0,
-        //     line_cap: LineCap::Round,
-        //     line_join: LineJoin::Round,
-        //     line_dash: w::canvas::LineDash {
-        //         segments: &[5.0],
-        //         offset: 0,
-        //     },
-        // };
-
-        // let radius = 25.0;
-
-        // frame.stroke(&Path::circle(sel.top_left(), radius), dotted_stroke);
-        // frame.stroke(&Path::circle(sel.bottom_right(), radius), dotted_stroke);
-
-        // // --- heading ---
-        // frame.fill_text(w::canvas::Text {
-        //     content: "Pick top and then bottom corners".into(),
-        //     position: Point::new(160.0, BASIC_MOVEMENTS_SIZE.height + 100.0),
-        //     color: Color::WHITE,
-        //     size: Pixels(30.0),
-        //     font: Font::MONOSPACE,
-        //     ..Default::default()
-        // });
-        // // --- subheading ---
-        // frame.fill_text(w::canvas::Text {
-        //     content: "select any area of the screen in 8 keystrokes!".into(),
-        //     position: Point::new(180.0, BASIC_MOVEMENTS_SIZE.height + 100.0),
-        //     color: Color::WHITE.scale_alpha(0.8),
-        //     size: Pixels(20.0),
-        //     font: Font::MONOSPACE,
-        //     ..Default::default()
-        // });
-
-        // // --- top left label ---
-        // frame.fill_text(w::canvas::Text {
-        //     content: "Pick top left corner: t".into(),
-        //     position: sel.top_left() - Vector::new(200.0, 20.0),
-        //     color: Color::WHITE,
-        //     ..Default::default()
-        // });
-        // // --- bottom right label ---
-        // frame.fill_text(w::canvas::Text {
-        //     content: "Pick bottom right corner: b".into(),
-        //     position: sel.bottom_right() + Vector::x(50.0),
-        //     color: Color::WHITE,
-        //     ..Default::default()
-        // });
 
         vec![frame.into_geometry()]
     }
