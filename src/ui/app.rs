@@ -596,7 +596,7 @@ impl canvas::Program<Message> for App {
         bounds: Rectangle,
         cursor: iced::advanced::mouse::Cursor,
     ) -> Option<Action<Message>> {
-        use iced::Event::{Keyboard, Mouse};
+        use iced::Event::{Keyboard, Mouse, Touch};
         use iced::keyboard::Event::KeyPressed;
         use iced::keyboard::Key::Named;
         use iced::keyboard::Modifiers;
@@ -604,6 +604,7 @@ impl canvas::Program<Message> for App {
         use iced::mouse::Button::Left;
         use iced::mouse::Event::ButtonPressed;
         use iced::mouse::Event::ButtonReleased;
+        use iced::touch::Event::{FingerLifted, FingerMoved, FingerPressed};
 
         // Handle popups. Esc = close popup
         //
@@ -710,13 +711,13 @@ impl canvas::Program<Message> for App {
         // Create the selection when it does not exist yet
 
         let message = match event {
-            Mouse(ButtonPressed(Left)) => {
+            Touch(FingerPressed { .. }) | Mouse(ButtonPressed(Left)) => {
                 state.is_left_down = true;
                 Message::Selection(Box::new(ui::selection::Message::CreateSelection(
                     cursor.position()?,
                 )))
             }
-            Mouse(ButtonReleased(Left)) => {
+            Touch(FingerLifted { .. }) | Mouse(ButtonReleased(Left)) => {
                 state.is_left_down = false;
                 Message::NoOp
             }
