@@ -604,7 +604,7 @@ impl canvas::Program<Message> for App {
         use iced::mouse::Button::Left;
         use iced::mouse::Event::ButtonPressed;
         use iced::mouse::Event::ButtonReleased;
-        use iced::touch::Event::{FingerLifted, FingerMoved, FingerPressed};
+        use iced::touch::Event::{FingerLifted, FingerPressed};
 
         // Handle popups. Esc = close popup
         //
