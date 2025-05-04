@@ -45,11 +45,11 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libgl-dev libx11-dev libx11-xcb-dev libwayland-dev
 
-      - name: Install macos deps
-        if: matrix.os == 'macos-latest'
-        run: |
-          brew install llvm
-          echo "$(brew --prefix llvm)/bin" >> $GITHUB_PATH
+      # - name: Install macos deps
+      #   if: matrix.os == 'macos-latest'
+      #   run: |
+      #     brew install llvm
+      #     echo "$(brew --prefix llvm)/bin" >> $GITHUB_PATH
 
       - run: cargo test --workspace
 
