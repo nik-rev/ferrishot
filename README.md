@@ -36,7 +36,7 @@ The selection is surrounded by buttons, each with their own keybinding. Most not
 Ferrishot can be fully keyboard controlled, with no mouse! You can select any region on the screen in just
 8 keystrokes. Pick a top-left corner by typing `t`, and pick a bottom-right corner by typing `b`:
 
-https://github.com/nik-rev/ferrishot/raw/refs/heads/main/assets/instant-shot.mp4
+<https://github.com/user-attachments/assets/7b013780-4213-4770-bbb4-6c9c8a383eb3>
 
 We also have vim motions! There is a cheatsheet available by pressing `?` to view the motions:
 
