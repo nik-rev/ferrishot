@@ -158,7 +158,7 @@ impl ImageUploadService {
         self,
         file_path: &std::path::Path,
     ) -> Result<ImageUploaded, Box<dyn Error>> {
-        let request = crate::CLIENT
+        let request = crate::HTTP_CLIENT
             .request(reqwest::Method::POST, self.post_url())
             .header(
                 "User-Agent",

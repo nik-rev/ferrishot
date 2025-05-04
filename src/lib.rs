@@ -1,7 +1,7 @@
 //! The ferrishot app
 
 /// A single client for HTTP requests
-static CLIENT: std::sync::LazyLock<reqwest::Client> =
+static HTTP_CLIENT: std::sync::LazyLock<reqwest::Client> =
     std::sync::LazyLock::new(reqwest::Client::new);
 
 mod clipboard;
