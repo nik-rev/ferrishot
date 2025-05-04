@@ -15,6 +15,8 @@ pub use image_uploaded::ImageUploaded;
 pub mod letters;
 pub use letters::{Letters, PickCorner};
 
+use super::selection_icons::icon_tooltip;
+
 /// Popup are overlaid on top and they block any events. allowing only Escape to close
 /// the popup.
 #[derive(Debug, strum::EnumTryAs)]
@@ -27,11 +29,13 @@ pub enum Popup {
     KeyCheatsheet,
 }
 
-/// Make element full screen
-fn popup<'a>(
+/// Elements inside of a `popup` render in the center of the screen
+/// with a close button
+fn popup<'app>(
     size: iced::Size,
-    contents: impl Into<Element<'a, crate::Message>>,
-) -> Element<'a, crate::Message> {
+    contents: impl Into<Element<'app, crate::Message>>,
+    theme: &'app crate::config::Theme,
+) -> Element<'app, crate::Message> {
     w::container(w::stack![
         contents.into(),
         //
@@ -41,19 +45,24 @@ fn popup<'a>(
             w::vertical_space().height(10.0),
             w::row![
                 w::horizontal_space().width(Fill),
-                w::button(
-                    crate::icon!(Close)
-                        .style(|_, _| w::svg::Style {
-                            color: Some(Color::WHITE)
-                        })
-                        .width(24.0)
-                        .height(24.0)
-                )
-                .on_press(crate::Message::ClosePopup)
-                .style(|_, _| w::button::Style {
-                    background: Some(Background::Color(Color::TRANSPARENT)),
-                    ..Default::default()
-                }),
+                icon_tooltip(
+                    w::button(
+                        crate::icon!(Close)
+                            .style(|_, _| w::svg::Style {
+                                color: Some(Color::WHITE)
+                            })
+                            .width(24.0)
+                            .height(24.0)
+                    )
+                    .on_press(crate::Message::ClosePopup)
+                    .style(|_, _| w::button::Style {
+                        background: Some(Background::Color(Color::TRANSPARENT)),
+                        ..Default::default()
+                    }),
+                    "Close",
+                    w::tooltip::Position::Right,
+                    theme
+                ),
                 w::horizontal_space().width(10.0)
             ]
             .height(size.height)

@@ -253,6 +253,7 @@ impl<'app> ImageUploaded<'app> {
                 ..Default::default()
             })
             .padding(30.0),
+            &self.app.config.theme,
         )
     }
 }

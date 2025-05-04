@@ -44,14 +44,14 @@ impl crate::message::Handler for Message {
 
 /// Show a cheatsheet for the default keybindings available in ferrishot
 #[derive(Debug, Copy, Clone)]
-pub struct KeybindingsCheatsheet {
+pub struct KeybindingsCheatsheet<'app> {
     /// Theme of the app
-    pub theme: crate::config::Theme,
+    pub theme: &'app crate::config::Theme,
 }
 
-impl KeybindingsCheatsheet {
+impl<'app> KeybindingsCheatsheet<'app> {
     /// Show the keybinding cheatsheet
-    pub fn view(self) -> Element<'static, crate::Message> {
+    pub fn view(self) -> Element<'app, crate::Message> {
         let size = Size::new(1550.0, 1000.0);
         super::popup(
             size,
@@ -62,6 +62,7 @@ impl KeybindingsCheatsheet {
                 })
                 .width(size.width)
                 .height(size.height),
+            self.theme,
         )
     }
 }
@@ -86,7 +87,7 @@ type CellDefinition<'a> = (
     ),
 );
 
-impl w::canvas::Program<crate::Message> for KeybindingsCheatsheet {
+impl w::canvas::Program<crate::Message> for KeybindingsCheatsheet<'_> {
     type State = ();
 
     fn draw(
@@ -106,7 +107,7 @@ impl w::canvas::Program<crate::Message> for KeybindingsCheatsheet {
 
         let theme_with_dimmed_sel = crate::config::Theme {
             selection_frame: self.theme.selection_frame.scale_alpha(0.3),
-            ..self.theme
+            ..*self.theme
         };
 
         let cell_definitions: [CellDefinition; 12] = [
@@ -248,7 +249,7 @@ impl w::canvas::Program<crate::Message> for KeybindingsCheatsheet {
                         )
                         .with_size(|_| Size::square(sel_size));
 
-                        let new_sel = compute_new_sel(old_sel).with_theme(&self.theme);
+                        let new_sel = compute_new_sel(old_sel).with_theme(self.theme);
 
                         let icon_pos_relative = icon_pos_fn(new_sel);
 
@@ -435,7 +436,7 @@ impl w::canvas::Program<crate::Message> for KeybindingsCheatsheet {
 
                                 let new_sel =
                                     transform_old_sel(origin, sel_size, cell_size, old_sel)
-                                        .with_theme(&self.theme);
+                                        .with_theme(self.theme);
 
                                 new_sel.draw_border(frame);
                                 new_sel.draw_corners(frame);
@@ -507,13 +508,9 @@ impl w::canvas::Program<crate::Message> for KeybindingsCheatsheet {
                     .draw(|frame, cell_rect| {
                         let sel_size = Size::square(100.0);
 
-                        let sel = Selection::new(
-                            cell_rect.center_for(sel_size),
-                            &self.theme,
-                            false,
-                            None,
-                        )
-                        .with_size(|_| sel_size);
+                        let sel =
+                            Selection::new(cell_rect.center_for(sel_size), self.theme, false, None)
+                                .with_size(|_| sel_size);
 
                         sel.draw_border(frame);
                         sel.draw_corners(frame);

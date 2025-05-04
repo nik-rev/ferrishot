@@ -205,7 +205,7 @@ impl App {
                     }
                     .view(),
                     Popup::KeyCheatsheet => ui::popup::KeybindingsCheatsheet {
-                        theme: self.config.theme,
+                        theme: &self.config.theme,
                     }
                     .view(),
                 }
