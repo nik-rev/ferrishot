@@ -28,8 +28,14 @@ Run by typing `ferrishot` on the command line.
 The selection is surrounded by buttons, each with their own keybinding. Most notably:
 
 - `Enter` copies screenshot to clipboard
-- `Ctrl u` uploads the screenshot to the internet, giving you the link and QR Code - so you can easily send it to your phone!
 - `Ctrl s` saves screenshot to a file. You can choose any valid extension like `.png`, `.webp`, `.jpg`
+- `Ctrl u` uploads the screenshot to the internet
+
+#### Image Uploaded
+
+You get a link and a QR Code, so you can easily send it to another device!
+
+![uploaded image](assets/image_uploaded_online.webp)
 
 ### Size Indicator
 

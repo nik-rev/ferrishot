@@ -169,7 +169,7 @@ theme {
   cheatsheet-bg 0x00_00_00
   cheatsheet-fg 0xff_ff_ff
 
-  popup-close-icon-bg 0x00_00_00 opacity=0
+  popup-close-icon-bg 0x00_00_00 opacity=0.0
   popup-close-icon-fg 0xff_ff_ff
 
   // debug menu, for development (F12)
