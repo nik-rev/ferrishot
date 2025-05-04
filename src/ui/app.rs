@@ -1,6 +1,8 @@
 //! Main logic for the application, handling of events and mutation of the state
 
 use std::sync::Arc;
+use std::time::Duration;
+use std::time::Instant;
 
 use crate::Cli;
 use crate::Config;
@@ -10,9 +12,11 @@ use crate::ui;
 use crate::ui::PickCorner;
 use iced::Length::Fill;
 use iced::Renderer;
+use iced::Subscription;
 use iced::Theme;
 use iced::mouse::Interaction;
 use iced::widget::Canvas;
+use iced::window;
 use iced::{
     Rectangle,
     widget::{Action, canvas},
@@ -70,6 +74,12 @@ pub static SAVED_IMAGE: std::sync::OnceLock<image::DynamicImage> = std::sync::On
 /// Holds the state for ferrishot
 #[derive(Debug)]
 pub struct App {
+    /// If an image is in the process of being uploaded (but hasn't yet)
+    pub is_uploading_image: bool,
+    /// When the application was launched
+    pub time_started: Instant,
+    /// How long has passed since starting ferrishot
+    pub time_elapsed: Duration,
     /// Config of the app
     pub config: Arc<Config>,
     /// A list of messages which obtained while the debug overlay is active
@@ -108,6 +118,9 @@ impl App {
     #[must_use]
     pub fn new(cli: Arc<Cli>, config: Arc<Config>) -> Self {
         Self {
+            is_uploading_image: false,
+            time_started: Instant::now(),
+            time_elapsed: Duration::default(),
             selection: cli.region.map(|rect| Selection {
                 theme: config.theme,
                 is_first: true,
@@ -146,6 +159,12 @@ impl App {
     /// circumstances <https://github.com/iced-rs/iced/issues/2625>
     fn exit() -> Task<Message> {
         iced::window::get_latest().then(|id| iced::window::close(id.expect("window to exist")))
+    }
+
+    /// This method is used to keep track of time / how much time has passed since start
+    /// of the program, using this for animations.
+    pub fn subscription(&self) -> Subscription<crate::Message> {
+        window::frames().map(crate::Message::Tick)
     }
 
     /// Renders the app
@@ -222,6 +241,9 @@ impl App {
         use crate::message::Handler as _;
 
         match message {
+            Message::Tick(instant) => {
+                self.time_elapsed = instant.duration_since(self.time_started);
+            }
             Message::KeyCheatsheet(key_cheatsheet) => {
                 return key_cheatsheet.handle(self);
             }
@@ -239,6 +261,7 @@ impl App {
             }
             Message::NoOp => (),
             Message::KeyBind { action, count } => match action {
+                KeyAction::NoOp => {}
                 KeyAction::OpenKeybindingsCheatsheet => {
                     self.keybinding_cheatsheet.is_open = !self.keybinding_cheatsheet.is_open;
                 }
@@ -477,6 +500,8 @@ impl App {
                         return Task::none();
                     };
 
+                    self.is_uploading_image = true;
+
                     let cropped_image = selection.process_image(
                         self.image.width(),
                         self.image.height(),
@@ -487,6 +512,7 @@ impl App {
                         Ok(tempdir) => tempdir.into_path().join("ferrishot-screenshot.png"),
                         Err(err) => {
                             self.errors.push(err.to_string());
+                            self.is_uploading_image = false;
                             return Task::none();
                         }
                     };
@@ -504,10 +530,10 @@ impl App {
                             let file_size = file.metadata().map(|meta| meta.len()).unwrap_or(0);
 
                             match crate::image_upload::upload(&file).await {
-                                Ok(url) => Message::ImageUploaded(
+                                Ok(image_uploaded) => Message::ImageUploaded(
                                     super::image_uploaded::Message::ImageUploaded(
                                         ui::image_uploaded::ImageUploadedData {
-                                            url,
+                                            image_uploaded,
                                             uploaded_image: iced::widget::image::Handle::from_path(
                                                 &file,
                                             ),

@@ -1,14 +1,17 @@
 //! Icons around the selection rectangle
 
+use core::f32;
+
 use iced::{
     Element,
     Length::{self, Fill},
-    Padding, Rectangle,
+    Padding, Radians, Rectangle, Rotation,
     widget::{Column, Row, Space, row, tooltip},
 };
 
-use crate::ui::selection::ICON_BUTTON_SIZE;
 use crate::{config::KeyAction, icon, message::Message, ui::selection::FRAME_WIDTH};
+use crate::{icons::Icon, ui::selection::ICON_BUTTON_SIZE};
+use iced::widget as w;
 use iced::{Background, Border, Shadow, widget};
 
 // Here is the behaviour that we want
@@ -155,51 +158,57 @@ impl<'app> SelectionIcons<'app> {
     pub fn view(self) -> Element<'app, Message> {
         let icons = vec![
             (
-                selection_icon(icon!(Fullscreen), &self.app.config.theme)
-                    .on_press(Message::KeyBind {
-                        action: KeyAction::SelectFullScreen,
-                        count: 1,
-                    })
-                    .into(),
+                icon!(Fullscreen),
+                KeyAction::SelectFullScreen,
                 "Select entire monitor (F11)",
             ),
             (
-                selection_icon(icon!(Clipboard), &self.app.config.theme)
-                    .on_press(Message::KeyBind {
-                        action: KeyAction::CopyToClipboard,
-                        count: 1,
-                    })
-                    .into(),
+                icon!(Clipboard),
+                KeyAction::CopyToClipboard,
                 "Copy to Clipboard (Enter)",
             ),
             (
-                selection_icon(icon!(Save), &self.app.config.theme)
-                    .on_press(Message::KeyBind {
-                        action: KeyAction::SaveScreenshot,
-                        count: 1,
-                    })
-                    .into(),
+                icon!(Save),
+                KeyAction::SaveScreenshot,
                 "Save Screenshot (Ctrl + s)",
             ),
+            (icon!(Close), KeyAction::Exit, "Exit (esc)"),
+            if self.app.is_uploading_image {
+                // how many seconds we are into the current spin
+                let current_spin_secs = self.app.time_elapsed.as_secs_f32() % 2.0;
+                // how much % we are through the current spin
+                let current_spin_percent = current_spin_secs / 2.0;
+
+                (
+                    icon!(Spinner).rotation(Rotation::Floating(Radians(
+                        current_spin_percent * f32::consts::TAU,
+                    ))),
+                    // TODO: Clicking this should cancel the image upload
+                    KeyAction::NoOp,
+                    "Screenshot is being uploaded...",
+                )
+            } else {
+                (
+                    icon!(Upload),
+                    KeyAction::UploadScreenshot,
+                    "Upload Screenshot (Ctrl + u)",
+                )
+            },
+        ]
+        .into_iter()
+        .map(|(icon, action, label)| {
             (
-                selection_icon(icon!(Close), &self.app.config.theme)
+                selection_icon(icon, &self.app.config.theme)
                     .on_press(Message::KeyBind {
-                        action: KeyAction::Exit,
+                        action,
+                        // Count does not actually matter at all, since it does not make sense to
+                        // do any of the buttons multiple times.
                         count: 1,
                     })
                     .into(),
-                "Exit (esc)",
-            ),
-            (
-                selection_icon(icon!(Upload), &self.app.config.theme)
-                    .on_press(Message::KeyBind {
-                        action: KeyAction::UploadScreenshot,
-                        count: 1,
-                    })
-                    .into(),
-                "Upload Screenshot (Ctrl + u)",
-            ),
-        ];
+                label,
+            )
+        });
 
         let is_enough_space_at_bottom = self.image_height
             - (self.selection_rect.y + self.selection_rect.height)

@@ -58,15 +58,18 @@ impl crate::message::Handler for Message {
                     });
                 }
             }
-            Self::ImageUploaded(data) => match iced::widget::qr_code::Data::new(data.url.clone()) {
-                Ok(qr_code) => {
-                    app.image_uploaded.url = Some((qr_code, data));
-                    app.selection = None;
+            Self::ImageUploaded(data) => {
+                app.is_uploading_image = false;
+                match iced::widget::qr_code::Data::new(data.image_uploaded.link.clone()) {
+                    Ok(qr_code) => {
+                        app.image_uploaded.url = Some((qr_code, data));
+                        app.selection = None;
+                    }
+                    Err(err) => {
+                        app.errors.push(format!("Failed to get QR Code: {err}"));
+                    }
                 }
-                Err(err) => {
-                    app.errors.push(format!("Failed to get QR Code: {err}"));
-                }
-            },
+            }
         }
 
         Task::none()
@@ -76,8 +79,8 @@ impl crate::message::Handler for Message {
 /// Data of the uploaded image
 #[derive(Clone, Debug)]
 pub struct ImageUploadedData {
-    /// link to the uploaded image
-    pub url: String,
+    /// data of the image upload
+    pub image_uploaded: crate::image_upload::ImageUploaded,
     /// the uploaded image
     pub uploaded_image: iced::widget::image::Handle,
     /// The height of the image
@@ -127,7 +130,7 @@ impl<'app> ImageUploaded<'app> {
                                 // URL Text
                                 //
                                 container(
-                                    text(self.data.url.clone())
+                                    text(self.data.image_uploaded.link.clone())
                                         .color(self.app.config.theme.image_uploaded_fg)
                                 )
                                 .center_y(Fill),
@@ -156,7 +159,7 @@ impl<'app> ImageUploaded<'app> {
                                                 .height(Length::Fixed(25.0)),
                                         )
                                         .on_press(crate::Message::ImageUploaded(Message::CopyLink(
-                                            self.data.url.to_string(),
+                                            self.data.image_uploaded.link.to_string(),
                                         )))
                                         .style(|_, _| {
                                             iced::widget::button::Style {
@@ -204,12 +207,17 @@ impl<'app> ImageUploaded<'app> {
                     // Metadata
                     //
                     container(column![
-                        text!("size: {w} ✕ {h}", w = self.data.width, h = self.data.height)
-                            .shaping(text::Shaping::Advanced),
                         text!(
-                            "filesize: {}",
-                            human_bytes::human_bytes(self.data.file_size as f64)
+                            "Image dimensions: {w} ✕ {h}",
+                            w = self.data.width,
+                            h = self.data.height
                         )
+                        .shaping(text::Shaping::Advanced),
+                        text!(
+                            "Filesize: {}",
+                            human_bytes::human_bytes(self.data.file_size as f64)
+                        ),
+                        text!("Link expires in: {}", self.data.image_uploaded.expires_in)
                     ])
                     .center_x(Fill),
                     //

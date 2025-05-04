@@ -1,5 +1,7 @@
 //! A message represents some event in the app that mutates the state
 
+use std::time::Instant;
+
 use crate::ui;
 
 use crate::config::KeyAction;
@@ -15,6 +17,8 @@ pub trait Handler {
 pub enum Message {
     /// Image uploaded message
     ImageUploaded(ui::image_uploaded::Message),
+    /// A certain moment. This message is used for animations
+    Tick(Instant),
     /// Letters message
     Letters(ui::letters::Message),
     /// Size indicator message

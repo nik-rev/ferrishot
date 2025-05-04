@@ -79,6 +79,8 @@ load_icons! {
     Upload,
     /// Indicate success
     Check,
+    /// Loading...
+    Spinner,
 }
 
 /// Expands to an SVG by reading from the `icons/` directory
