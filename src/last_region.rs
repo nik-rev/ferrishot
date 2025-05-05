@@ -2,7 +2,6 @@
 use crate::rect::{ParseRectError, RectangleExt as _};
 use etcetera::BaseStrategy as _;
 use iced::Rectangle;
-use std::error::Error;
 use std::io::Write as _;
 use tap::Pipe as _;
 
@@ -10,14 +9,14 @@ use tap::Pipe as _;
 pub struct LastRegion;
 
 /// Could not get the last region
-#[derive(thiserror::Error, Debug, miette::Diagnostic)]
-pub enum LastRegionReadError {
+#[derive(thiserror::Error, miette::Diagnostic, Debug)]
+pub enum Error {
     /// Can't find home dir
     #[error(transparent)]
     HomeDir(#[from] etcetera::HomeDirError),
     /// Failed to parse as rectangle
     #[error(transparent)]
-    ParseRectError(#[from] ParseRectError),
+    ParseRect(#[from] ParseRectError),
     /// Failed to read the last region file
     #[error(transparent)]
     Io(#[from] std::io::Error),
@@ -28,7 +27,7 @@ impl LastRegion {
     pub const LAST_REGION_FILENAME: &str = "ferrishot-last-region.txt";
 
     /// Read the last region used
-    pub fn read() -> Result<Option<Rectangle>, LastRegionReadError> {
+    pub fn read() -> Result<Option<Rectangle>, Error> {
         etcetera::choose_base_strategy()?
             .cache_dir()
             .join(Self::LAST_REGION_FILENAME)
@@ -39,7 +38,7 @@ impl LastRegion {
     }
 
     /// Write the last used region
-    pub fn write(region: Rectangle) -> Result<(), Box<dyn Error>> {
+    pub fn write(region: Rectangle) -> Result<(), Error> {
         etcetera::choose_base_strategy()?
             .cache_dir()
             .join(Self::LAST_REGION_FILENAME)

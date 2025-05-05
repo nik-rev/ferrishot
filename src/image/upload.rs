@@ -1,6 +1,6 @@
 //! Upload images to free services
 
-use std::{error::Error, path::Path};
+use std::path::Path;
 
 use ferrishot_knus::DecodeScalar;
 use iced::futures::future::join_all;
@@ -132,6 +132,20 @@ pub struct ImageUploaded {
     pub expires_in: &'static str,
 }
 
+/// Image upload error
+#[derive(thiserror::Error, miette::Diagnostic, Debug)]
+pub enum Error {
+    /// IO error
+    #[error(transparent)]
+    Io(#[from] std::io::Error),
+    /// Reqwest error
+    #[error(transparent)]
+    Reqwest(#[from] reqwest::Error),
+    /// Invalid response. serde could not parse
+    #[error("invalid response: {0}")]
+    InvalidResponse(String),
+}
+
 impl ImageUploadService {
     /// Conservative estimate for how long until images expire
     fn expires_in(self) -> &'static str {
@@ -154,10 +168,7 @@ impl ImageUploadService {
     }
 
     /// Upload the image to the given upload service
-    pub async fn upload_image(
-        self,
-        file_path: &std::path::Path,
-    ) -> Result<ImageUploaded, Box<dyn Error>> {
+    pub async fn upload_image(self, file_path: &std::path::Path) -> Result<ImageUploaded, Error> {
         let request = crate::HTTP_CLIENT
             .request(reqwest::Method::POST, self.post_url())
             .header(
@@ -196,7 +207,9 @@ impl ImageUploadService {
                     .files
                     .into_iter()
                     .next()
-                    .ok_or("Expected uguu to return an array with 1 file")?
+                    .ok_or(Error::InvalidResponse(
+                        "Expected uguu to return an array with 1 file".to_string(),
+                    ))?
                     .url
             }
             Self::Catbox => {

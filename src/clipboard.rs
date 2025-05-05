@@ -1,4 +1,4 @@
-//! Write clipboard with either:
+//! Set clipboard with either:
 //!
 //! - PNG image
 //! - text
@@ -10,8 +10,21 @@ pub const CLIPBOARD_DAEMON_ID: &str = "__ferrishot_clipboard_daemon";
 
 use std::{fs::File, io::Write as _};
 
+/// Error with the clipboard
+#[derive(thiserror::Error, miette::Diagnostic, Debug)]
+pub enum ClipboardError {
+    /// Arboard Error
+    #[error(transparent)]
+    #[cfg(not(target_os = "linux"))]
+    Arboard(#[from] arboard::Error),
+    /// IO Error
+    #[error(transparent)]
+    #[cfg(target_os = "linux")]
+    Io(#[from] std::io::Error),
+}
+
 /// Set the text content of the clipboard
-pub fn set_text(text: &str) -> Result<(), Box<dyn std::error::Error>> {
+pub fn set_text(text: &str) -> Result<(), ClipboardError> {
     #[cfg(target_os = "linux")]
     {
         use std::process;
@@ -31,19 +44,6 @@ pub fn set_text(text: &str) -> Result<(), Box<dyn std::error::Error>> {
     }
 
     Ok(())
-}
-
-/// Error with the clipboard
-#[derive(thiserror::Error, miette::Diagnostic, Debug)]
-pub enum ClipboardError {
-    /// Arboard Error
-    #[error(transparent)]
-    #[cfg(not(target_os = "linux"))]
-    Arboard(#[from] arboard::Error),
-    /// IO Error
-    #[error(transparent)]
-    #[cfg(target_os = "linux")]
-    Io(#[from] std::io::Error),
 }
 
 /// Set the image content of the clipboard
