@@ -90,10 +90,14 @@ pub impl Vector<f32> {
 }
 
 /// Error parsing a rect
-#[derive(Debug, Clone, thiserror::Error, Eq, PartialEq)]
+#[derive(thiserror::Error, miette::Diagnostic, Debug, Clone, Eq, PartialEq)]
+#[error("Failed to parse region")]
+#[diagnostic(help(
+    "use the valid format: `<width>x<height>+<top-left-x>+<top-left-y>`, like 100x90+75+80"
+))]
 pub enum ParseRectError {
     /// Invalid format
-    #[error("Invalid format. Expected: `<width>x<height>+<top-left-x>+<top-left-y>`")]
+    #[error("Invalid format")]
     InvalidFormat,
     /// Parse float error
     #[error(transparent)]
@@ -564,7 +568,6 @@ pub impl Rectangle<f32> {
     }
 
     /// Convert this rectangle into a string
-    #[allow(dead_code, reason = "will be used later")]
     fn as_str(&self) -> String {
         format!("{}x{}+{}+{}", self.width, self.height, self.x, self.y)
     }
@@ -595,14 +598,17 @@ mod tests {
 
     #[test]
     fn parse_rect() {
-        assert_eq!(
-            Rectangle::from_str("1000x900+100+200"),
-            Ok(iced::Rectangle {
-                width: 1000.0,
-                height: 900.0,
-                x: 100.0,
-                y: 200.0,
-            })
-        );
+        let str = "1000x900+100+200";
+        let rect = iced::Rectangle {
+            width: 1000.0,
+            height: 900.0,
+            x: 100.0,
+            y: 200.0,
+        };
+
+        // string -> Rect
+        assert_eq!(Rectangle::from_str(str), Ok(rect));
+        // Rect -> string
+        assert_eq!(rect.as_str(), str.to_owned());
     }
 }

@@ -9,7 +9,6 @@ use crate::Cli;
 use crate::Config;
 use crate::config::KeyAction;
 use crate::config::Place;
-use crate::image_action;
 use crate::ui;
 use crate::ui::popup;
 use iced::Length::Fill;
@@ -27,8 +26,8 @@ use image::DynamicImage;
 use tap::Pipe as _;
 use ui::popup::PickCorner;
 
+use crate::image::RgbaHandle;
 use crate::message::Message;
-use crate::screenshot::Screenshot;
 use iced::widget::Stack;
 use iced::{Point, Size, Task};
 
@@ -61,7 +60,7 @@ pub struct App {
     /// We then create a window spanning the entire monitor, with this
     /// screenshot as background, with a canvas rendered on top - giving the
     /// illusion that we are drawing shapes on top of the screen.
-    pub image: Screenshot,
+    pub image: Arc<RgbaHandle>,
     /// Area of the screen that is selected for capture
     pub selection: Option<Selection>,
     /// Errors to display to the user
@@ -75,18 +74,19 @@ pub struct App {
     pub popup: Option<Popup>,
 }
 
+#[bon::bon]
 impl App {
     /// Run the `app` in headless mode. So, simply do whatever action is necessary and do not spawn a window
     pub async fn headless(
-        action: image_action::Message,
+        action: crate::image::action::Message,
         region: Rectangle,
         img_file: Option<&PathBuf>,
-    ) -> Result<Option<String>, String> {
-        use image_action::Output as O;
+    ) -> Result<Option<String>, crate::image::action::Error> {
+        use crate::image::action::Output as O;
 
-        match Self::get_image(img_file)
+        match crate::image::get_image(img_file)?
             .pipe(|img| Self::process_image(region, &img))
-            .pipe(|img| action.execute(img))
+            .pipe(|img| action.execute(img, region))
             .await?
         {
             // don't output anything
@@ -104,23 +104,19 @@ impl App {
         }
     }
 
-    /// Get image to use for the app
-    fn get_image(file: Option<&PathBuf>) -> Screenshot {
-        file.and_then(|path| image::ImageReader::open(path).ok())
-            .and_then(|reader| reader.decode().ok())
-            .map(|img| Screenshot::new(img.width(), img.height(), img.into_rgba8().into_raw()))
-            // Default is taking a screenshot of the desktop
-            .unwrap_or_default()
-    }
-
     /// Create a new `App`
-    #[must_use]
-    pub fn new(cli: Arc<Cli>, config: Arc<Config>, initial_selection: Option<Rectangle>) -> Self {
+    #[builder]
+    pub fn new(
+        cli: Arc<Cli>,
+        config: Arc<Config>,
+        initial_region: Option<Rectangle>,
+        image: Arc<RgbaHandle>,
+    ) -> Self {
         Self {
             is_uploading_image: false,
             time_started: Instant::now(),
             time_elapsed: Duration::ZERO,
-            selection: initial_selection.map(|rect| Selection {
+            selection: initial_region.map(|rect| Selection {
                 is_first: true,
                 accept_on_select: cli.accept_on_select,
                 theme: config.theme,
@@ -131,7 +127,7 @@ impl App {
             selections_created: 0,
             // FIXME: Currently the app cannot handle when the resolution is very small
             // if a path was passed and the path contains a valid image
-            image: Self::get_image(cli.file.as_ref()),
+            image,
             errors: Errors::default(),
             show_debug_overlay: cli.debug,
             config,
@@ -163,7 +159,7 @@ impl App {
         Stack::new()
             // taken screenshot in the background
             .push(super::BackgroundImage {
-                image_handle: Screenshot::clone(&self.image).into(),
+                image_handle: RgbaHandle::clone(&self.image).into(),
             })
             // Shade in the background + global event handler + selection renderer
             .push(Canvas::new(self).width(Fill).height(Fill))
@@ -228,7 +224,7 @@ impl App {
     /// # Panics
     ///
     /// The stored image is not a valid RGBA image
-    pub fn process_image(rect: Rectangle, image: &Screenshot) -> DynamicImage {
+    pub fn process_image(rect: Rectangle, image: &RgbaHandle) -> DynamicImage {
         image::DynamicImage::from(
             image::RgbaImage::from_raw(image.width(), image.height(), image.bytes().to_vec())
                 .expect("Image handle stores a valid image"),
@@ -296,13 +292,13 @@ impl App {
                     self.selections_created += 1;
                 }
                 KeyAction::CopyToClipboard => {
-                    return image_action::Message::Copy.handle(self);
+                    return crate::image::action::Message::Copy.handle(self);
                 }
                 KeyAction::SaveScreenshot => {
-                    return image_action::Message::Save.handle(self);
+                    return crate::image::action::Message::Save.handle(self);
                 }
                 KeyAction::UploadScreenshot => {
-                    return image_action::Message::Upload.handle(self);
+                    return crate::image::action::Message::Upload.handle(self);
                 }
                 KeyAction::Exit => return Self::exit(),
                 KeyAction::SetWidth => {

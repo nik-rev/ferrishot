@@ -1,5 +1,4 @@
 //! A `Selection` is the structure representing a selected area in the background image
-use crate::image_action;
 use crate::rect::Corners;
 use crate::rect::RectangleExt as _;
 use crate::rect::Side;
@@ -245,7 +244,7 @@ pub struct Selection {
     /// If this selection is the first one
     pub is_first: bool,
     /// Accept on select
-    pub accept_on_select: Option<image_action::Message>,
+    pub accept_on_select: Option<crate::image::action::Message>,
     /// Theme of the app
     pub theme: crate::Theme,
     /// Area represented by the selection
@@ -330,7 +329,7 @@ impl Selection {
     pub fn initial(
         rect: Rectangle,
         theme: &crate::Theme,
-        accept_on_select: Option<image_action::Message>,
+        accept_on_select: Option<crate::image::action::Message>,
     ) -> Self {
         Self {
             is_first: true,
@@ -454,7 +453,7 @@ impl Selection {
         point: Point,
         theme: &crate::Theme,
         is_first: bool,
-        accept_on_select: Option<image_action::Message>,
+        accept_on_select: Option<crate::image::action::Message>,
     ) -> Self {
         Self {
             rect: Rectangle::new(point, Size::default()),

@@ -5,11 +5,13 @@
 //! - Save image
 use std::path::PathBuf;
 
+use iced::Rectangle;
 use iced::Task;
 use iced::widget as w;
 use image::DynamicImage;
 
-use crate::image_upload::ImageUploaded;
+use crate::image::upload::ImageUploaded;
+use crate::last_region::LastRegion;
 use crate::{App, config::KeyAction, rect::RectangleExt as _, ui::popup::image_uploaded};
 
 /// Action to take with the image
@@ -48,6 +50,26 @@ pub enum Output {
     },
 }
 
+/// Image action error
+#[derive(thiserror::Error, miette::Diagnostic, Debug)]
+pub enum Error {
+    /// Clipboard error
+    #[error("failed to copy the image: {0}")]
+    Clipboard(#[from] crate::clipboard::ClipboardError),
+    /// IO error
+    #[error(transparent)]
+    Io(#[from] std::io::Error),
+    /// Image upload error
+    #[error("failed to upload the image: {0}")]
+    ImageUpload(String),
+    /// Image error
+    #[error(transparent)]
+    SaveImage(#[from] image::ImageError),
+    /// Could not get the image
+    #[error(transparent)]
+    GetImage(#[from] crate::image::GetImageError),
+}
+
 impl Message {
     /// Convert this into a key action
     pub fn into_key_action(self) -> KeyAction {
@@ -59,55 +81,60 @@ impl Message {
     }
 
     /// Execute the action
-    pub async fn execute(self, image: DynamicImage) -> Result<(Output, ImageData), String> {
+    pub async fn execute(
+        self,
+        image: DynamicImage,
+        region: Rectangle,
+    ) -> Result<(Output, ImageData), Error> {
         let image_data = ImageData {
             height: image.height(),
             width: image.width(),
         };
 
-        match self {
-            Self::Copy => {
-                let clipboard = arboard::ImageData {
-                    width: image.width() as usize,
-                    height: image.height() as usize,
-                    bytes: std::borrow::Cow::Borrowed(image.as_bytes()),
-                };
+        // NOTE: Not a hard error, so no need to abort the main action
+        if let Err(failed_to_write) = LastRegion::write(region) {
+            log::error!(
+                "Failed to save the current rectangle selection, for possible re-use: {failed_to_write}"
+            );
+        };
 
-                crate::clipboard::set_image(clipboard)
-                    .map(|_| (Output::Copied, image_data))
-                    .map_err(|e| format!("Could not copy the image: {e}"))
-            }
+        let out = match self {
+            Self::Copy => crate::clipboard::set_image(arboard::ImageData {
+                width: image.width() as usize,
+                height: image.height() as usize,
+                bytes: std::borrow::Cow::Borrowed(image.as_bytes()),
+            })
+            .map(|_| (Output::Copied, image_data))?,
             Self::Save => {
                 let _ = crate::SAVED_IMAGE.set(image);
-                Ok((Output::Saved, image_data))
+                (Output::Saved, image_data)
             }
             Self::Upload => {
-                let path = tempfile::TempDir::new()
-                    .map_err(|e| e.to_string())?
+                let path = tempfile::TempDir::new()?
                     .into_path()
                     .join("ferrishot-screenshot.png");
 
                 // TODO: allow configuring the upload format
-                image
-                    .save_with_format(&path, image::ImageFormat::Png)
-                    .map_err(|e| e.to_string())?;
+                // in-app
+                image.save_with_format(&path, image::ImageFormat::Png)?;
 
-                let file_size = path.metadata().map(|m| m.len()).unwrap_or(0);
-
-                let x = crate::image_upload::upload(&path)
-                    .await
-                    .map_err(|err| err.into_iter().next().expect("at least 1 upload provider"))?;
-
-                Ok((
+                (
                     Output::Uploaded {
+                        data: crate::image::upload::upload(&path).await.map_err(|err| {
+                            err.into_iter()
+                                .next()
+                                .map(Error::ImageUpload)
+                                .expect("at least 1 image upload provider")
+                        })?,
+                        file_size: path.metadata().map(|m| m.len()).unwrap_or(0),
                         path,
-                        data: x,
-                        file_size,
                     },
                     image_data,
-                ))
+                )
             }
-        }
+        };
+
+        Ok(out)
     }
 }
 
@@ -122,14 +149,14 @@ impl crate::message::Handler for Message {
             return Task::none();
         };
 
-        let image = App::process_image(rect, &app.image);
-
         if self.is_upload() {
             app.is_uploading_image = true;
         }
 
+        let image = App::process_image(rect, &app.image);
+
         Task::future(async move {
-            match self.execute(image).await {
+            match self.execute(image, rect).await {
                 Ok((Output::Saved | Output::Copied, _)) => crate::message::Message::Exit,
                 Ok((
                     Output::Uploaded {
@@ -147,7 +174,7 @@ impl crate::message::Handler for Message {
                         file_size,
                     },
                 )),
-                Err(err) => crate::Message::Error(err),
+                Err(err) => crate::Message::Error(err.to_string()),
             }
         })
     }

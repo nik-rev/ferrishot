@@ -96,7 +96,7 @@ impl crate::message::Handler for Message {
 #[derive(Clone, Debug)]
 pub struct ImageUploadedData {
     /// data of the image upload
-    pub image_uploaded: crate::image_upload::ImageUploaded,
+    pub image_uploaded: crate::image::upload::ImageUploaded,
     /// the uploaded image
     pub uploaded_image: iced::widget::image::Handle,
     /// The height of the image

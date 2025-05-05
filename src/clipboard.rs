@@ -30,6 +30,19 @@ pub fn set_text(text: &str) -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+/// Error with the clipboard
+#[derive(thiserror::Error, miette::Diagnostic, Debug)]
+pub enum ClipboardError {
+    /// Arboard Error
+    #[error(transparent)]
+    #[cfg(not(target_os = "linux"))]
+    Arboard(#[from] arboard::Error),
+    /// IO Error
+    #[error(transparent)]
+    #[cfg(target_os = "linux")]
+    Io(#[from] std::io::Error),
+}
+
 /// Set the image content of the clipboard
 ///
 /// # Returns
@@ -42,13 +55,8 @@ pub fn set_text(text: &str) -> Result<(), Box<dyn std::error::Error>> {
         reason = "on non-linux it is passed by value"
     )
 )]
-pub fn set_image(
-    image_data: arboard::ImageData,
-) -> Result<std::path::PathBuf, Box<dyn std::error::Error>> {
-    let clipboard_buffer_path = tempfile::Builder::new()
-        .keep(true)
-        .tempfile()
-        .expect("failed to create a temporary file, for storage of image data");
+pub fn set_image(image_data: arboard::ImageData) -> Result<std::path::PathBuf, ClipboardError> {
+    let clipboard_buffer_path = tempfile::Builder::new().keep(true).tempfile()?;
     let mut clipboard_buffer_file = File::create(&clipboard_buffer_path)?;
     clipboard_buffer_file.write_all(&image_data.bytes)?;
 

@@ -14,7 +14,7 @@
 //!   obtain the `Message` to execute for that action.
 //! - Adding opacity to colors
 
-mod cli;
+pub mod cli;
 mod key;
 mod macros;
 mod named_key;

@@ -25,11 +25,7 @@ async fn main() -> miette::Result<()> {
     // More info: <https://docs.rs/arboard/3.5.0/arboard/trait.SetExtLinux.html#tymethod.wait>
     #[cfg(target_os = "linux")]
     {
-        if std::env::args()
-            .nth(1)
-            .as_deref()
-            .is_some_and(|arg| arg == ferrishot::CLIPBOARD_DAEMON_ID)
-        {
+        if std::env::args().nth(1).as_deref() == Some(ferrishot::CLIPBOARD_DAEMON_ID) {
             ferrishot::run_clipboard_daemon().expect("Failed to run clipboard daemon");
             return Ok(());
         }
@@ -76,7 +72,7 @@ async fn main() -> miette::Result<()> {
     // Parse user's `ferrishot.kdl` config file
     let config = Arc::new(ferrishot::Config::parse(&cli.config_file)?);
     let initial_region = if cli.last_region {
-        Cli::last_region()?
+        ferrishot::LastRegion::read()?
     } else {
         cli.region
     };
@@ -96,8 +92,17 @@ async fn main() -> miette::Result<()> {
         }
         // Launch ferrishot app
         _ => {
+            let image = Arc::new(ferrishot::get_image(cli.file.as_ref())?);
+
             iced::application(
-                move || App::new(Arc::clone(&cli), Arc::clone(&config), initial_region),
+                move || {
+                    App::builder()
+                        .cli(Arc::clone(&cli))
+                        .config(Arc::clone(&config))
+                        .maybe_initial_region(initial_region)
+                        .image(Arc::clone(&image))
+                        .build()
+                },
                 App::update,
                 App::view,
             )
