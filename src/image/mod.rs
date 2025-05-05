@@ -27,6 +27,8 @@ pub enum GetImageError {
     Screenshot(#[from] screenshot::ScreenshotError),
 }
 
+/// Returns handle of the image that will be edited
+///
 /// If path is passed, use that as the image to edit.
 /// Otherwise take a screenshot of the desktop and use that to edit.
 pub fn get_image(file: Option<&PathBuf>) -> Result<RgbaHandle, GetImageError> {
@@ -35,7 +37,7 @@ pub fn get_image(file: Option<&PathBuf>) -> Result<RgbaHandle, GetImageError> {
         .map(ImageReader::decode)
         .transpose()?
         .map_or_else(
-            // no path passed = take image of the workspace
+            // no path passed = take image of the monitor
             screenshot::take,
             |img| RgbaHandle::new(img.width(), img.height(), img.into_rgba8().into_raw()).pipe(Ok),
         )?

@@ -1,4 +1,7 @@
-//! Provides methods to set the clipboard with image data
+//! Write clipboard with either:
+//!
+//! - PNG image
+//! - text
 
 /// An argument that can be passed into the program to signal that it should daemonize itself. This
 /// can be anything as long as it is unlikely to be passed in by the user by mistake.
