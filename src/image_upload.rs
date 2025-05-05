@@ -6,7 +6,7 @@ use ferrishot_knus::DecodeScalar;
 use iced::futures::future::join_all;
 use reqwest::multipart::{Form, Part};
 use serde::{Deserialize, Serialize};
-use strum::{EnumCount, IntoEnumIterator as _};
+use strum::{EnumCount as _, IntoEnumIterator as _};
 use tokio::sync::oneshot;
 
 /// Upload an image to multiple services. As soon as the first service succeeds,

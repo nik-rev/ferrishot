@@ -2,7 +2,8 @@
 
 use std::sync::Arc;
 
-use clap::Parser;
+use clap::Parser as _;
+use ferrishot::Cli;
 use miette::IntoDiagnostic as _;
 use miette::miette;
 
@@ -11,7 +12,13 @@ use ferrishot::App;
 /// RGBA bytes for the Logo of ferrishot. Generated with `build.rs`
 const LOGO: &[u8; 64 * 64 * 4] = include_bytes!(concat!(env!("OUT_DIR"), "/logo.bin"));
 
-fn main() -> miette::Result<()> {
+#[allow(
+    clippy::print_stderr,
+    clippy::print_stdout,
+    reason = "print from `main` is fine"
+)]
+#[tokio::main]
+async fn main() -> miette::Result<()> {
     // On linux, a daemon is required to provide clipboard access even when
     // the process dies.
     //
@@ -29,7 +36,7 @@ fn main() -> miette::Result<()> {
     }
 
     // Parse command line arguments
-    let cli = Arc::new(ferrishot::Cli::parse());
+    let cli = Arc::new(Cli::parse());
 
     if cli.markdown_help {
         clap_markdown::print_help_markdown::<ferrishot::Cli>();
@@ -43,8 +50,6 @@ fn main() -> miette::Result<()> {
 
     // Setup logging
     ferrishot::logging::initialize(&cli);
-
-    let save_path = cli.save_path.clone();
 
     if cli.dump_default_config {
         std::fs::create_dir_all(
@@ -61,6 +66,8 @@ fn main() -> miette::Result<()> {
         return Ok(());
     }
 
+    let cli_save_path = cli.save_path.clone();
+
     if let Some(delay) = cli.delay {
         println!("Sleeping for {delay:?}...");
         std::thread::sleep(delay);
@@ -68,32 +75,52 @@ fn main() -> miette::Result<()> {
 
     // Parse user's `ferrishot.kdl` config file
     let config = Arc::new(ferrishot::Config::parse(&cli.config_file)?);
+    let initial_region = if cli.last_region {
+        Cli::last_region()?
+    } else {
+        cli.region
+    };
 
-    // Launch ferrishot
-    iced::application(
-        move || App::new(Arc::clone(&cli), Arc::clone(&config)),
-        App::update,
-        App::view,
-    )
-    .subscription(App::subscription)
-    .window(iced::window::Settings {
-        level: iced::window::Level::Normal,
-        fullscreen: true,
-        icon: Some(
-            iced::window::icon::from_rgba(LOGO.to_vec(), 64, 64)
-                .expect("Icon to be valid RGBA bytes"),
-        ),
-        ..Default::default()
-    })
-    .title("ferrishot")
-    .default_font(iced::Font::MONOSPACE)
-    .run()
-    .map_err(|err| miette!("Failed to start ferrishot: {err}"))?;
+    match (cli.accept_on_select, initial_region) {
+        // If we want to do an action as soon as we have a selection,
+        // AND we start the app with the selection: Then don't even launch a window.
+        //
+        // Run in 'headless' mode and perform the action instantly
+        (Some(accept_on_select), Some(region)) => {
+            if let Some(output) = App::headless(accept_on_select, region, cli.file.as_ref())
+                .await
+                .map_err(|err| miette!("Failed to start ferrishot (headless): {err}"))?
+            {
+                print!("{output}");
+            }
+        }
+        // Launch ferrishot app
+        _ => {
+            iced::application(
+                move || App::new(Arc::clone(&cli), Arc::clone(&config), initial_region),
+                App::update,
+                App::view,
+            )
+            .subscription(App::subscription)
+            .window(iced::window::Settings {
+                level: iced::window::Level::Normal,
+                fullscreen: true,
+                icon: Some(
+                    iced::window::icon::from_rgba(LOGO.to_vec(), 64, 64)
+                        .expect("Icon to be valid RGBA bytes"),
+                ),
+                ..Default::default()
+            })
+            .title("ferrishot")
+            .default_font(iced::Font::MONOSPACE)
+            .run()
+            .map_err(|err| miette!("Failed to start ferrishot: {err}"))?;
+        }
+    }
 
     if let Some(saved_image) = ferrishot::SAVED_IMAGE.get() {
-        // Open file explorer to choose where to save the image
-
-        if let Some(save_path) = save_path.or_else(|| {
+        if let Some(save_path) = cli_save_path.or_else(|| {
+            // Open file explorer to choose where to save the image
             let dialog = rfd::FileDialog::new()
                 .set_title("Save Screenshot")
                 .save_file();

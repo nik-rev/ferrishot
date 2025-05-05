@@ -104,6 +104,8 @@ strum = { version = "0.27.1", features = ["derive"] }
 human_bytes = "0.4.3"
 bon = "3.6.3"
 clap-markdown = "0.1.5"
+tap = "1.0.1"
+indoc = "2.0.6"
 
 
 [lints.rust]
@@ -116,6 +118,7 @@ nursery = { priority = -1, level = "warn" }
 # $a * $b + $c is slower and less precise than $a.mul_add($b, $c) but it is more readable
 # the gain in speed / precision will be negligible in most situations
 suboptimal_flops = "allow"
+# arbitrary limit imposes unnecessary restriction and can make code harder to follow
 too_many_lines = "allow"
 # if we need it const, make it const. no need to make everything that can be const, const
 missing_const_for_fn = "allow"
@@ -126,10 +129,19 @@ cast_sign_loss = "allow"
 cast_possible_truncation = "allow"
 cast_precision_loss = "allow"
 
+missing_errors_doc = "allow"
+
+unused_trait_names = "warn"
+
 allow_attributes_without_reason = "warn"
 unwrap_used = "warn"
 missing_assert_message = "warn"
 missing_docs_in_private_items = "warn"
+
+# catch debug remnants
+print_stderr = "warn"
+print_stdout = "warn"
+dbg_macro = "warn"
 
 # The profile that 'dist' will build with
 [profile.dist]

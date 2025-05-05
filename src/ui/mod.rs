@@ -24,7 +24,7 @@ use size_indicator::size_indicator;
 use selection_icons::SelectionIcons;
 use welcome_message::welcome_message;
 
-pub use app::{App, SAVED_IMAGE};
+pub use app::App;
 
 /// An extension trait to show a red border around an element and all children
 #[easy_ext::ext(Explainer)]

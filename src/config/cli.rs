@@ -3,21 +3,12 @@ use std::time::Duration;
 use std::{path::PathBuf, sync::LazyLock};
 
 use clap::Parser;
-use etcetera::BaseStrategy;
+use etcetera::BaseStrategy as _;
 use iced::Rectangle;
+use miette::IntoDiagnostic as _;
+use tap::Pipe as _;
 
-use crate::rect::RectangleExt;
-
-/// Action to take when instantly accepting
-#[derive(clap::ValueEnum, Debug, Clone, Copy)]
-pub enum AcceptOnSelect {
-    /// Copy the selected region to the clipboard
-    Copy,
-    /// Save the selected region as a file
-    Save,
-    /// Upload the selected region to the internet
-    Upload,
-}
+use crate::rect::RectangleExt as _;
 
 /// Command line arguments for the program
 #[derive(Parser, Debug)]
@@ -44,7 +35,7 @@ pub struct Cli {
     #[arg(long, value_parser = Rectangle::from_str, value_name = "WxH+X+Y", verbatim_doc_comment)]
     pub region: Option<Rectangle>,
     /// Open ferrishot with the last selected region
-    #[arg(long)]
+    #[arg(long, conflicts_with = "region")]
     pub last_region: bool,
 
     /// Accept capture and perform the action as soon as a selection is made
@@ -56,7 +47,7 @@ pub struct Cli {
     /// clipboard for example. In 90% of situations you won't want to do much post-processing of
     /// the region and this makes that experience twice as fast. You can always opt-out with `ctrl`
     #[arg(short('a'), long, value_name = "ACTION", verbatim_doc_comment)]
-    pub accept_on_select: Option<AcceptOnSelect>,
+    pub accept_on_select: Option<crate::image_action::Message>,
 
     /// Wait this long before launch
     #[arg(
@@ -112,6 +103,25 @@ pub struct Cli {
     #[arg(long, hide = true)]
     pub markdown_help: bool,
 }
+
+impl Cli {
+    /// Read the last region used
+    pub fn last_region() -> Result<Option<Rectangle>, miette::Error> {
+        etcetera::choose_base_strategy()
+            .into_diagnostic()?
+            .cache_dir()
+            .join(LAST_REGION_FILENAME)
+            .pipe(std::fs::read_to_string)
+            .into_diagnostic()?
+            .pipe_deref(Rectangle::from_str)
+            .into_diagnostic()?
+            .pipe(Some)
+            .pipe(Ok)
+    }
+}
+
+/// Name of the file used to read the last region
+const LAST_REGION_FILENAME: &str = "ferrishot-last-region.txt";
 
 /// Represents the default location of the config file
 static DEFAULT_CONFIG_FILE_PATH: LazyLock<PathBuf> = LazyLock::new(|| {

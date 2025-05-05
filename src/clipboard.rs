@@ -5,7 +5,7 @@
 #[cfg(target_os = "linux")]
 pub const CLIPBOARD_DAEMON_ID: &str = "__ferrishot_clipboard_daemon";
 
-use std::{fs::File, io::Write};
+use std::{fs::File, io::Write as _};
 
 /// Set the text content of the clipboard
 pub fn set_text(text: &str) -> Result<(), Box<dyn std::error::Error>> {

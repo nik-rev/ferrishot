@@ -15,6 +15,8 @@ pub trait Handler {
 /// Represents an action happening in the application
 #[derive(Debug, Clone)]
 pub enum Message {
+    /// Close the app
+    Exit,
     /// Close the current popup
     ClosePopup,
     /// Image uploaded message

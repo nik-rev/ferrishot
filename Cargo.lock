@@ -1465,6 +1465,7 @@ dependencies = [
  "ferrishot_knus",
  "human_bytes",
  "image 0.25.6",
+ "indoc",
  "log",
  "miette",
  "mouse_position",
@@ -1473,6 +1474,7 @@ dependencies = [
  "serde",
  "serde_json",
  "strum 0.27.1",
+ "tap",
  "tempfile",
  "thiserror 2.0.12",
  "tokio",
@@ -2575,6 +2577,12 @@ dependencies = [
  "equivalent",
  "hashbrown 0.15.2",
 ]
+
+[[package]]
+name = "indoc"
+version = "2.0.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f4c7245a08504955605670dbf141fceab975f15ca21570696aebe9d2e71576bd"
 
 [[package]]
 name = "interpolate_name"
@@ -5027,6 +5035,12 @@ dependencies = [
  "toml",
  "version-compare",
 ]
+
+[[package]]
+name = "tap"
+version = "1.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "55937e1799185b12863d447f42597ed69d9928686b8d88a1df17376a097d8369"
 
 [[package]]
 name = "target-lexicon"

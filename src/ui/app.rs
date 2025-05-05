@@ -1,5 +1,6 @@
 //! Main logic for the application, handling of events and mutation of the state
 
+use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::Duration;
 use std::time::Instant;
@@ -8,6 +9,7 @@ use crate::Cli;
 use crate::Config;
 use crate::config::KeyAction;
 use crate::config::Place;
+use crate::image_action;
 use crate::ui;
 use crate::ui::popup;
 use iced::Length::Fill;
@@ -21,6 +23,8 @@ use iced::{
     Rectangle,
     widget::{Action, canvas},
 };
+use image::DynamicImage;
+use tap::Pipe as _;
 use ui::popup::PickCorner;
 
 use crate::message::Message;
@@ -29,48 +33,13 @@ use iced::widget::Stack;
 use iced::{Point, Size, Task};
 
 use crate::rect::Direction;
-use crate::rect::RectangleExt;
+use crate::rect::RectangleExt as _;
 use crate::ui::selection::Selection;
 
 use super::Errors;
 use super::popup::Popup;
 use super::selection::OptionalSelectionExt as _;
 use super::selection::SelectionKeysState;
-
-/// The image to save to a file, chosen by the user in a file picker.
-///
-/// Unfortunately, there is simply no way to communicate something from
-/// the inside of an iced application to the outside: i.e. "Return" something
-/// from an iced program exiting. So we have to use a global variable for this.
-///
-/// This global is mutated just *once* at the end of the application's lifetime,
-/// when the window closes.
-///
-/// It is then accessed just *once* to open the file dialog and let the user pick
-/// where they want to save their image.
-///
-/// Yes, at the moment we want this when using Ctrl + S to save as file:
-/// 1. Close the application to save the file and generate the image we'll save
-/// 2. Open the file explorer, and save the image to the specified path
-///
-/// When the file explorer is spawned from the inside of an iced window, closing
-/// this window will then also close the file explorer. It means that we can't
-/// close the window and then spawn an explorer.
-///
-/// The other option is to have both windows open at the same time. But this
-/// would be really odd. First of all, we will need to un-fullscreen the App
-/// because the file explorer can spawn under the app.
-///
-/// This is going to be sub-optimal. Currently, we give off the illusion of
-/// drawing shapes and rectangles on top of the desktop. It is not immediately
-/// obvious that the app is just another window which is full-screen.
-/// Doing the above would break that illusion.
-///
-/// Ideally, we would be able to spawn a file explorer *above* the window without
-/// having to close this. But this seems to not be possible. Perhaps in the
-/// future there will be some kind of file explorer Iced widget that we
-/// can use instead of the native file explorer.
-pub static SAVED_IMAGE: std::sync::OnceLock<image::DynamicImage> = std::sync::OnceLock::new();
 
 /// Holds the state for ferrishot
 #[derive(Debug)]
@@ -107,17 +76,54 @@ pub struct App {
 }
 
 impl App {
+    /// Run the `app` in headless mode. So, simply do whatever action is necessary and do not spawn a window
+    pub async fn headless(
+        action: image_action::Message,
+        region: Rectangle,
+        img_file: Option<&PathBuf>,
+    ) -> Result<Option<String>, String> {
+        use image_action::Output as O;
+
+        match Self::get_image(img_file)
+            .pipe(|img| Self::process_image(region, &img))
+            .pipe(|img| action.execute(img))
+            .await?
+        {
+            // don't output anything
+            (O::Saved | O::Copied, _) => Ok(None),
+            (O::Uploaded { data, .. }, _) => indoc::formatdoc!(
+                "
+                    link: {link}
+                    expires: {expires}
+                ",
+                link = data.link,
+                expires = data.expires_in
+            )
+            .pipe(Some)
+            .pipe(Ok),
+        }
+    }
+
+    /// Get image to use for the app
+    fn get_image(file: Option<&PathBuf>) -> Screenshot {
+        file.and_then(|path| image::ImageReader::open(path).ok())
+            .and_then(|reader| reader.decode().ok())
+            .map(|img| Screenshot::new(img.width(), img.height(), img.into_rgba8().into_raw()))
+            // Default is taking a screenshot of the desktop
+            .unwrap_or_default()
+    }
+
     /// Create a new `App`
     #[must_use]
-    pub fn new(cli: Arc<Cli>, config: Arc<Config>) -> Self {
+    pub fn new(cli: Arc<Cli>, config: Arc<Config>, initial_selection: Option<Rectangle>) -> Self {
         Self {
             is_uploading_image: false,
             time_started: Instant::now(),
-            time_elapsed: Duration::default(),
-            selection: cli.region.map(|rect| Selection {
-                theme: config.theme,
+            time_elapsed: Duration::ZERO,
+            selection: initial_selection.map(|rect| Selection {
                 is_first: true,
                 accept_on_select: cli.accept_on_select,
+                theme: config.theme,
                 rect,
                 status: ui::selection::SelectionStatus::default(),
             }),
@@ -125,14 +131,7 @@ impl App {
             selections_created: 0,
             // FIXME: Currently the app cannot handle when the resolution is very small
             // if a path was passed and the path contains a valid image
-            image: cli
-                .file
-                .as_ref()
-                .and_then(|path| image::ImageReader::open(path).ok())
-                .and_then(|reader| reader.decode().ok())
-                .map(|img| Screenshot::new(img.width(), img.height(), img.into_rgba8().into_raw()))
-                // Default is taking a screenshot of the desktop
-                .unwrap_or_default(),
+            image: Self::get_image(cli.file.as_ref()),
             errors: Errors::default(),
             show_debug_overlay: cli.debug,
             config,
@@ -145,7 +144,11 @@ impl App {
     ///
     /// This is like `iced::exit`, but it does not cause a segfault in special
     /// circumstances <https://github.com/iced-rs/iced/issues/2625>
-    fn exit() -> Task<Message> {
+    ///
+    /// # Panics
+    ///
+    /// If there is no window
+    pub fn exit() -> Task<Message> {
         iced::window::get_latest().then(|id| iced::window::close(id.expect("window to exist")))
     }
 
@@ -219,11 +222,31 @@ impl App {
             .into()
     }
 
+    /// Convert the image into its final form, with crop (and in the future will also have
+    /// "decorations" such as arrow, circle, square)
+    ///
+    /// # Panics
+    ///
+    /// The stored image is not a valid RGBA image
+    pub fn process_image(rect: Rectangle, image: &Screenshot) -> DynamicImage {
+        image::DynamicImage::from(
+            image::RgbaImage::from_raw(image.width(), image.height(), image.bytes().to_vec())
+                .expect("Image handle stores a valid image"),
+        )
+        .crop_imm(
+            rect.x as u32,
+            rect.y as u32,
+            rect.width as u32,
+            rect.height as u32,
+        )
+    }
+
     /// Modifies the app's state
     pub fn update(&mut self, message: Message) -> Task<Message> {
         use crate::message::Handler as _;
 
         match message {
+            Message::Exit => return Self::exit(),
             Message::ClosePopup => {
                 self.popup = None;
             }
@@ -251,53 +274,6 @@ impl App {
                 KeyAction::OpenKeybindingsCheatsheet => {
                     self.popup = Some(Popup::KeyCheatsheet);
                 }
-                KeyAction::CopyToClipboard => {
-                    let Some(selection) = self.selection.map(Selection::norm) else {
-                        self.errors.push("There is no selection to copy");
-                        return Task::none();
-                    };
-
-                    let cropped_image = selection.process_image(
-                        self.image.width(),
-                        self.image.height(),
-                        self.image.bytes(),
-                    );
-
-                    let image_data = arboard::ImageData {
-                        width: cropped_image.width() as usize,
-                        height: cropped_image.height() as usize,
-                        bytes: std::borrow::Cow::Borrowed(cropped_image.as_bytes()),
-                    };
-
-                    // #[cfg_attr(
-                    //     target_os = "macos",
-                    //     expect(unused_variables, reason = "it is used on other platforms")
-                    // )]
-                    match crate::clipboard::set_image(image_data) {
-                        Ok(_img_path) => {
-                            // send desktop notification if possible, this is
-                            // just a decoration though so it's ok if we fail to do this
-                            // let mut notify = notify_rust::Notification::new();
-
-                            // notify.summary(&format!(
-                            //     "Copied image to clipboard {w}px * {h}px",
-                            //     w = cropped_image.width(),
-                            //     h = cropped_image.height()
-                            // ));
-
-                            // images are not supported on macos
-                            // #[cfg(not(target_os = "macos"))]
-                            // notify.image_path(&img_path.to_string_lossy());
-
-                            // let _ = notify.show();
-
-                            return Self::exit();
-                        }
-                        Err(err) => {
-                            self.errors.push(format!("Could not copy the image: {err}"));
-                        }
-                    }
-                }
                 KeyAction::ToggleDebugOverlay => {
                     self.show_debug_overlay = !self.show_debug_overlay;
                 }
@@ -319,23 +295,14 @@ impl App {
                     );
                     self.selections_created += 1;
                 }
+                KeyAction::CopyToClipboard => {
+                    return image_action::Message::Copy.handle(self);
+                }
                 KeyAction::SaveScreenshot => {
-                    let Some(selection) = self.selection.as_ref().map(|sel| Selection::norm(*sel))
-                    else {
-                        self.errors
-                            .push("Selection does not exist. There is nothing to copy!");
-                        return Task::none();
-                    };
-
-                    let cropped_image = selection.process_image(
-                        self.image.width(),
-                        self.image.height(),
-                        self.image.bytes(),
-                    );
-
-                    let _ = SAVED_IMAGE.set(cropped_image);
-
-                    return Self::exit();
+                    return image_action::Message::Save.handle(self);
+                }
+                KeyAction::UploadScreenshot => {
+                    return image_action::Message::Upload.handle(self);
                 }
                 KeyAction::Exit => return Self::exit(),
                 KeyAction::SetWidth => {
@@ -481,64 +448,6 @@ impl App {
                     self.popup = Some(Popup::Letters(popup::letters::State {
                         picking_corner: PickCorner::BottomRight,
                     }));
-                }
-                KeyAction::UploadScreenshot => {
-                    let Some(selection) = self.selection.as_ref().map(|sel| Selection::norm(*sel))
-                    else {
-                        self.errors
-                            .push("Select something on the screen to upload it");
-                        return Task::none();
-                    };
-
-                    self.is_uploading_image = true;
-
-                    let cropped_image = selection.process_image(
-                        self.image.width(),
-                        self.image.height(),
-                        self.image.bytes(),
-                    );
-
-                    let tempfile = match tempfile::TempDir::new() {
-                        Ok(tempdir) => tempdir.into_path().join("ferrishot-screenshot.png"),
-                        Err(err) => {
-                            self.errors.push(err.to_string());
-                            self.is_uploading_image = false;
-                            return Task::none();
-                        }
-                    };
-
-                    // TODO: add config option for setting the format to upload with
-                    if let Err(err) =
-                        cropped_image.save_with_format(&tempfile, image::ImageFormat::Png)
-                    {
-                        self.errors.push(err.to_string());
-                    }
-
-                    return Task::future(async move {
-                        {
-                            let file = tempfile;
-                            let file_size = file.metadata().map(|meta| meta.len()).unwrap_or(0);
-
-                            match crate::image_upload::upload(&file).await {
-                                Ok(image_uploaded) => Message::ImageUploaded(
-                                    popup::image_uploaded::Message::ImageUploaded(
-                                        popup::image_uploaded::ImageUploadedData {
-                                            image_uploaded,
-                                            uploaded_image: iced::widget::image::Handle::from_path(
-                                                &file,
-                                            ),
-                                            height: cropped_image.height(),
-                                            width: cropped_image.width(),
-                                            file_size,
-                                        },
-                                    ),
-                                ),
-                                Err(err) => {
-                                    Message::Error(err.into_iter().next().unwrap_or_default())
-                                }
-                            }
-                        }
-                    });
                 }
             },
             Message::Error(err) => {

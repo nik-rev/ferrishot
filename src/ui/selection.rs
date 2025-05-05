@@ -1,8 +1,7 @@
 //! A `Selection` is the structure representing a selected area in the background image
-use crate::config::AcceptOnSelect;
-use crate::config::KeyAction;
+use crate::image_action;
 use crate::rect::Corners;
-use crate::rect::RectangleExt;
+use crate::rect::RectangleExt as _;
 use crate::rect::Side;
 use crate::rect::SideOrCorner;
 use delegate::delegate;
@@ -246,7 +245,7 @@ pub struct Selection {
     /// If this selection is the first one
     pub is_first: bool,
     /// Accept on select
-    pub accept_on_select: Option<AcceptOnSelect>,
+    pub accept_on_select: Option<image_action::Message>,
     /// Theme of the app
     pub theme: crate::Theme,
     /// Area represented by the selection
@@ -327,6 +326,21 @@ pub impl Option<Selection> {
 }
 
 impl Selection {
+    /// Create the initial selection
+    pub fn initial(
+        rect: Rectangle,
+        theme: &crate::Theme,
+        accept_on_select: Option<image_action::Message>,
+    ) -> Self {
+        Self {
+            is_first: true,
+            accept_on_select,
+            theme: *theme,
+            rect,
+            status: SelectionStatus::Idle,
+        }
+    }
+
     /// Set a theme to the selection
     pub fn with_theme(mut self, theme: &crate::Theme) -> Self {
         self.theme = *theme;
@@ -367,21 +381,6 @@ impl Selection {
                 Interaction::Crosshair
             }
         })
-    }
-
-    /// Convert the image into its final form, with crop (and in the future will also have
-    /// "decorations" such as arrow, circle, square)
-    pub fn process_image(&self, width: u32, height: u32, pixels: &[u8]) -> image::DynamicImage {
-        image::DynamicImage::from(
-            image::RgbaImage::from_raw(width, height, pixels.to_vec())
-                .expect("Image handle stores a valid image"),
-        )
-        .crop_imm(
-            self.rect.x as u32,
-            self.rect.y as u32,
-            self.rect.width as u32,
-            self.rect.height as u32,
-        )
     }
 
     /// Draw shade around the selection
@@ -455,7 +454,7 @@ impl Selection {
         point: Point,
         theme: &crate::Theme,
         is_first: bool,
-        accept_on_select: Option<AcceptOnSelect>,
+        accept_on_select: Option<image_action::Message>,
     ) -> Self {
         Self {
             rect: Rectangle::new(point, Size::default()),
@@ -528,13 +527,10 @@ impl Selection {
                     |on_select| {
                         if self.is_first && !state.is_ctrl_down {
                             // we have created 1 selections in total, (the current one)
-                            let action = match on_select {
-                                AcceptOnSelect::Copy => KeyAction::CopyToClipboard,
-                                AcceptOnSelect::Save => KeyAction::SaveScreenshot,
-                                AcceptOnSelect::Upload => KeyAction::UploadScreenshot,
-                            };
-
-                            crate::Message::KeyBind { action, count: 1 }
+                            crate::Message::KeyBind {
+                                action: on_select.into_key_action(),
+                                count: 1,
+                            }
                         } else {
                             // stop the creating of the initial selection
                             crate::Message::Selection(Box::new(Message::EnterIdle))

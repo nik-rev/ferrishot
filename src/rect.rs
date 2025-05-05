@@ -6,7 +6,7 @@ use iced::{Point, Rectangle, Size, Vector, advanced::graphics::geometry, mouse, 
 
 use std::str::FromStr;
 
-use strum::IntoEnumIterator;
+use strum::IntoEnumIterator as _;
 
 /// Extension methods for `Stroke`
 #[easy_ext::ext(StrokeExt)]

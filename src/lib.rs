@@ -7,6 +7,7 @@ static HTTP_CLIENT: std::sync::LazyLock<reqwest::Client> =
 mod clipboard;
 mod config;
 mod icons;
+mod image_action;
 mod image_upload;
 pub mod logging;
 mod message;
@@ -21,4 +22,5 @@ use message::Message;
 pub use clipboard::{CLIPBOARD_DAEMON_ID, run_clipboard_daemon};
 
 pub use config::{Cli, Config, DEFAULT_KDL_CONFIG_STR, DEFAULT_LOG_FILE_PATH};
-pub use ui::{App, SAVED_IMAGE};
+pub use image_action::SAVED_IMAGE;
+pub use ui::App;
