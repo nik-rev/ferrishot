@@ -57,7 +57,9 @@ async fn main() -> miette::Result<()> {
 
         std::fs::write(&cli.config_file, ferrishot::DEFAULT_KDL_CONFIG_STR).into_diagnostic()?;
 
-        println!("Wrote the default config file to {}", cli.config_file);
+        if !cli.silent {
+            println!("Wrote the default config file to {}", cli.config_file);
+        }
 
         return Ok(());
     }
@@ -65,7 +67,9 @@ async fn main() -> miette::Result<()> {
     let cli_save_path = cli.save_path.clone();
 
     if let Some(delay) = cli.delay {
-        println!("Sleeping for {delay:?}...");
+        if !cli.silent {
+            println!("Sleeping for {delay:?}...");
+        }
         std::thread::sleep(delay);
     }
 
@@ -87,7 +91,9 @@ async fn main() -> miette::Result<()> {
                 .await
                 .map_err(|err| miette!("Failed to start ferrishot (headless): {err}"))?
             {
-                print!("{output}");
+                if !cli.silent {
+                    print!("{output}");
+                }
             }
         }
         // Launch ferrishot app

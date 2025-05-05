@@ -26,9 +26,6 @@ pub struct Cli {
 
     /// Open ferrishot with a region pre-selected
     ///
-    /// Using this option with `--accept-on-select` will run ferrishot in 'headless mode',
-    /// without making a new window
-    ///
     /// Format: `<width>x<height>+<top-left-x>+<top-left-y>`
     #[arg(long, value_parser = Rectangle::from_str, value_name = "WxH+X+Y", verbatim_doc_comment)]
     pub region: Option<Rectangle>,
@@ -39,13 +36,20 @@ pub struct Cli {
     /// Accept capture and perform the action as soon as a selection is made
     ///
     /// If holding `ctrl` while you are releasing the left mouse button on the first selection,
-    /// the behaviour is cancelled
+    /// the behavior is cancelled
     ///
     /// It's quite useful to run ferrishot, select a region and have it instantly be copied to the
     /// clipboard for example. In 90% of situations you won't want to do much post-processing of
     /// the region and this makes that experience twice as fast. You can always opt-out with `ctrl`
-    #[arg(short('a'), long, value_name = "ACTION", verbatim_doc_comment)]
+    ///
+    /// Using this option with `--region` or `--last-region` will run ferrishot in 'headless mode',
+    /// without making a new window.
+    #[arg(short, long, value_name = "ACTION", verbatim_doc_comment)]
     pub accept_on_select: Option<crate::image::action::Message>,
+
+    /// Run in silent mode. Do not output anything.
+    #[arg(short, long)]
+    pub silent: bool,
 
     /// Wait this long before launch
     #[arg(
@@ -62,7 +66,7 @@ pub struct Cli {
     //
     // --- Config ---
     //
-    /// Write the default config file
+    /// Write contents of the default config file to the config file location
     #[arg(help_heading = "Config", long, help = format!("Write the default config to {}", DEFAULT_CONFIG_FILE_PATH.display()))]
     pub dump_default_config: bool,
 
@@ -84,21 +88,21 @@ pub struct Cli {
     #[arg(help_heading = "Debug", long, hide = true, default_value_t = log::LevelFilter::Error)]
     pub log_level: log::LevelFilter,
     /// Log to stdout instead of file
-    #[arg(help_heading = "Debug", long, hide = true)]
+    #[arg(help_heading = "Debug", long, hide = true, conflicts_with = "silent")]
     pub log_stdout: bool,
-    /// Print the path of the log file
+    /// Path to the log file
     #[arg(help_heading = "Debug", long, hide = true, default_value_t = DEFAULT_LOG_FILE_PATH.to_string_lossy().to_string())]
     pub log_file: String,
     /// Launch ferrishot in debug mode (F12)
     #[arg(help_heading = "Debug", long, hide = true)]
     pub debug: bool,
     /// Output the path to the log file
-    #[arg(help_heading = "Debug", long, hide = true)]
+    #[arg(help_heading = "Debug", long, hide = true, conflicts_with = "silent")]
     pub print_log_file_path: bool,
 
     /// Print markdown of the command line interface
     /// This looks nicer than just copy-pasting the command line output into a code block
-    #[arg(long, hide = true)]
+    #[arg(long, hide = true, conflicts_with = "silent")]
     pub markdown_help: bool,
 }
 
