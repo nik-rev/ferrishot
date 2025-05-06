@@ -1,4 +1,5 @@
 //! The ferrishot app
+#![cfg_attr(test, allow(clippy::unwrap_used, reason = "ok to unwrap in test"))]
 
 mod clipboard;
 mod config;

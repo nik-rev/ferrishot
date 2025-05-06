@@ -47,3 +47,33 @@ impl LastRegion {
             .pipe(Ok)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn write_and_read_last_region() {
+        let region = Rectangle {
+            x: 42.0,
+            y: 24.0,
+            width: 800.0,
+            height: 600.0,
+        };
+
+        LastRegion::write(region).unwrap();
+
+        assert_eq!(LastRegion::read().unwrap(), Some(region));
+
+        let another_region = Rectangle {
+            x: 900.0,
+            y: 400.0,
+            width: 800.0,
+            height: 150.0,
+        };
+
+        LastRegion::write(another_region).unwrap();
+
+        assert_eq!(LastRegion::read().unwrap(), Some(another_region));
+    }
+}
