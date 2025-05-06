@@ -1,6 +1,6 @@
 # Contributing
 
-`ferrishot` takes a screenshot of the current desktop and creates a new window with background set to the taken screenshot.
+**How it works**: `ferrishot` takes a screenshot of the current desktop and creates a new window with background set to the taken screenshot.
 
 Some pointers:
 

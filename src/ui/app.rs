@@ -133,7 +133,7 @@ impl App {
                 } else {
                     formatdoc! {
                         "
-                            {check} Image saved to {save_path}
+                            {tick} Image saved to {save_path}
 
                             width: {width} px
                             height: {height} px
@@ -156,7 +156,7 @@ impl App {
                 } else {
                     formatdoc! {
                         "
-                            {check} Image copied to clipboard
+                            {tick} Image copied to clipboard
 
                             width: {width} px
                             height: {height} px
@@ -190,7 +190,7 @@ impl App {
                 } else {
                     formatdoc! {
                         "
-                            {check} Image uploaded to {link}
+                            {tick} Image uploaded to {link}
 
                             width: {width} px
                             height: {height} px

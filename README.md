@@ -170,3 +170,7 @@ If you use Linux, see [`CONTRIBUTING.md`](./CONTRIBUTING.md) for details on whic
 ```sh
 cargo install ferrishot
 ```
+
+## Contributing
+
+See [`CONTRIBUTING.md`](./CONTRIBUTING.md)
