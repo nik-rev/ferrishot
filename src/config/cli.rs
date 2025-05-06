@@ -8,9 +8,23 @@ use iced::Rectangle;
 
 use crate::rect::RectangleExt as _;
 
+use anstyle::{AnsiColor, Effects};
+
+/// get CLI styles
+fn get_cli_styles() -> clap::builder::Styles {
+    clap::builder::Styles::styled()
+        .header(AnsiColor::Green.on_default().effects(Effects::BOLD))
+        .usage(AnsiColor::Green.on_default().effects(Effects::BOLD))
+        .literal(AnsiColor::Cyan.on_default().effects(Effects::BOLD))
+        .placeholder(AnsiColor::Cyan.on_default())
+        .error(AnsiColor::Red.on_default().effects(Effects::BOLD))
+        .valid(AnsiColor::Cyan.on_default().effects(Effects::BOLD))
+        .invalid(AnsiColor::Yellow.on_default().effects(Effects::BOLD))
+}
+
 /// Command line arguments for the program
 #[derive(Parser, Debug)]
-#[command(version, about, author = "Nik Revenco")]
+#[command(version, about, author = "Nik Revenco", styles=get_cli_styles())]
 #[expect(clippy::struct_excessive_bools, reason = "normal for CLIs")]
 pub struct Cli {
     /// Instead of taking a screenshot of the desktop, open this image instead
@@ -85,24 +99,25 @@ pub struct Cli {
     // These options are hidden from the user
     //
     /// Choose a minumum level at which to log
-    #[arg(help_heading = "Debug", long, hide = true, default_value_t = log::LevelFilter::Error)]
+    #[arg(long, hide = true, default_value_t = log::LevelFilter::Error)]
     pub log_level: log::LevelFilter,
     /// Log to stdout instead of file
-    #[arg(help_heading = "Debug", long, hide = true, conflicts_with = "silent")]
+    #[arg(long, hide = true, conflicts_with = "silent")]
     pub log_stdout: bool,
     /// Path to the log file
-    #[arg(help_heading = "Debug", long, hide = true, default_value_t = DEFAULT_LOG_FILE_PATH.to_string_lossy().to_string())]
+    #[arg(long, hide = true, default_value_t = DEFAULT_LOG_FILE_PATH.to_string_lossy().to_string())]
     pub log_file: String,
     /// Launch ferrishot in debug mode (F12)
-    #[arg(help_heading = "Debug", long, hide = true)]
+    #[arg(long, hide = true)]
     pub debug: bool,
     /// Output the path to the log file
-    #[arg(help_heading = "Debug", long, hide = true, conflicts_with = "silent")]
+    #[arg(long, hide = true, conflicts_with = "silent")]
     pub print_log_file_path: bool,
 
+    #[cfg(feature = "docgen")]
     /// Print markdown of the command line interface
     /// This looks nicer than just copy-pasting the command line output into a code block
-    #[arg(long, hide = true, conflicts_with = "silent")]
+    #[arg(long, hide = true, verbatim_doc_comment, conflicts_with = "silent")]
     pub markdown_help: bool,
 }
 

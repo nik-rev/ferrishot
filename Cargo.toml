@@ -102,11 +102,20 @@ easy-ext = "1.0.2"
 derive_more = { version = "2.0.1", features = ["is_variant"] }
 strum = { version = "0.27.1", features = ["derive"] }
 human_bytes = "0.4.3"
+# generate builder methods
 bon = "3.6.3"
-clap-markdown = "0.1.5"
+# allows 
 tap = "1.0.1"
+# dedents string literals
 indoc = "2.0.6"
 
+# `docgen` feature
+# generate markdown help for the ferrishot CLI (more details in CONTRIBUTING.md)
+clap-markdown = { version = "0.1.5", optional = true }
+anstyle = "1.0.10"
+
+[features]
+docgen = ["dep:clap-markdown"]
 
 [lints.rust]
 missing_docs = "warn"

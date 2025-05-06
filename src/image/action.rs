@@ -28,9 +28,9 @@ pub enum Message {
 /// Data about the image
 pub struct ImageData {
     /// Height of the image (pixels)
-    height: u32,
+    pub height: u32,
     /// Width of the image (pixels)
-    width: u32,
+    pub width: u32,
 }
 
 /// The output of an image action
@@ -38,6 +38,8 @@ pub enum Output {
     /// Copied to the clipboard
     Copied,
     /// Saved to a path
+    ///
+    /// We don't know the path yet. We'll find out at the end of `main`.
     Saved,
     /// Uploaded to the internet
     Uploaded {

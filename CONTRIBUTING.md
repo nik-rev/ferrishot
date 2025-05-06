@@ -60,6 +60,14 @@ There seems to be _no workarounds_ for this unfortunately. So what we're doing a
 
 </details>
 
+#### CLI Markdown Help
+
+You can generate markdown documentation for the CLI interface by running:
+
+```sh
+cargo run --features docgen -- --markdown-help
+```
+
 ## Building
 
 On Windows and MacOS there are no dependencies.

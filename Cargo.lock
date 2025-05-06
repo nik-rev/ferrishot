@@ -1451,6 +1451,7 @@ dependencies = [
 name = "ferrishot"
 version = "0.2.0"
 dependencies = [
+ "anstyle",
  "arboard",
  "bon",
  "chrono",

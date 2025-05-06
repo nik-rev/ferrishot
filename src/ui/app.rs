@@ -9,6 +9,7 @@ use crate::Cli;
 use crate::Config;
 use crate::config::KeyAction;
 use crate::config::Place;
+use crate::image::action::ImageData;
 use crate::ui;
 use crate::ui::popup;
 use iced::Length::Fill;
@@ -23,6 +24,7 @@ use iced::{
     widget::{Action, canvas},
 };
 use image::DynamicImage;
+use indoc::formatdoc;
 use tap::Pipe as _;
 use ui::popup::PickCorner;
 
@@ -77,31 +79,69 @@ pub struct App {
 #[bon::bon]
 impl App {
     /// Run the `app` in headless mode. So, simply do whatever action is necessary and do not spawn a window
+    ///
+    /// Returns a closure which takes path of the saved image. It has to be this way because we don't
+    /// actually know where the image will be saved until the end of `main`.
     pub async fn headless(
         action: crate::image::action::Message,
         region: Rectangle,
         img_file: Option<&PathBuf>,
-    ) -> Result<Option<String>, crate::image::action::Error> {
+    ) -> Result<Box<dyn Fn(PathBuf) -> String>, crate::image::action::Error> {
         use crate::image::action::Output as O;
 
-        match crate::image::get_image(img_file)?
+        let (output, ImageData { height, width }) = crate::image::get_image(img_file)?
             .pipe(|img| Self::process_image(region, &img))
             .pipe(|img| action.execute(img, region))
-            .await?
-        {
-            // don't output anything
-            (O::Saved | O::Copied, _) => Ok(None),
-            (O::Uploaded { data, .. }, _) => indoc::formatdoc!(
+            .await?;
+
+        let closure: Box<dyn Fn(PathBuf) -> String> = match output {
+            O::Saved => Box::new(move |saved_path| {
+                formatdoc! {
                 "
-                    link: {link}
-                    expires: {expires}
+                    Image saved to a file
+                    ---
+
+                    width: {width}
+                    height: {height}
+
+                    save path: {path}
                 ",
-                link = data.link,
-                expires = data.expires_in
-            )
-            .pipe(Some)
-            .pipe(Ok),
-        }
+                path = saved_path.display()
+                }
+            }),
+            O::Copied => Box::new(move |_| {
+                formatdoc! {
+                "
+                    Image copied to clipboard
+                    ---
+
+                    width: {width}
+                    height: {height}
+                "
+                }
+            }),
+            O::Uploaded {
+                data, file_size, ..
+            } => Box::new(move |_| {
+                formatdoc! {
+                "
+                    Image uploaded online
+                    ---
+
+                    width: {width}
+                    height: {height}
+
+                    link: {link}
+                    expires in: {expires}
+                    file size (in bytes): {file_size}
+                ",
+                    link = data.link,
+                    expires = data.expires_in
+                }
+            }),
+        };
+
+        Ok(closure)
     }
 
     /// Create a new `App`

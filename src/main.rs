@@ -8,6 +8,7 @@ use miette::IntoDiagnostic as _;
 use miette::miette;
 
 use ferrishot::App;
+use tap::Pipe as _;
 
 /// RGBA bytes for the Logo of ferrishot. Generated with `build.rs`
 const LOGO: &[u8; 64 * 64 * 4] = include_bytes!(concat!(env!("OUT_DIR"), "/logo.bin"));
@@ -24,16 +25,15 @@ async fn main() -> miette::Result<()> {
     //
     // More info: <https://docs.rs/arboard/3.5.0/arboard/trait.SetExtLinux.html#tymethod.wait>
     #[cfg(target_os = "linux")]
-    {
-        if std::env::args().nth(1).as_deref() == Some(ferrishot::CLIPBOARD_DAEMON_ID) {
-            ferrishot::run_clipboard_daemon().expect("Failed to run clipboard daemon");
-            return Ok(());
-        }
+    if std::env::args().nth(1).as_deref() == Some(ferrishot::CLIPBOARD_DAEMON_ID) {
+        ferrishot::run_clipboard_daemon().expect("Failed to run clipboard daemon");
+        return Ok(());
     }
 
     // Parse command line arguments
     let cli = Arc::new(Cli::parse());
 
+    #[cfg(feature = "docgen")]
     if cli.markdown_help {
         clap_markdown::print_help_markdown::<ferrishot::Cli>();
         return Ok(());
@@ -64,7 +64,9 @@ async fn main() -> miette::Result<()> {
         return Ok(());
     }
 
+    // these variables need to be re-used after the `iced::application` ends
     let cli_save_path = cli.save_path.clone();
+    let is_silent = cli.silent;
 
     if let Some(delay) = cli.delay {
         if !cli.silent {
@@ -75,28 +77,26 @@ async fn main() -> miette::Result<()> {
 
     // Parse user's `ferrishot.kdl` config file
     let config = Arc::new(ferrishot::Config::parse(&cli.config_file)?);
+
+    // start the app with an initial selection of the image
     let initial_region = if cli.last_region {
         ferrishot::LastRegion::read()?
     } else {
         cli.region
     };
 
-    match (cli.accept_on_select, initial_region) {
+    let generate_output = match (cli.accept_on_select, initial_region) {
         // If we want to do an action as soon as we have a selection,
         // AND we start the app with the selection: Then don't even launch a window.
         //
         // Run in 'headless' mode and perform the action instantly
         (Some(accept_on_select), Some(region)) => {
-            if let Some(output) = App::headless(accept_on_select, region, cli.file.as_ref())
+            App::headless(accept_on_select, region, cli.file.as_ref())
                 .await
                 .map_err(|err| miette!("Failed to start ferrishot (headless): {err}"))?
-            {
-                if !cli.silent {
-                    print!("{output}");
-                }
-            }
+                .pipe(Some)
         }
-        // Launch ferrishot app
+        // Launch full ferrishot app
         _ => {
             let image = Arc::new(ferrishot::get_image(cli.file.as_ref())?);
 
@@ -126,8 +126,10 @@ async fn main() -> miette::Result<()> {
             .default_font(iced::Font::MONOSPACE)
             .run()
             .map_err(|err| miette!("Failed to start ferrishot: {err}"))?;
+
+            None
         }
-    }
+    };
 
     if let Some(saved_image) = ferrishot::SAVED_IMAGE.get() {
         if let Some(save_path) = cli_save_path.or_else(|| {
@@ -143,8 +145,15 @@ async fn main() -> miette::Result<()> {
             dialog
         }) {
             saved_image
-                .save(save_path)
+                .save(&save_path)
                 .map_err(|err| miette!("Failed to save the screenshot: {err}"))?;
+
+            if let Some(print_output) = generate_output {
+                let output = print_output(save_path);
+                if !is_silent {
+                    print!("{output}");
+                }
+            }
         }
     }
 
