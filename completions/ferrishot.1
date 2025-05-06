@@ -1,0 +1,73 @@
+.ie \n(.g .ds Aq \(aq
+.el .ds Aq '
+.TH ferrishot 1  "ferrishot 0.2.0" 
+.SH NAME
+ferrishot \- A cross\-platform desktop screenshot app
+.SH SYNOPSIS
+\fBferrishot\fR [\fB\-r\fR|\fB\-\-region\fR] [\fB\-l\fR|\fB\-\-last\-region\fR] [\fB\-a\fR|\fB\-\-accept\-on\-select\fR] [\fB\-d\fR|\fB\-\-delay\fR] [\fB\-s\fR|\fB\-\-save\-path\fR] [\fB\-D\fR|\fB\-\-dump\-default\-config\fR] [\fB\-C\fR|\fB\-\-config\-file\fR] [\fB\-S\fR|\fB\-\-silent\fR] [\fB\-j\fR|\fB\-\-json\fR] [\fB\-h\fR|\fB\-\-help\fR] [\fB\-V\fR|\fB\-\-version\fR] [\fIFILE\fR] 
+.SH DESCRIPTION
+A cross\-platform desktop screenshot app
+.SH OPTIONS
+.TP
+\fB\-r\fR, \fB\-\-region\fR=\fIWxH+X+Y\fR
+Open with a region pre\-selected
+
+Format: `<width>x<height>+<top\-left\-x>+<top\-left\-y>`
+.TP
+\fB\-l\fR, \fB\-\-last\-region\fR
+Use last region
+.TP
+\fB\-a\fR, \fB\-\-accept\-on\-select\fR=\fIACTION\fR
+Accept capture and perform the action as soon as a selection is made
+
+If holding `ctrl` while you are releasing the left mouse button on the first selection,
+the behavior is cancelled
+
+It\*(Aqs quite useful to run ferrishot, select a region and have it instantly be copied to the
+clipboard for example. In 90% of situations you won\*(Aqt want to do much post\-processing of
+the region and this makes that experience twice as fast. You can always opt\-out with `ctrl`
+
+Using this option with `\-\-region` or `\-\-last\-region` will run ferrishot in \*(Aqheadless mode\*(Aq,
+without making a new window.
+.br
+
+.br
+\fIPossible values:\fR
+.RS 14
+.IP \(bu 2
+copy: Copy image to the clipboard
+.IP \(bu 2
+save: Save image to a file
+.IP \(bu 2
+upload: Upload image to the internet
+.RE
+.TP
+\fB\-d\fR, \fB\-\-delay\fR=\fIMILLISECONDS\fR
+Wait this long before launch
+.TP
+\fB\-s\fR, \fB\-\-save\-path\fR=\fIPATH\fR
+Instead of opening a file picker to save the screenshot, save it to this path instead
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+Print help (see a summary with \*(Aq\-h\*(Aq)
+.TP
+\fB\-V\fR, \fB\-\-version\fR
+Print version
+.SH CONFIG
+.TP
+\fB\-D\fR, \fB\-\-dump\-default\-config\fR
+Write contents of the default config to /home/e/.config/ferrishot.kdl
+.TP
+\fB\-C\fR, \fB\-\-config\-file\fR=\fIfile.kdl\fR [default: /home/e/.config/ferrishot.kdl]
+Use the provided config file
+.SH OUTPUT
+.TP
+\fB\-S\fR, \fB\-\-silent\fR
+Run in silent mode. Do not print anything
+.TP
+\fB\-j\fR, \fB\-\-json\fR
+Print in JSON format
+.SH VERSION
+v0.2.0
+.SH AUTHORS
+Nik Revenco

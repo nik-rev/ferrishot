@@ -2,7 +2,7 @@
 use std::time::Duration;
 use std::{path::PathBuf, sync::LazyLock};
 
-use clap::Parser;
+use clap::{Parser, ValueHint};
 use etcetera::BaseStrategy as _;
 use iced::Rectangle;
 use indoc::indoc;
@@ -25,7 +25,7 @@ fn get_cli_styles() -> clap::builder::Styles {
 
 /// Command line arguments for the program
 #[derive(Parser, Debug)]
-#[command(version, about, author = "Nik Revenco", styles=get_cli_styles())]
+#[command(version, about, author = "Nik Revenco", styles = get_cli_styles())]
 #[expect(clippy::struct_excessive_bools, reason = "normal for CLIs")]
 pub struct Cli {
     /// Instead of taking a screenshot of the desktop, open this image instead
@@ -36,7 +36,7 @@ pub struct Cli {
     //
     // TODO: Fix this argument
     //
-    #[arg(hide = true)]
+    #[arg(hide = true, value_hint = ValueHint::FilePath)]
     pub file: Option<PathBuf>,
 
     /// Open with a region pre-selected
@@ -85,7 +85,8 @@ pub struct Cli {
         short,
         long,
         value_name = "PATH",
-        long_help = "Instead of opening a file picker to save the screenshot, save it to this path instead"
+        long_help = "Instead of opening a file picker to save the screenshot, save it to this path instead",
+        value_hint = ValueHint::FilePath
     )]
     pub save_path: Option<PathBuf>,
 
@@ -108,7 +109,8 @@ pub struct Cli {
         short = 'C',
         long,
         value_name = "file.kdl",
-        default_value_t = DEFAULT_CONFIG_FILE_PATH.to_string_lossy().to_string()
+        default_value_t = DEFAULT_CONFIG_FILE_PATH.to_string_lossy().to_string(),
+        value_hint = ValueHint::FilePath
     )]
     pub config_file: String,
 
@@ -139,7 +141,13 @@ pub struct Cli {
     #[arg(help_heading = "Debug", long, hide = true, conflicts_with = "silent")]
     pub log_stdout: bool,
     /// Path to the log file
-    #[arg(help_heading = "Debug", long, hide = true, default_value_t = DEFAULT_LOG_FILE_PATH.to_string_lossy().to_string())]
+    #[arg(
+        help_heading = "Debug",
+        long,
+        hide = true,
+        default_value_t = DEFAULT_LOG_FILE_PATH.to_string_lossy().to_string(),
+        value_hint = ValueHint::FilePath
+    )]
     pub log_file: String,
     /// Launch ferrishot in debug mode (F12)
     #[arg(help_heading = "Debug", long, hide = true)]
@@ -147,18 +155,6 @@ pub struct Cli {
     /// Output the path to the log file
     #[arg(help_heading = "Debug", long, hide = true, conflicts_with = "silent")]
     pub print_log_file_path: bool,
-
-    /// Print markdown of the command line interface
-    /// This looks nicer than just copy-pasting the command line output into a code block
-    #[arg(
-        help_heading = "Docgen",
-        long,
-        hide = true,
-        verbatim_doc_comment,
-        conflicts_with = "silent"
-    )]
-    #[cfg(feature = "docgen")]
-    pub markdown_help: bool,
 }
 
 /// Represents the default location of the config file

@@ -1,0 +1,26 @@
+name: ferrishot
+description: A cross-platform desktop screenshot app
+flags:
+  -a, --accept-on-select=: Accept on first selection
+  -C, --config-file=: Use the provided config file
+  -d, --delay=: Wait this long before launch
+  -D, --dump-default-config: Write the default config to /home/e/.config/ferrishot.kdl
+  -h, --help: Print help (see more with '--help')
+  -j, --json: Print in JSON format
+  -l, --last-region: Use last region
+  -r, --region=: Open with a region pre-selected
+  -s, --save-path=: Save image to path
+  -S, --silent: Run in silent mode
+  -V, --version: Print version
+completion:
+  flag:
+    accept-on-select:
+    - "copy\tCopy image to the clipboard"
+    - "save\tSave image to a file"
+    - "upload\tUpload image to the internet"
+    config-file:
+    - $files
+    save-path:
+    - $files
+  positional:
+  - - $files

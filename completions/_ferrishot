@@ -1,0 +1,63 @@
+#compdef ferrishot
+
+autoload -U is-at-least
+
+_ferrishot() {
+    typeset -A opt_args
+    typeset -a _arguments_options
+    local ret=1
+
+    if is-at-least 5.2; then
+        _arguments_options=(-s -S -C)
+    else
+        _arguments_options=(-s -C)
+    fi
+
+    local context curcontext="$curcontext" state line
+    _arguments "${_arguments_options[@]}" : \
+'-r+[Open with a region pre-selected]:WxH+X+Y:_default' \
+'--region=[Open with a region pre-selected]:WxH+X+Y:_default' \
+'-a+[Accept on first selection]:ACTION:((copy\:"Copy image to the clipboard"
+save\:"Save image to a file"
+upload\:"Upload image to the internet"))' \
+'--accept-on-select=[Accept on first selection]:ACTION:((copy\:"Copy image to the clipboard"
+save\:"Save image to a file"
+upload\:"Upload image to the internet"))' \
+'-d+[Wait this long before launch]:MILLISECONDS:_default' \
+'--delay=[Wait this long before launch]:MILLISECONDS:_default' \
+'-s+[Save image to path]:PATH:_files' \
+'--save-path=[Save image to path]:PATH:_files' \
+'-C+[Use the provided config file]:file.kdl:_files' \
+'--config-file=[Use the provided config file]:file.kdl:_files' \
+'--log-level=[Choose a minumum level at which to log]:LOG_LEVEL:_default' \
+'--log-file=[Path to the log file]:LOG_FILE:_files' \
+'(-r --region)-l[Use last region]' \
+'(-r --region)--last-region[Use last region]' \
+'-D[Write the default config to /home/e/.config/ferrishot.kdl]' \
+'--dump-default-config[Write the default config to /home/e/.config/ferrishot.kdl]' \
+'-S[Run in silent mode]' \
+'--silent[Run in silent mode]' \
+'(-S --silent)-j[Print in JSON format]' \
+'(-S --silent)--json[Print in JSON format]' \
+'(-S --silent)--log-stdout[Log to stdout instead of file]' \
+'--debug[Launch ferrishot in debug mode (F12)]' \
+'(-S --silent)--print-log-file-path[Output the path to the log file]' \
+'-h[Print help (see more with '\''--help'\'')]' \
+'--help[Print help (see more with '\''--help'\'')]' \
+'-V[Print version]' \
+'--version[Print version]' \
+'::file -- Instead of taking a screenshot of the desktop, open this image instead:_files' \
+&& ret=0
+}
+
+(( $+functions[_ferrishot_commands] )) ||
+_ferrishot_commands() {
+    local commands; commands=()
+    _describe -t commands 'ferrishot commands' commands "$@"
+}
+
+if [ "$funcstack[1]" = "_ferrishot" ]; then
+    _ferrishot "$@"
+else
+    compdef _ferrishot ferrishot
+fi
