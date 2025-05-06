@@ -15,8 +15,8 @@ use iced::{
 };
 
 use crate::{
-    icons::Icon,
     geometry::{PointExt as _, RectangleExt as _, SizeExt as _, VectorExt as _},
+    icons::Icon,
     ui::{grid::Grid, selection::Selection},
 };
 
