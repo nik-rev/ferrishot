@@ -15,11 +15,9 @@ use std::{fs::File, io::Write as _};
 pub enum ClipboardError {
     /// Arboard Error
     #[error(transparent)]
-    #[cfg(not(target_os = "linux"))]
     Arboard(#[from] arboard::Error),
     /// IO Error
     #[error(transparent)]
-    #[cfg(target_os = "linux")]
     Io(#[from] std::io::Error),
 }
 
