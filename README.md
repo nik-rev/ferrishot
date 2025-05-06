@@ -81,10 +81,6 @@ A cross-platform desktop screenshot app
 
 **Usage:** `ferrishot [OPTIONS]`
 
-###### **Arguments:**
-
-- `<FILE>` — Instead of taking a screenshot of the desktop, open this image instead
-
 ###### **Options:**
 
 - `-r`, `--region <WxH+X+Y>` — Open with a region pre-selected
