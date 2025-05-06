@@ -61,10 +61,6 @@ pub struct Cli {
     #[arg(short, long, value_name = "ACTION", verbatim_doc_comment)]
     pub accept_on_select: Option<crate::image::action::Message>,
 
-    /// Run in silent mode. Do not output anything.
-    #[arg(short, long)]
-    pub silent: bool,
-
     /// Wait this long before launch
     #[arg(
         long,
@@ -92,6 +88,16 @@ pub struct Cli {
         default_value_t = DEFAULT_CONFIG_FILE_PATH.to_string_lossy().to_string()
     )]
     pub config_file: String,
+
+    //
+    // --- Output
+    //
+    /// Run in silent mode. Do not output anything.
+    #[arg(help_heading = "Output", short, long)]
+    pub silent: bool,
+    /// Output in JSON format
+    #[arg(help_heading = "Output", long, conflicts_with = "silent")]
+    pub json: bool,
 
     //
     // --- Debug ---

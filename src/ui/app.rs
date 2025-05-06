@@ -86,6 +86,7 @@ impl App {
         action: crate::image::action::Message,
         region: Rectangle,
         img_file: Option<&PathBuf>,
+        is_json: bool,
     ) -> Result<Box<dyn Fn(Option<PathBuf>) -> String>, crate::image::action::Error> {
         use crate::image::action::Output as O;
 
@@ -105,54 +106,102 @@ impl App {
             O::Saved => Box::new(move |saved_path| {
                 let save_path = saved_path
                     .as_ref()
-                    .map(|path| format!("save path: {}", path.display()))
+                    .map(|path| format!("{}", path.display()))
                     .unwrap_or_default();
 
-                let file_size = saved_path
+                let file_size_bytes = saved_path
                     .unwrap_or_default()
                     .metadata()
                     .map(|meta| meta.len())
-                    .unwrap_or(0)
-                    .pipe(|bytes| human_bytes::human_bytes(bytes as f64));
+                    .unwrap_or(0);
 
-                formatdoc! {
-                "
-                    {check} Image saved to a file
+                let file_size = human_bytes::human_bytes(file_size_bytes as f64);
 
-                    width: {width} px
-                    height: {height} px
-                    file size: {file_size}
+                if is_json {
+                    formatdoc! {
+                        r#"
+                            {{
+                                "type": "save",
+                                "width": {width},
+                                "height": {height},
+                                "fileSize": "{file_size}",
+                                "fileSizeInBytes": {file_size_bytes},
+                                "savePath": "{save_path}"
+                            }}
+                        "#
+                    }
+                } else {
+                    formatdoc! {
+                        "
+                            {check} Image saved to a file
 
-                    {save_path}
-                ",
+                            width: {width} px
+                            height: {height} px
+                            file size: {file_size}
+
+                            save_path: {save_path}
+                        ",
+                    }
                 }
             }),
             O::Copied => Box::new(move |_| {
-                formatdoc! {
-                "
-                    {check} Image copied to clipboard
+                if is_json {
+                    formatdoc! {
+                        r#"
+                            {{
+                                "type": "copy",
+                                "width": {width},
+                                "height": {height},
+                            }}
+                        "#
+                    }
+                } else {
+                    formatdoc! {
+                        "
+                            {check} Image copied to clipboard
 
-                    width: {width} px
-                    height: {height} px
-                "
+                            width: {width} px
+                            height: {height} px
+                        "
+                    }
                 }
             }),
             O::Uploaded {
-                data, file_size, ..
+                data,
+                file_size: file_size_bytes,
+                ..
             } => Box::new(move |_| {
-                formatdoc! {
-                "
-                    {check} Image uploaded online
+                let link = &data.link;
+                let expires = data.expires_in;
+                let file_size = human_bytes::human_bytes(file_size_bytes as f64);
 
-                    width: {width} px
-                    height: {height} px
-                    file size: {file_size}
+                if is_json {
+                    formatdoc! {
+                        r#"
+                            {{
+                                "type": "upload",
+                                "width": {width},
+                                "height": {height},
+                                "fileSize": "{file_size}",
+                                "fileSizeInBytes": {file_size_bytes},
+                                "link": "{link}",
+                                "expiresIn": "{expires}"
+                            }}
+                        "#
+                    }
+                } else {
+                    formatdoc! {
+                        "
+                            {check} Image uploaded online
 
-                    link: {link}
-                    expires in: {expires}
-                ",
-                    link = data.link,
-                    expires = data.expires_in
+                            width: {width} px
+                            height: {height} px
+                            file size: {file_size}
+
+                            link: {link}
+                            expires in: {expires}
+                        "
+                    }
                 }
             }),
         };

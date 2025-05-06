@@ -104,7 +104,7 @@ fn main() -> miette::Result<()> {
         (Some(accept_on_select), Some(region)) => {
             let runtime = tokio::runtime::Runtime::new().into_diagnostic()?;
 
-            App::headless(accept_on_select, region, cli.file.as_ref())
+            App::headless(accept_on_select, region, cli.file.as_ref(), cli.json)
                 .pipe(|fut| runtime.block_on(fut))
                 .map_err(|err| miette!("Failed to start ferrishot (headless): {err}"))?
                 .pipe(Some)
