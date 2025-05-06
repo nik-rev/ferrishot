@@ -39,6 +39,9 @@ pub struct Cli {
     #[arg(hide = true, value_hint = ValueHint::FilePath)]
     pub file: Option<PathBuf>,
 
+    //
+    // --- Options ---
+    //
     /// Open with a region pre-selected
     ///
     /// Format: `<width>x<height>+<top-left-x>+<top-left-y>`
@@ -133,6 +136,7 @@ pub struct Cli {
         long_help = "Run in silent mode. Do not print anything"
     )]
     pub silent: bool,
+
     /// Print in JSON format
     #[arg(help_heading = "Output", short, long, conflicts_with = "silent")]
     pub json: bool,
@@ -152,6 +156,7 @@ pub struct Cli {
         hide = !cfg!(feature = "debug")
     )]
     pub log_level: log::LevelFilter,
+
     /// Log to standard error instead of file
     #[arg(
         help_heading = "Debug",
@@ -160,6 +165,7 @@ pub struct Cli {
         hide = !cfg!(feature = "debug")
     )]
     pub log_stderr: bool,
+
     /// Path to the log file
     #[arg(
         help_heading = "Debug",
@@ -170,6 +176,7 @@ pub struct Cli {
         hide = !cfg!(feature = "debug")
     )]
     pub log_file: String,
+
     /// Filter for specific Rust module or crate, instead of showing logs from all crates
     #[arg(
         help_heading = "Debug",
@@ -179,6 +186,7 @@ pub struct Cli {
         hide = !cfg!(feature = "debug")
     )]
     pub log_filter: Option<String>,
+
     /// Launch in debug mode (F12)
     #[arg(
         help_heading = "Debug",
