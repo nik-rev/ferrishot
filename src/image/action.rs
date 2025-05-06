@@ -7,12 +7,12 @@ use std::path::PathBuf;
 
 use iced::Rectangle;
 use iced::Task;
-use iced::widget as w;
 use image::DynamicImage;
 
 use crate::image::upload::ImageUploaded;
 use crate::last_region::LastRegion;
 use crate::{App, config::KeyAction, rect::RectangleExt as _, ui::popup::image_uploaded};
+use iced::widget;
 
 /// Action to take with the image
 #[derive(clap::ValueEnum, Debug, Clone, Copy, strum::EnumIs)]
@@ -170,7 +170,7 @@ impl crate::message::Handler for Message {
                 )) => crate::Message::ImageUploaded(image_uploaded::Message::ImageUploaded(
                     image_uploaded::ImageUploadedData {
                         image_uploaded: data,
-                        uploaded_image: w::image::Handle::from_path(&path),
+                        uploaded_image: widget::image::Handle::from_path(&path),
                         height,
                         width,
                         file_size,

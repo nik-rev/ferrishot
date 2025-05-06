@@ -23,6 +23,18 @@ async fn main() -> miette::Result<()> {
     // On linux, a daemon is required to provide clipboard access even when
     // the process dies.
     //
+    // If no daemon then:
+    // - Something is copied to the clipboard. It can be pasted into other apps just fine.
+    // - But, if the process from which the thing was copied dies: so does whatever we copied.
+    //   Clipboard empties!
+    //
+    // This daemon is invoked by ferrishot itself. We spawn a new `ferrishot` process and
+    // pass in a unique argument to ourselves.
+    //
+    // If we receive this argument we become a daemon, running a background process
+    // instead of the usual screenshot app which provides the clipboard item until the
+    // user copies something else to their clipboard.
+    //
     // More info: <https://docs.rs/arboard/3.5.0/arboard/trait.SetExtLinux.html#tymethod.wait>
     #[cfg(target_os = "linux")]
     if std::env::args().nth(1).as_deref() == Some(ferrishot::CLIPBOARD_DAEMON_ID) {

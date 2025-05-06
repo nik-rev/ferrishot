@@ -3,7 +3,6 @@
 //!
 //! Only one of the popups can be active at any time (see `Popup` enum)
 
-use iced::widget as w;
 pub mod keybindings_cheatsheet;
 use iced::Background;
 use iced::Element;
@@ -13,10 +12,11 @@ pub use keybindings_cheatsheet::KeybindingsCheatsheet;
 pub mod image_uploaded;
 pub use image_uploaded::ImageUploaded;
 
+use iced::widget::{
+    button, column, container, horizontal_space, row, stack, svg, tooltip, vertical_space,
+};
 pub mod letters;
 pub use letters::{Letters, PickCorner};
-
-use super::selection_icons::icon_tooltip;
 
 /// Popup are overlaid on top and they block any events. allowing only Escape to close
 /// the popup.
@@ -37,34 +37,34 @@ fn popup<'app>(
     contents: impl Into<Element<'app, crate::Message>>,
     theme: &'app crate::Theme,
 ) -> Element<'app, crate::Message> {
-    w::container(w::stack![
+    container(stack![
         contents.into(),
         //
         // Close Button 'x' in the top right corner
         //
-        w::column![
-            w::vertical_space().height(10.0),
-            w::row![
-                w::horizontal_space().width(Fill),
-                icon_tooltip(
-                    w::button(
+        column![
+            vertical_space().height(10.0),
+            row![
+                horizontal_space().width(Fill),
+                super::selection_icons::icon_tooltip(
+                    button(
                         crate::icon!(Close)
-                            .style(|_, _| w::svg::Style {
+                            .style(|_, _| svg::Style {
                                 color: Some(theme.popup_close_icon_fg)
                             })
                             .width(24.0)
                             .height(24.0)
                     )
                     .on_press(crate::Message::ClosePopup)
-                    .style(|_, _| w::button::Style {
+                    .style(|_, _| button::Style {
                         background: Some(Background::Color(theme.popup_close_icon_bg)),
                         ..Default::default()
                     }),
                     "Close",
-                    w::tooltip::Position::Right,
+                    tooltip::Position::Right,
                     theme
                 ),
-                w::horizontal_space().width(10.0)
+                horizontal_space().width(10.0)
             ]
             .height(size.height)
             .width(size.width)

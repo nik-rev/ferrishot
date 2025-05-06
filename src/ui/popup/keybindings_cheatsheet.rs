@@ -7,9 +7,9 @@ use iced::{
     advanced::{graphics::geometry, svg::Svg},
     font::{self, Family, Weight},
     widget::{
-        self as w,
+        canvas,
         canvas::{LineCap, LineJoin, Stroke},
-        container,
+        column, container,
         text::Shaping,
     },
 };
@@ -55,7 +55,7 @@ impl<'app> KeybindingsCheatsheet<'app> {
         let size = Size::new(1550.0, 1000.0);
         super::popup(
             size,
-            w::container(w::column![w::canvas(self).width(Fill).height(Fill)])
+            container(column![canvas(self).width(Fill).height(Fill)])
                 .style(|_| container::Style {
                     background: Some(Background::Color(self.theme.cheatsheet_bg)),
                     ..Default::default()
@@ -87,7 +87,7 @@ type CellDefinition<'a> = (
     ),
 );
 
-impl w::canvas::Program<crate::Message> for KeybindingsCheatsheet<'_> {
+impl canvas::Program<crate::Message> for KeybindingsCheatsheet<'_> {
     type State = ();
 
     fn draw(
@@ -97,13 +97,13 @@ impl w::canvas::Program<crate::Message> for KeybindingsCheatsheet<'_> {
         _theme: &Theme,
         bounds: iced::Rectangle,
         _cursor: iced::advanced::mouse::Cursor,
-    ) -> Vec<w::canvas::Geometry> {
+    ) -> Vec<canvas::Geometry> {
         /// How far away the `new` selection from the `old` selection should be
         const SEL_NEW_OLD_OFFSET: f32 = 20.0;
         /// Size of each arrow
         const ARROW_ICON_SIZE: f32 = 18.0;
 
-        let mut frame = w::canvas::Frame::new(renderer, bounds.size());
+        let mut frame = canvas::Frame::new(renderer, bounds.size());
 
         let theme_with_dimmed_sel = crate::Theme {
             selection_frame: self.theme.selection_frame.scale_alpha(0.3),
@@ -239,7 +239,7 @@ impl w::canvas::Program<crate::Message> for KeybindingsCheatsheet<'_> {
             .into_iter()
             .map(|(key, label, compute_new_sel, (icon, icon_pos_fn))| {
                 crate::ui::grid::Cell::builder()
-                    .draw(move |frame: &mut w::canvas::Frame, bounds: Rectangle| {
+                    .draw(move |frame: &mut canvas::Frame, bounds: Rectangle| {
                         let sel_size = 100.0;
                         let old_sel = Selection::new(
                             bounds.center() - Vector::diag(sel_size / 2.0),
@@ -271,14 +271,14 @@ impl w::canvas::Program<crate::Message> for KeybindingsCheatsheet<'_> {
                         new_sel.draw_border(frame);
                         new_sel.draw_corners(frame);
                     })
-                    .label(w::canvas::Text {
+                    .label(canvas::Text {
                         content: key.to_string(),
                         color: self.theme.cheatsheet_fg,
                         font: Font::MONOSPACE,
                         shaping: Shaping::Advanced,
                         ..Default::default()
                     })
-                    .description(w::canvas::Text {
+                    .description(canvas::Text {
                         content: label.to_string(),
                         color: self.theme.selection_frame,
                         font: Font {
@@ -402,7 +402,7 @@ impl w::canvas::Program<crate::Message> for KeybindingsCheatsheet<'_> {
             .cell_size(Size::new(100.0, 100.0))
             .spacing(Size::new(90.0, 100.0))
             .title((
-                w::canvas::Text {
+                canvas::Text {
                     content: "Move region:".to_string(),
                     size: 30.0.into(),
                     color: self.theme.cheatsheet_fg,
@@ -418,7 +418,7 @@ impl w::canvas::Program<crate::Message> for KeybindingsCheatsheet<'_> {
                     .iter()
                     .map(|(key, desc, transform_old_sel)| {
                         crate::ui::grid::Cell::builder()
-                            .draw(move |frame: &mut w::canvas::Frame, bounds: Rectangle| {
+                            .draw(move |frame: &mut canvas::Frame, bounds: Rectangle| {
                                 let cell_size = Size::new(100.0, 100.0);
                                 let sel_size = Size::square(40.0);
                                 let origin = bounds.top_left();
@@ -446,19 +446,19 @@ impl w::canvas::Program<crate::Message> for KeybindingsCheatsheet<'_> {
                                 width: 1.0,
                                 line_cap: LineCap::Round,
                                 line_join: LineJoin::Round,
-                                line_dash: w::canvas::LineDash {
+                                line_dash: canvas::LineDash {
                                     segments: &[10.0],
                                     offset: 0,
                                 },
                             })
-                            .label(w::canvas::Text {
+                            .label(canvas::Text {
                                 content: (*key).to_string(),
                                 color: self.theme.cheatsheet_fg,
                                 font: Font::MONOSPACE,
                                 shaping: Shaping::Advanced,
                                 ..Default::default()
                             })
-                            .description(w::canvas::Text {
+                            .description(canvas::Text {
                                 content: (*desc).to_string(),
                                 color: self.theme.selection_frame,
                                 font: Font {
@@ -482,7 +482,7 @@ impl w::canvas::Program<crate::Message> for KeybindingsCheatsheet<'_> {
         Grid::builder()
             .top_left(region_movement_bindings_rect.bottom_left() + Vector::y(60.0))
             .title((
-                w::canvas::Text {
+                canvas::Text {
                     content: "Pick top and then bottom corners".into(),
                     color: self.theme.cheatsheet_fg,
                     size: Pixels(30.0),
@@ -492,7 +492,7 @@ impl w::canvas::Program<crate::Message> for KeybindingsCheatsheet<'_> {
                 15.0,
             ))
             .description((
-                w::canvas::Text {
+                canvas::Text {
                     content: "select any area of the screen in 8 keystrokes!".into(),
                     color: self.theme.cheatsheet_fg,
                     size: Pixels(20.0),
@@ -516,11 +516,11 @@ impl w::canvas::Program<crate::Message> for KeybindingsCheatsheet<'_> {
                         sel.draw_corners(frame);
 
                         let dotted_stroke = Stroke {
-                            style: w::canvas::Style::Solid(self.theme.selection_frame),
+                            style: canvas::Style::Solid(self.theme.selection_frame),
                             width: 3.0,
                             line_cap: LineCap::Round,
                             line_join: LineJoin::Round,
-                            line_dash: w::canvas::LineDash {
+                            line_dash: canvas::LineDash {
                                 segments: &[5.0],
                                 offset: 0,
                             },
@@ -538,7 +538,7 @@ impl w::canvas::Program<crate::Message> for KeybindingsCheatsheet<'_> {
                         );
 
                         // top left label
-                        frame.fill_text(w::canvas::Text {
+                        frame.fill_text(canvas::Text {
                             content: "Pick top left corner: t".into(),
                             position: sel.top_left() - Vector::new(200.0, 20.0),
                             color: self.theme.cheatsheet_fg,
@@ -546,7 +546,7 @@ impl w::canvas::Program<crate::Message> for KeybindingsCheatsheet<'_> {
                         });
 
                         // bottom right label
-                        frame.fill_text(w::canvas::Text {
+                        frame.fill_text(canvas::Text {
                             content: "Pick bottom right corner: b".into(),
                             position: sel.bottom_right() + Vector::x(50.0),
                             color: self.theme.cheatsheet_fg,

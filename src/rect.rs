@@ -2,7 +2,8 @@
 //! - Corners
 //! - Point
 //! - Extension methods
-use iced::{Point, Rectangle, Size, Vector, advanced::graphics::geometry, mouse, widget as w};
+use iced::widget::{canvas, text};
+use iced::{Point, Rectangle, Size, Vector, advanced::graphics::geometry, mouse};
 
 use std::str::FromStr;
 
@@ -10,7 +11,7 @@ use strum::IntoEnumIterator as _;
 
 /// Extension methods for `Stroke`
 #[easy_ext::ext(StrokeExt)]
-pub impl w::canvas::Stroke<'_> {
+pub impl canvas::Stroke<'_> {
     /// A red stroke, for debugging purposes
     const RED: Self = Self {
         style: geometry::Style::Solid(iced::color!(0xff_00_00)),
@@ -47,7 +48,7 @@ pub impl geometry::Text {
             align_x: self.align_x.into(),
             align_y: self.align_y,
             shaping: self.shaping,
-            wrapping: w::text::Wrapping::None,
+            wrapping: text::Wrapping::None,
         };
         let para = iced::advanced::graphics::text::Paragraph::with_text(x);
 
