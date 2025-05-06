@@ -126,6 +126,23 @@ A cross-platform desktop screenshot app
 - [x] Linux (X11)
 - [x] Linux (Wayland)
 
+## Roadmap
+
+Ferrishot is under heavy development! At the moment the goal is to implement all the features that [flameshot](https://github.com/flameshot-org/flameshot) has, including more than that.
+
+- [ ] Draw shapes on the image
+  - Square
+  - Circle
+  - Arrow
+  - Pen
+- [ ] Draw text on the image
+- [ ] Other effects
+  - Blur / pixelate
+  - Numbered circles
+- [ ] Pin screenshot
+- [ ] Color picker
+- [ ] In-app tool editing
+
 ## Installation
 
 ### Homebrew
