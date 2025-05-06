@@ -150,7 +150,11 @@ crate::declare_theme_options! {
     //
     // --- Image uploaded popup ---
     //
-    image_uploaded_fg, // WHITE
-    image_uploaded_bg, // BLACK 0.9
-    success, // GREEN
+    /// Foreground color of the image_uploaded popup
+    image_uploaded_fg,
+    /// Background color of the image_uploaded popup
+    image_uploaded_bg,
+
+    /// Color of success, e.g. green check mark when copying text to clipboard
+    success,
 }

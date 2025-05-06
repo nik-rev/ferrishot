@@ -5,6 +5,7 @@
 //! - Vector
 use iced::widget::{canvas, text};
 use iced::{Point, Rectangle, Size, Vector, advanced::graphics::geometry, mouse};
+use tap::Pipe as _;
 
 use std::str::FromStr;
 
@@ -40,7 +41,8 @@ pub impl geometry::Text {
     /// on a `canvas`
     fn size(&self) -> Size {
         use iced::advanced::text::Paragraph as _;
-        let x = iced::advanced::text::Text {
+
+        iced::advanced::text::Text {
             content: self.content.as_str(),
             bounds: Size::INFINITY,
             size: self.size,
@@ -50,10 +52,9 @@ pub impl geometry::Text {
             align_y: self.align_y,
             shaping: self.shaping,
             wrapping: text::Wrapping::None,
-        };
-        let para = iced::advanced::graphics::text::Paragraph::with_text(x);
-
-        para.min_bounds()
+        }
+        .pipe(iced::advanced::graphics::text::Paragraph::with_text)
+        .min_bounds()
     }
 }
 
