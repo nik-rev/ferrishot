@@ -7,7 +7,7 @@
       <br />
       ferrishot
     </h1>
-    <h4>Screenshot app written in Rust, inspired by <a href="https://github.com/flameshot-org/flameshot">flameshot<a />.</h4>
+    <h4>Powerful screenshot app written in Rust, inspired by <a href="https://github.com/flameshot-org/flameshot">flameshot<a />.</h4>
   </p>
   <p align="center">
     <a href="https://github.com/nik-rev/ferrishot/releases">
