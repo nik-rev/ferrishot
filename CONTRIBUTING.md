@@ -10,6 +10,7 @@ Some pointers:
 - `message.rs` holds `Message` enum which defines all events that can happen which mutate the `App`'s state
   - `App::update` responds to a `Message` to mutate itself
 - `config/options.rs` defines each config option
+- `cli.rs` defines the command line interface
 
 100% of the code is documented. To take advantage of that you can use `cargo doc --document-private-items --open`.
 
