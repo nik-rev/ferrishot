@@ -18,8 +18,7 @@ const LOGO: &[u8; 64 * 64 * 4] = include_bytes!(concat!(env!("OUT_DIR"), "/logo.
     clippy::print_stdout,
     reason = "print from `main` is fine"
 )]
-#[tokio::main]
-async fn main() -> miette::Result<()> {
+fn main() -> miette::Result<()> {
     // On linux, a daemon is required to provide clipboard access even when
     // the process dies.
     //
@@ -103,8 +102,10 @@ async fn main() -> miette::Result<()> {
         //
         // Run in 'headless' mode and perform the action instantly
         (Some(accept_on_select), Some(region)) => {
+            let runtime = tokio::runtime::Runtime::new().into_diagnostic()?;
+
             App::headless(accept_on_select, region, cli.file.as_ref())
-                .await
+                .pipe(|fut| runtime.block_on(fut))
                 .map_err(|err| miette!("Failed to start ferrishot (headless): {err}"))?
                 .pipe(Some)
         }
@@ -143,7 +144,7 @@ async fn main() -> miette::Result<()> {
         }
     };
 
-    if let Some(saved_image) = ferrishot::SAVED_IMAGE.get() {
+    let saved_path = if let Some(saved_image) = ferrishot::SAVED_IMAGE.get() {
         if let Some(save_path) = cli_save_path.or_else(|| {
             // Open file explorer to choose where to save the image
             let dialog = rfd::FileDialog::new()
@@ -160,14 +161,19 @@ async fn main() -> miette::Result<()> {
                 .save(&save_path)
                 .map_err(|err| miette!("Failed to save the screenshot: {err}"))?;
 
-            if let Some(print_output) = generate_output {
-                let output = print_output(save_path);
-                if !is_silent {
-                    print!("{output}");
-                }
-            }
+            Some(save_path)
+        } else {
+            None
+        }
+    } else {
+        None
+    };
+
+    if let Some(print_output) = generate_output {
+        let output = print_output(saved_path);
+        if !is_silent {
+            print!("{output}");
         }
     }
-
     Ok(())
 }

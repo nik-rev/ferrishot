@@ -9,6 +9,10 @@ use serde::{Deserialize, Serialize};
 use strum::{EnumCount as _, IntoEnumIterator as _};
 use tokio::sync::oneshot;
 
+/// A single client for HTTP requests
+static HTTP_CLIENT: std::sync::LazyLock<reqwest::Client> =
+    std::sync::LazyLock::new(reqwest::Client::new);
+
 /// Upload an image to multiple services. As soon as the first service succeeds,
 /// cancel the other uploads.
 ///
@@ -169,7 +173,7 @@ impl ImageUploadService {
 
     /// Upload the image to the given upload service
     pub async fn upload_image(self, file_path: &std::path::Path) -> Result<ImageUploaded, Error> {
-        let request = crate::HTTP_CLIENT
+        let request = HTTP_CLIENT
             .request(reqwest::Method::POST, self.post_url())
             .header(
                 "User-Agent",

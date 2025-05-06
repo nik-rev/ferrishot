@@ -8,6 +8,7 @@ use std::path::PathBuf;
 use iced::Rectangle;
 use iced::Task;
 use image::DynamicImage;
+use tap::Pipe as _;
 
 use crate::image::upload::ImageUploaded;
 use crate::last_region::LastRegion;
@@ -45,8 +46,8 @@ pub enum Output {
     Uploaded {
         /// information about the uploaded image
         data: ImageUploaded,
-        /// file size in bytes
-        file_size: u64,
+        /// file size (human-readable)
+        file_size: String,
         /// Path to the uploaded image
         path: PathBuf,
     },
@@ -128,7 +129,11 @@ impl Message {
                                 .map(Error::ImageUpload)
                                 .expect("at least 1 image upload provider")
                         })?,
-                        file_size: path.metadata().map(|m| m.len()).unwrap_or(0),
+                        file_size: path
+                            .metadata()
+                            .map(|meta| meta.len())
+                            .unwrap_or(0)
+                            .pipe(|bytes| human_bytes::human_bytes(bytes as f64)),
                         path,
                     },
                     image_data,

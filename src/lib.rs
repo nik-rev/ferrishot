@@ -1,21 +1,18 @@
 //! The ferrishot app
 
-/// A single client for HTTP requests
-static HTTP_CLIENT: std::sync::LazyLock<reqwest::Client> =
-    std::sync::LazyLock::new(reqwest::Client::new);
-
 mod clipboard;
 mod config;
 mod icons;
 mod image;
 mod last_region;
-pub mod logging;
 mod message;
 mod rect;
 mod ui;
 
 use config::Theme;
 use message::Message;
+
+pub mod logging;
 
 #[cfg(target_os = "linux")]
 pub use clipboard::{CLIPBOARD_DAEMON_ID, run_clipboard_daemon};

@@ -86,7 +86,7 @@ impl App {
         action: crate::image::action::Message,
         region: Rectangle,
         img_file: Option<&PathBuf>,
-    ) -> Result<Box<dyn Fn(PathBuf) -> String>, crate::image::action::Error> {
+    ) -> Result<Box<dyn Fn(Option<PathBuf>) -> String>, crate::image::action::Error> {
         use crate::image::action::Output as O;
 
         let (output, ImageData { height, width }) = crate::image::get_image(img_file)?
@@ -94,29 +94,46 @@ impl App {
             .pipe(|img| action.execute(img, region))
             .await?;
 
-        let closure: Box<dyn Fn(PathBuf) -> String> = match output {
+        let green = anstyle::AnsiColor::Green
+            .on_default()
+            .effects(anstyle::Effects::BOLD);
+        let reset = anstyle::Reset;
+
+        let check = format!("{green}✓{reset}");
+
+        let closure: Box<dyn Fn(Option<PathBuf>) -> String> = match output {
             O::Saved => Box::new(move |saved_path| {
+                let save_path = saved_path
+                    .as_ref()
+                    .map(|path| format!("save path: {}", path.display()))
+                    .unwrap_or_default();
+
+                let file_size = saved_path
+                    .unwrap_or_default()
+                    .metadata()
+                    .map(|meta| meta.len())
+                    .unwrap_or(0)
+                    .pipe(|bytes| human_bytes::human_bytes(bytes as f64));
+
                 formatdoc! {
                 "
-                    Image saved to a file
-                    ---
+                    {check} Image saved to a file
 
-                    width: {width}
-                    height: {height}
+                    width: {width} px
+                    height: {height} px
+                    file size: {file_size}
 
-                    save path: {path}
+                    {save_path}
                 ",
-                path = saved_path.display()
                 }
             }),
             O::Copied => Box::new(move |_| {
                 formatdoc! {
                 "
-                    Image copied to clipboard
-                    ---
+                    {check} Image copied to clipboard
 
-                    width: {width}
-                    height: {height}
+                    width: {width} px
+                    height: {height} px
                 "
                 }
             }),
@@ -125,15 +142,14 @@ impl App {
             } => Box::new(move |_| {
                 formatdoc! {
                 "
-                    Image uploaded online
-                    ---
+                    {check} Image uploaded online
 
-                    width: {width}
-                    height: {height}
+                    width: {width} px
+                    height: {height} px
+                    file size: {file_size}
 
                     link: {link}
                     expires in: {expires}
-                    file size (in bytes): {file_size}
                 ",
                     link = data.link,
                     expires = data.expires_in

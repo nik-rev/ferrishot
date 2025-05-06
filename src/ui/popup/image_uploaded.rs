@@ -103,8 +103,8 @@ pub struct ImageUploadedData {
     pub height: u32,
     /// The width of the image
     pub width: u32,
-    /// File size in bytes
-    pub file_size: u64,
+    /// File size
+    pub file_size: String,
 }
 
 /// Data for the uploaded image
@@ -231,10 +231,7 @@ impl<'app> ImageUploaded<'app> {
                             h = self.data.height
                         )
                         .shaping(text::Shaping::Advanced),
-                        text!(
-                            "Filesize: {}",
-                            human_bytes::human_bytes(self.data.file_size as f64)
-                        ),
+                        text!("Filesize: {}", self.data.file_size),
                         text!("Link expires in: {}", self.data.image_uploaded.expires_in)
                     ])
                     .center_x(Fill),
