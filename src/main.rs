@@ -80,7 +80,7 @@ fn main() -> miette::Result<()> {
 
     // start the app with an initial selection of the image
     let initial_region = if cli.last_region {
-        ferrishot::LastRegion::read()?
+        ferrishot::last_region::read()?
     } else {
         cli.region
     };

@@ -10,7 +10,6 @@ use iced::Task;
 use image::DynamicImage;
 
 use crate::image::upload::ImageUploaded;
-use crate::last_region::LastRegion;
 use crate::{App, config::KeyAction, geometry::RectangleExt as _, ui::popup::image_uploaded};
 use iced::widget;
 
@@ -94,7 +93,7 @@ impl Message {
         };
 
         // NOTE: Not a hard error, so no need to abort the main action
-        if let Err(failed_to_write) = LastRegion::write(region) {
+        if let Err(failed_to_write) = crate::last_region::write(region) {
             log::error!(
                 "Failed to save the current rectangle selection, for possible re-use: {failed_to_write}"
             );
