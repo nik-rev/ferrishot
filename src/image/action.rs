@@ -98,7 +98,7 @@ impl Message {
             log::error!(
                 "Failed to save the current rectangle selection, for possible re-use: {failed_to_write}"
             );
-        };
+        }
 
         let out = match self {
             Self::Copy => crate::clipboard::set_image(arboard::ImageData {
