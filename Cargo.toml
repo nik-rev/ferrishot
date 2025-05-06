@@ -10,6 +10,9 @@ keywords = ["screenshot", "screen-capture", "capture", "flameshot"]
 categories = ["visualization", "multimedia"]
 authors = ["Nik Revenco"]
 
+[features]
+debug = []
+
 [workspace]
 members = [".", "docgen"]
 

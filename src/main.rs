@@ -44,11 +44,6 @@ fn main() -> miette::Result<()> {
     // Parse command line arguments
     let cli = Arc::new(Cli::parse());
 
-    if cli.print_log_file_path {
-        println!("{}", ferrishot::DEFAULT_LOG_FILE_PATH.display());
-        return Ok(());
-    }
-
     // Setup logging
     ferrishot::logging::initialize(&cli);
 

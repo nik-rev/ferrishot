@@ -42,7 +42,14 @@ pub struct Cli {
     /// Open with a region pre-selected
     ///
     /// Format: `<width>x<height>+<top-left-x>+<top-left-y>`
-    #[arg(short, long, value_parser = Rectangle::from_str, value_name = "WxH+X+Y", verbatim_doc_comment)]
+    #[arg(
+        short,
+        long,
+        value_parser = Rectangle::from_str,
+        value_name = "WxH+X+Y",
+        verbatim_doc_comment,
+        value_hint = ValueHint::Other
+    )]
     pub region: Option<Rectangle>,
 
     /// Use last region
@@ -77,6 +84,7 @@ pub struct Cli {
         long,
         value_name = "MILLISECONDS",
         value_parser = |s: &str| s.parse().map(Duration::from_millis),
+        value_hint = ValueHint::Other
     )]
     pub delay: Option<Duration>,
 
@@ -108,7 +116,7 @@ pub struct Cli {
         help_heading = "Config",
         short = 'C',
         long,
-        value_name = "file.kdl",
+        value_name = "FILE.KDL",
         default_value_t = DEFAULT_CONFIG_FILE_PATH.to_string_lossy().to_string(),
         value_hint = ValueHint::FilePath
     )]
@@ -132,29 +140,52 @@ pub struct Cli {
     //
     // --- Debug ---
     //
-    // These options are hidden from the user
+    // Requires ferrishot to be compiled with `debug` for them to show up in the CLI help
     //
-    /// Choose a minumum level at which to log
-    #[arg(help_heading = "Debug", long, hide = true, default_value_t = log::LevelFilter::Error)]
+    /// Choose a miniumum level at which to log
+    #[arg(
+        help_heading = "Debug",
+        long,
+        value_name = "LEVEL",
+        default_value = "error",
+        long_help = "Choose a minumum level at which to log. [error, warn, info, debug, trace, off]",
+        hide = !cfg!(feature = "debug")
+    )]
     pub log_level: log::LevelFilter,
-    /// Log to stdout instead of file
-    #[arg(help_heading = "Debug", long, hide = true, conflicts_with = "silent")]
-    pub log_stdout: bool,
+    /// Log to standard error instead of file
+    #[arg(
+        help_heading = "Debug",
+        long,
+        conflicts_with = "silent",
+        hide = !cfg!(feature = "debug")
+    )]
+    pub log_stderr: bool,
     /// Path to the log file
     #[arg(
         help_heading = "Debug",
         long,
-        hide = true,
+        value_name = "FILE",
         default_value_t = DEFAULT_LOG_FILE_PATH.to_string_lossy().to_string(),
-        value_hint = ValueHint::FilePath
+        value_hint = ValueHint::FilePath,
+        hide = !cfg!(feature = "debug")
     )]
     pub log_file: String,
-    /// Launch ferrishot in debug mode (F12)
-    #[arg(help_heading = "Debug", long, hide = true)]
+    /// Filter for specific Rust module or crate, instead of showing logs from all crates
+    #[arg(
+        help_heading = "Debug",
+        long,
+        value_name = "FILTER",
+        value_hint = ValueHint::Other,
+        hide = !cfg!(feature = "debug")
+    )]
+    pub log_filter: Option<String>,
+    /// Launch in debug mode (F12)
+    #[arg(
+        help_heading = "Debug",
+        long,
+        hide = !cfg!(feature = "debug")
+    )]
     pub debug: bool,
-    /// Output the path to the log file
-    #[arg(help_heading = "Debug", long, hide = true, conflicts_with = "silent")]
-    pub print_log_file_path: bool,
 }
 
 /// Represents the default location of the config file

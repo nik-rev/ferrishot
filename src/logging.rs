@@ -2,8 +2,10 @@
 
 /// Initialize logging
 pub fn initialize(cli: &crate::Cli) {
-    if cli.log_stdout {
-        env_logger::builder().init();
+    if cli.log_stderr {
+        env_logger::builder()
+            .filter_module(cli.log_filter.as_deref().unwrap_or(""), cli.log_level)
+            .init();
     } else {
         use std::io::Write as _;
 
@@ -12,19 +14,18 @@ pub fn initialize(cli: &crate::Cli) {
                 .format(|buf, record| {
                     writeln!(
                         buf,
-                        "{}:{} {} [{}] - {}",
-                        record.file().unwrap_or("unknown"),
-                        record.line().unwrap_or(0),
-                        chrono::Local::now().format("%Y-%m-%dT%H:%M:%S%.3f"),
-                        record.level(),
-                        record.args()
+                        "[{time} {level} {module}] {message}",
+                        time = chrono::Local::now().format("%Y-%m-%dT%H:%M:%S%.3f"),
+                        level = record.level(),
+                        module = record.module_path().unwrap_or("unknown"),
+                        message = record.args(),
                     )
                 })
                 .target(env_logger::Target::Pipe(Box::new(file)))
-                .filter(Some("ferrishot"), log::LevelFilter::Error)
+                .filter(cli.log_filter.as_deref(), cli.log_level)
                 .init(),
             Err(err) => {
-                env_logger::builder().init();
+                env_logger::builder().filter_level(cli.log_level).init();
                 log::error!("Failed to create log file: {err}");
             }
         }

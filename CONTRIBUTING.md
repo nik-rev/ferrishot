@@ -46,13 +46,29 @@ cargo docgen
 
 - Use `F12` (or `ferrishot --debug`) to toggle the debug overlay which contains shows information about recent `Message`s received.
 - The `.explain()` method on `Element` provided by the `Explainer` trait will show a red border around an element and all of its children.
+- These are the additional CLI options available for development:
 
-## Logging
+  ```
+  Debug:
+    --log-level <LEVEL>
+            Choose a minimum level at which to log. [error, warn, info, debug, trace, off]
 
-- The default log level is `error`. You can set a different log level using `--log-level=<level>` or by specifying the `RUST_LOG=<level>` env variable.
-  - Levels: `error`, `warn`, `info`, `debug`, `trace`, `off`.
-- The logs get written into a file. You can see which file by using `ferrishot --print-log-file-path`. You can also choose a custom file with `ferrishot --log-file`.
-- To write the logs to standard output use the `--log-stdout` argument.
+            [default: error]
+
+    --log-stderr
+            Log to standard error instead of file
+
+    --log-file <FILE>
+            Path to the log file
+
+            [default: /home/e/.cache/ferrishot.log]
+
+    --log-filter <FILTER>
+            Filter for specific Rust module or crate, instead of showing logs from all crates
+
+    --debug
+            Launch in debug mode (F12)
+  ```
 
 ## Website
 
