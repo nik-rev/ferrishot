@@ -55,6 +55,22 @@ theme {
 
     Using this option with `--region` will run ferrishot in "headless mode", without opening a window (as the region created with `--region` _will_ be the first region)
 
+- Ferrishot now has a website! [ferrishot.com](https://ferrishot.com)
+- The command-line interface has completions for several shells. Completions for each shell can be found in `completions/` folder on GitHub:
+  - PowerShell
+  - Bash
+  - Elv
+  - Fish
+  - Nushell
+
+##### Breaking
+
+Removed `--instant` flag, use instead:
+
+```
+ferrishot --accept-on-select copy
+```
+
 # v0.2.0 - 16 April 2025
 
 - Right-click will snap the closest corner to the current cursor position
