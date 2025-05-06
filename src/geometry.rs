@@ -595,6 +595,7 @@ pub impl Rectangle<f32> {
     }
 }
 
+#[expect(clippy::float_cmp, reason = "small values")]
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -613,5 +614,354 @@ mod tests {
         assert_eq!(Rectangle::from_str(str), Ok(rect));
         // Rect -> string
         assert_eq!(rect.as_str(), str.to_owned());
+    }
+
+    #[test]
+    fn test_size_ext_square() {
+        let size = Size::square(10.0);
+        assert_eq!(size.width, 10.0);
+        assert_eq!(size.height, 10.0);
+    }
+
+    #[test]
+    fn test_vector_ext_x() {
+        let vec = Vector::x(5.0);
+        assert_eq!(vec.x, 5.0);
+        assert_eq!(vec.y, 0.0);
+    }
+
+    #[test]
+    fn test_vector_ext_y() {
+        let vec = Vector::y(7.0);
+        assert_eq!(vec.x, 0.0);
+        assert_eq!(vec.y, 7.0);
+    }
+
+    #[test]
+    fn test_vector_ext_diag() {
+        let vec = Vector::diag(3.0);
+        assert_eq!(vec.x, 3.0);
+        assert_eq!(vec.y, 3.0);
+    }
+
+    #[test]
+    fn test_corner_resize_rect() {
+        let initial_rect = Rectangle {
+            x: 10.0,
+            y: 20.0,
+            width: 100.0,
+            height: 80.0,
+        };
+        let dx = 5.0;
+        let dy = -5.0;
+
+        let resized_top_left = Corner::TopLeft.resize_rect(initial_rect, dy, dx);
+        assert_eq!(
+            resized_top_left,
+            Rectangle {
+                x: 10.0 + dx,
+                y: 20.0 + dy,
+                width: 100.0 - dx,
+                height: 80.0 - dy
+            }
+        );
+
+        let resized_top_right = Corner::TopRight.resize_rect(initial_rect, dy, dx);
+        assert_eq!(
+            resized_top_right,
+            Rectangle {
+                x: 10.0,
+                y: 20.0 + dy,
+                width: 100.0 + dx,
+                height: 80.0 - dy
+            }
+        );
+
+        let resized_bottom_left = Corner::BottomLeft.resize_rect(initial_rect, dy, dx);
+        assert_eq!(
+            resized_bottom_left,
+            Rectangle {
+                x: 10.0 + dx,
+                y: 20.0,
+                width: 100.0 - dx,
+                height: 80.0 + dy
+            }
+        );
+
+        let resized_bottom_right = Corner::BottomRight.resize_rect(initial_rect, dy, dx);
+        assert_eq!(
+            resized_bottom_right,
+            Rectangle {
+                x: 10.0,
+                y: 20.0,
+                width: 100.0 + dx,
+                height: 80.0 + dy
+            }
+        );
+    }
+
+    #[test]
+    fn test_corners_nearest_corner() {
+        let corners = Corners {
+            top_left: Point::new(0.0, 0.0),
+            top_right: Point::new(100.0, 0.0),
+            bottom_left: Point::new(0.0, 50.0),
+            bottom_right: Point::new(100.0, 50.0),
+        };
+
+        assert_eq!(
+            corners.nearest_corner(Point::new(10.0, 5.0)),
+            (Point::new(0.0, 0.0), Corner::TopLeft)
+        );
+        assert_eq!(
+            corners.nearest_corner(Point::new(90.0, 5.0)),
+            (Point::new(100.0, 0.0), Corner::TopRight)
+        );
+        assert_eq!(
+            corners.nearest_corner(Point::new(10.0, 45.0)),
+            (Point::new(0.0, 50.0), Corner::BottomLeft)
+        );
+        assert_eq!(
+            corners.nearest_corner(Point::new(90.0, 45.0)),
+            (Point::new(100.0, 50.0), Corner::BottomRight)
+        );
+        assert_eq!(
+            corners.nearest_corner(Point::new(50.0, 25.0)),
+            (Point::new(0.0, 0.0), Corner::TopLeft)
+        ); // Equidistant, min_by picks first
+    }
+
+    #[test]
+    fn test_corners_side_at() {
+        const HALF_INTERACTION: f32 = 35.0 / 2.0;
+
+        let rect = Rectangle::new(Point::new(100.0, 100.0), Size::new(200.0, 150.0));
+        let corners = rect.corners();
+
+        assert_eq!(
+            corners.side_at(Point::new(100.0, 100.0)),
+            Some(SideOrCorner::Corner(Corner::TopLeft))
+        );
+        assert_eq!(
+            corners.side_at(Point::new(
+                100.0 - HALF_INTERACTION + 1.0,
+                100.0 - HALF_INTERACTION + 1.0
+            )),
+            Some(SideOrCorner::Corner(Corner::TopLeft))
+        );
+        assert_eq!(
+            corners.side_at(Point::new(300.0, 100.0)),
+            Some(SideOrCorner::Corner(Corner::TopRight))
+        );
+        assert_eq!(
+            corners.side_at(Point::new(100.0, 250.0)),
+            Some(SideOrCorner::Corner(Corner::BottomLeft))
+        );
+        assert_eq!(
+            corners.side_at(Point::new(300.0, 250.0)),
+            Some(SideOrCorner::Corner(Corner::BottomRight))
+        );
+
+        assert_eq!(
+            corners.side_at(Point::new(200.0, 100.0)),
+            Some(SideOrCorner::Side(Side::Top))
+        );
+        assert_eq!(
+            corners.side_at(Point::new(200.0, 100.0 - HALF_INTERACTION + 1.0)),
+            Some(SideOrCorner::Side(Side::Top))
+        );
+        assert_eq!(
+            corners.side_at(Point::new(200.0, 100.0 + HALF_INTERACTION - 1.0)),
+            Some(SideOrCorner::Side(Side::Top))
+        );
+
+        assert_eq!(
+            corners.side_at(Point::new(200.0, 250.0)),
+            Some(SideOrCorner::Side(Side::Bottom))
+        );
+        assert_eq!(
+            corners.side_at(Point::new(200.0, 250.0 - HALF_INTERACTION + 1.0)),
+            Some(SideOrCorner::Side(Side::Bottom))
+        );
+
+        assert_eq!(
+            corners.side_at(Point::new(100.0, 150.0)),
+            Some(SideOrCorner::Side(Side::Left))
+        );
+        assert_eq!(
+            corners.side_at(Point::new(100.0 - HALF_INTERACTION + 1.0, 150.0)),
+            Some(SideOrCorner::Side(Side::Left))
+        );
+
+        assert_eq!(
+            corners.side_at(Point::new(300.0, 150.0)),
+            Some(SideOrCorner::Side(Side::Right))
+        );
+        assert_eq!(
+            corners.side_at(Point::new(300.0 + HALF_INTERACTION - 1.0, 150.0)),
+            Some(SideOrCorner::Side(Side::Right))
+        );
+
+        // Test point outside any interaction area
+        assert_eq!(corners.side_at(Point::new(0.0, 0.0)), None);
+        assert_eq!(
+            corners.side_at(Point::new(200.0, 100.0 + HALF_INTERACTION + 1.0)),
+            None
+        );
+        // Just below top interaction
+        assert_eq!(corners.side_at(Point::new(200.0, 200.0)), None);
+
+        // Point within
+        // - top-left corner rect
+        // - top side rect
+        // - left side rect
+        let point_in_top_left_corner_interaction = Point::new(
+            100.0 - HALF_INTERACTION / 2.0,
+            100.0 - HALF_INTERACTION / 2.0,
+        );
+        assert_eq!(
+            corners.side_at(point_in_top_left_corner_interaction),
+            Some(SideOrCorner::Corner(Corner::TopLeft))
+        );
+    }
+
+    #[test]
+    fn test_rectangle_ext_center_x_for() {
+        let rect = Rectangle {
+            x: 10.0,
+            y: 0.0,
+            width: 100.0,
+            height: 0.0,
+        };
+        let size_to_center = Size {
+            width: 20.0,
+            height: 0.0,
+        };
+        assert_eq!(rect.center_x_for(size_to_center), 50.0);
+    }
+
+    #[test]
+    fn test_rectangle_ext_center_y_for() {
+        let rect = Rectangle {
+            x: 0.0,
+            y: 10.0,
+            width: 0.0,
+            height: 100.0,
+        };
+        let size_to_center = Size {
+            width: 0.0,
+            height: 20.0,
+        };
+        assert_eq!(rect.center_y_for(size_to_center), 50.0);
+    }
+
+    #[test]
+    fn test_rectangle_ext_center_for() {
+        let rect = Rectangle {
+            x: 10.0,
+            y: 20.0,
+            width: 100.0,
+            height: 80.0,
+        };
+        let size_to_center = Size {
+            width: 20.0,
+            height: 10.0,
+        };
+        let center_point = rect.center_for(size_to_center);
+        assert_eq!(center_point, Point::new(50.0, 55.0));
+    }
+
+    #[test]
+    fn test_rectangle_ext_norm() {
+        let r1 = Rectangle {
+            x: 0.0,
+            y: 0.0,
+            width: 10.0,
+            height: 10.0,
+        };
+        assert_eq!(r1.norm(), r1);
+
+        let r2 = Rectangle {
+            x: 10.0,
+            y: 10.0,
+            width: -10.0,
+            height: -10.0,
+        };
+        let expected_r2 = Rectangle {
+            x: 0.0,
+            y: 0.0,
+            width: 10.0,
+            height: 10.0,
+        };
+        assert_eq!(r2.norm(), expected_r2);
+
+        let r3 = Rectangle {
+            x: 0.0,
+            y: 10.0,
+            width: 10.0,
+            height: -10.0,
+        };
+        let expected_r3 = Rectangle {
+            x: 0.0,
+            y: 0.0,
+            width: 10.0,
+            height: 10.0,
+        };
+        assert_eq!(r3.norm(), expected_r3);
+
+        let r4 = Rectangle {
+            x: 10.0,
+            y: 0.0,
+            width: -10.0,
+            height: 10.0,
+        };
+        let expected_r4 = Rectangle {
+            x: 0.0,
+            y: 0.0,
+            width: 10.0,
+            height: 10.0,
+        };
+        assert_eq!(r4.norm(), expected_r4);
+    }
+
+    #[test]
+    fn test_rectangle_ext_corners() {
+        let rect = Rectangle {
+            x: 10.0,
+            y: 20.0,
+            width: 30.0,
+            height: 40.0,
+        };
+        let corners = rect.corners();
+        assert_eq!(corners.top_left, Point::new(10.0, 20.0));
+        assert_eq!(corners.top_right, Point::new(40.0, 20.0));
+        assert_eq!(corners.bottom_left, Point::new(10.0, 60.0));
+        assert_eq!(corners.bottom_right, Point::new(40.0, 60.0));
+
+        let rect_neg = Rectangle {
+            x: 40.0,
+            y: 60.0,
+            width: -30.0,
+            height: -40.0,
+        };
+        let corners_neg = rect_neg.corners();
+        assert_eq!(corners_neg.top_left, Point::new(10.0, 20.0));
+        assert_eq!(corners_neg.top_right, Point::new(40.0, 20.0));
+        assert_eq!(corners_neg.bottom_left, Point::new(10.0, 60.0));
+        assert_eq!(corners_neg.bottom_right, Point::new(40.0, 60.0));
+    }
+
+    #[test]
+    fn test_rectangle_ext_corner_accessors() {
+        let rect = Rectangle {
+            x: 10.0,
+            y: 20.0,
+            width: 100.0,
+            height: 80.0,
+        };
+        assert_eq!(rect.top_left(), Point::new(10.0, 20.0));
+        assert_eq!(rect.top_right(), Point::new(110.0, 20.0));
+        assert_eq!(rect.bottom_left(), Point::new(10.0, 100.0));
+        assert_eq!(rect.bottom_right(), Point::new(110.0, 100.0));
     }
 }
