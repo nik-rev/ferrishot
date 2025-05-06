@@ -100,7 +100,7 @@ impl App {
             .effects(anstyle::Effects::BOLD);
         let reset = anstyle::Reset;
 
-        let check = format!("{green}✓{reset}");
+        let tick = format!("{green}✓{reset}");
 
         let closure: Box<dyn Fn(Option<PathBuf>) -> String> = match output {
             O::Saved => Box::new(move |saved_path| {
