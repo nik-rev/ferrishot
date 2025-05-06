@@ -133,13 +133,11 @@ impl App {
                 } else {
                     formatdoc! {
                         "
-                            {check} Image saved to a file
+                            {check} Image saved to {save_path}
 
                             width: {width} px
                             height: {height} px
                             file size: {file_size}
-
-                            save_path: {save_path}
                         ",
                     }
                 }
@@ -192,13 +190,11 @@ impl App {
                 } else {
                     formatdoc! {
                         "
-                            {check} Image uploaded online
+                            {check} Image uploaded to {link}
 
                             width: {width} px
                             height: {height} px
                             file size: {file_size}
-
-                            link: {link}
                             expires in: {expires}
                         "
                     }
