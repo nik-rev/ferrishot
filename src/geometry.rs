@@ -1,7 +1,8 @@
-//! Additional methods for working with rectangles:
+//! Additional methods for working with geometry in a canvas:
+//!
 //! - Corners
 //! - Point
-//! - Extension methods
+//! - Vector
 use iced::widget::{canvas, text};
 use iced::{Point, Rectangle, Size, Vector, advanced::graphics::geometry, mouse};
 

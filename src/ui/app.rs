@@ -33,8 +33,8 @@ use crate::message::Message;
 use iced::widget::Stack;
 use iced::{Point, Size, Task};
 
-use crate::rect::Direction;
-use crate::rect::RectangleExt as _;
+use crate::geometry::Direction;
+use crate::geometry::RectangleExt as _;
 use crate::ui::selection::Selection;
 
 use super::Errors;

@@ -6,7 +6,7 @@ use iced::{
     widget::{self, Space, column, row, text::Shaping},
 };
 
-use crate::{rect::RectangleExt as _, ui::selection::SelectionIsSome};
+use crate::{geometry::RectangleExt as _, ui::selection::SelectionIsSome};
 
 /// One of the values in the size indicator has changed
 #[derive(Clone, Debug)]

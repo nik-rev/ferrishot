@@ -1,8 +1,8 @@
 //! A `Selection` is the structure representing a selected area in the background image
-use crate::rect::Corners;
-use crate::rect::RectangleExt as _;
-use crate::rect::Side;
-use crate::rect::SideOrCorner;
+use crate::geometry::Corners;
+use crate::geometry::RectangleExt as _;
+use crate::geometry::Side;
+use crate::geometry::SideOrCorner;
 use delegate::delegate;
 use iced::Task;
 use iced::mouse::Cursor;

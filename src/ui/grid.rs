@@ -7,7 +7,7 @@ use iced::{
     widget::canvas::{self, Frame, Stroke},
 };
 
-use crate::rect::{PointExt as _, RectangleExt as _, StrokeExt as _, TextExt as _};
+use crate::geometry::{PointExt as _, RectangleExt as _, StrokeExt as _, TextExt as _};
 
 /// A cell in a grid
 #[derive(Clone, Debug, Builder)]

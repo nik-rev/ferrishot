@@ -1,5 +1,5 @@
 //! Read and write the last region of a rectangle
-use crate::rect::{ParseRectError, RectangleExt as _};
+use crate::geometry::{ParseRectError, RectangleExt as _};
 use etcetera::BaseStrategy as _;
 use iced::Rectangle;
 use std::io::Write as _;

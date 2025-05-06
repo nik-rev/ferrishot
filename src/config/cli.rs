@@ -7,7 +7,7 @@ use etcetera::BaseStrategy as _;
 use iced::Rectangle;
 use indoc::indoc;
 
-use crate::rect::RectangleExt as _;
+use crate::geometry::RectangleExt as _;
 
 use anstyle::{AnsiColor, Effects};
 

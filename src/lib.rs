@@ -2,11 +2,11 @@
 
 mod clipboard;
 mod config;
+mod geometry;
 mod icons;
 mod image;
 mod last_region;
 mod message;
-mod rect;
 mod ui;
 
 use config::Theme;

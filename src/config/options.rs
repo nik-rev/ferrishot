@@ -1,7 +1,7 @@
 //! Declare config options
 
 use crate::config::Place;
-use crate::rect::Direction;
+use crate::geometry::Direction;
 
 crate::declare_config_options! {
     /// Renders a size indicator in the bottom left corner.

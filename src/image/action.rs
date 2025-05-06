@@ -11,7 +11,7 @@ use image::DynamicImage;
 
 use crate::image::upload::ImageUploaded;
 use crate::last_region::LastRegion;
-use crate::{App, config::KeyAction, rect::RectangleExt as _, ui::popup::image_uploaded};
+use crate::{App, config::KeyAction, geometry::RectangleExt as _, ui::popup::image_uploaded};
 use iced::widget;
 
 /// Action to take with the image
