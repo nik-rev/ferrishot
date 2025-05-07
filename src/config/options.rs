@@ -62,14 +62,14 @@ crate::declare_key_options! {
 }
 
 crate::declare_theme_options! {
-    // Cheatsheet background
+    /// Cheatsheet background
     cheatsheet_bg,
-    // Cheatsheet text color
+    /// Cheatsheet text color
     cheatsheet_fg,
 
-    // Close the popup
+    /// Close the popup
     popup_close_icon_bg,
-    // Cheatsheet text color
+    /// Cheatsheet text color
     popup_close_icon_fg,
 
     /// Color of the border around the selection
