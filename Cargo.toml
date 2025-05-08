@@ -33,7 +33,18 @@ image = "0.25.6"
 mouse_position = "0.1.4"
 
 # cross-platform "take a screenshot of the monitor" UI.
-xcap = { version = "0.4.1", features = ["image", "vendored"] }
+#
+# FORK: screenshot on wayland using libwayshot is very fast,
+# so it comes before x11 and freedesktop. The reason is that
+# freedesktop can block for like 1.5s before giving up. x11 can block for about 30ms
+# libwayshot blocks for about 500ns. by "block" I mean how long it takes
+#
+# on the original xcap, they try libwayshot AFTER trying freedesktop
+# which leads to VERY bad performance on wayland (about 1.5 seconds delay for nothing)
+xcap = { package = "ferrishot_xcap", version = "0.4.1", features = [
+  "image",
+  "vendored",
+] }
 
 # Iced is the native UI framework that ferrishot uses
 # 

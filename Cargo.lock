@@ -1529,6 +1529,7 @@ dependencies = [
  "etcetera",
  "ferrishot_iced",
  "ferrishot_knus",
+ "ferrishot_xcap",
  "human_bytes",
  "image 0.25.6",
  "indoc",
@@ -1544,7 +1545,6 @@ dependencies = [
  "tempfile",
  "thiserror 2.0.12",
  "tokio",
- "xcap",
 ]
 
 [[package]]
@@ -1831,6 +1831,34 @@ dependencies = [
  "x11-dl",
  "x11rb",
  "xkbcommon-dl",
+]
+
+[[package]]
+name = "ferrishot_xcap"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b61f7567c39e6ddf07d6b8927f8cb10aac3ee6060fbafc1aea758373635ac0bf"
+dependencies = [
+ "dbus",
+ "dispatch2",
+ "image 0.25.6",
+ "lazy_static",
+ "libwayshot",
+ "log",
+ "objc2 0.6.0",
+ "objc2-app-kit 0.3.0",
+ "objc2-av-foundation",
+ "objc2-core-foundation",
+ "objc2-core-graphics",
+ "objc2-core-media",
+ "objc2-core-video",
+ "objc2-foundation 0.3.0",
+ "percent-encoding",
+ "scopeguard",
+ "thiserror 2.0.12",
+ "widestring",
+ "windows 0.60.0",
+ "xcb",
 ]
 
 [[package]]
@@ -6703,34 +6731,6 @@ name = "x11rb-protocol"
 version = "0.13.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ec107c4503ea0b4a98ef47356329af139c0a4f7750e621cf2973cd3385ebcb3d"
-
-[[package]]
-name = "xcap"
-version = "0.4.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "eabd25cdb442bb7f63f13fdee2f59d991b04668d37c69aee00dc2a1cc9d0e9a1"
-dependencies = [
- "dbus",
- "dispatch2",
- "image 0.25.6",
- "lazy_static",
- "libwayshot",
- "log",
- "objc2 0.6.0",
- "objc2-app-kit 0.3.0",
- "objc2-av-foundation",
- "objc2-core-foundation",
- "objc2-core-graphics",
- "objc2-core-media",
- "objc2-core-video",
- "objc2-foundation 0.3.0",
- "percent-encoding",
- "scopeguard",
- "thiserror 2.0.12",
- "widestring",
- "windows 0.60.0",
- "xcb",
-]
 
 [[package]]
 name = "xcb"
