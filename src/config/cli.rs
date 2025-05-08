@@ -4,10 +4,9 @@ use std::{path::PathBuf, sync::LazyLock};
 
 use clap::{Parser, ValueHint};
 use etcetera::BaseStrategy as _;
-use iced::Rectangle;
 use indoc::indoc;
 
-use crate::geometry::RectangleExt as _;
+use crate::lazy_rect::LazyRectangle;
 
 use anstyle::{AnsiColor, Effects};
 
@@ -45,15 +44,30 @@ pub struct Cli {
     /// Open with a region pre-selected
     ///
     /// Format: `<width>x<height>+<top-left-x>+<top-left-y>`
+    ///
+    /// Each value can be absolute.
+    /// - 550 for `x` means top-left corner starts after 550px
+    /// - 100 for `height` means it will be 100px tall
+    ///
+    /// Each can also be relative to the height (for `y` and `height`) or width (for `width` and `x`)
+    /// - 0.2 for `width` means it region takes up 20% of the width of the image.
+    /// - 0.5 for `y` means the top-left corner will be at the vertical center
+    ///
+    /// The format can also end with 1 or 2 percentages, which shifts the region relative to the region's size
+    /// - If `width` is `250`, end region with `+30%` to move right by 75px or `-40%` to move left by 100px
+    /// - Supplying 2 percentage at the end like `+30%-10%`, the 1st affects x-offset and the 2nd affects y-offset
+    ///
+    /// With the above syntax, you can create all the regions you want. More examples in `--dump-default-config`
+    /// - `100x1.0+0.5+0.5-50%`: Create a 100px wide, horizontally centered region
+    /// - `1.0x1.0+0+0`: Create a region that spans the full screen. You can use alias `full` for this
     #[arg(
         short,
         long,
-        value_parser = Rectangle::from_str,
         value_name = "WxH+X+Y",
         verbatim_doc_comment,
         value_hint = ValueHint::Other
     )]
-    pub region: Option<Rectangle>,
+    pub region: Option<LazyRectangle>,
 
     /// Use last region
     #[arg(short, long, conflicts_with = "region")]

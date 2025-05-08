@@ -85,12 +85,12 @@ impl App {
     pub async fn headless(
         action: crate::image::action::Message,
         region: Rectangle,
-        img_file: Option<&PathBuf>,
+        image: Arc<RgbaHandle>,
         is_json: bool,
     ) -> Result<Box<dyn Fn(Option<PathBuf>) -> String>, crate::image::action::Error> {
         use crate::image::action::Output as O;
 
-        let (output, ImageData { height, width }) = crate::image::get_image(img_file)?
+        let (output, ImageData { height, width }) = image
             .pipe(|img| Self::process_image(region, &img))
             .pipe(|img| action.execute(img, region))
             .await?;

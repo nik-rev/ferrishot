@@ -92,21 +92,6 @@ pub impl Vector<f32> {
     }
 }
 
-/// Error parsing a rect
-#[derive(thiserror::Error, miette::Diagnostic, Debug, Clone, Eq, PartialEq)]
-#[error("Failed to parse region")]
-#[diagnostic(help(
-    "use the valid format: `<width>x<height>+<top-left-x>+<top-left-y>`, like 100x90+75+80"
-))]
-pub enum ParseRectError {
-    /// Invalid format
-    #[error("Invalid format")]
-    InvalidFormat,
-    /// Parse float error
-    #[error(transparent)]
-    ParseFloatError(#[from] std::num::ParseFloatError),
-}
-
 /// Corner of a rectangle
 #[derive(
     Copy,
@@ -423,6 +408,20 @@ pub impl Point<f32> {
 /// Extension methods for `iced::Rectangle`
 #[easy_ext::ext(RectangleExt)]
 pub impl Rectangle<f32> {
+    /// Completely contain this rectangle in another rectangle
+    fn contained_in(mut self, container: Rectangle) -> Rectangle {
+        let dx = container.x.max(self.x).min(container.x + container.width) - self.x;
+        self.x += dx;
+
+        let dy = container.y.max(self.y).min(container.y + container.height) - self.y;
+        self.y += dy;
+
+        self.height = (self.height - dy).min((container.y + container.height) - self.y);
+        self.width = (self.width - dx).min((container.x + container.width) - self.y);
+
+        self
+    }
+
     /// x-coordinate for which the `size` would be horizontally
     /// centered relative to the `Rectangle`
     fn center_x_for(self, size: Size) -> f32 {
@@ -572,26 +571,10 @@ pub impl Rectangle<f32> {
 
     /// Convert this rectangle into a string
     fn as_str(&self) -> String {
-        format!("{}x{}+{}+{}", self.width, self.height, self.x, self.y)
-    }
-
-    /// Parse a string into an `iced::Rectangle`
-    fn from_str(s: &str) -> Result<Rectangle, ParseRectError> {
-        let (width, height, x, y) = s
-            .split_once('x')
-            .and_then(|(width, rest)| {
-                rest.split_once('+')
-                    .and_then(|(height, rest)| rest.split_once('+').map(|(x, y)| (height, x, y)))
-                    .map(|(height, x, y)| (width, height, x, y))
-            })
-            .ok_or(ParseRectError::InvalidFormat)?;
-
-        Ok(Self {
-            x: x.parse()?,
-            y: y.parse()?,
-            width: width.parse()?,
-            height: height.parse()?,
-        })
+        format!(
+            "{}x{}+{}+{}",
+            self.width as u32, self.height as u32, self.x as u32, self.y as u32
+        )
     }
 }
 
@@ -599,22 +582,23 @@ pub impl Rectangle<f32> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use pretty_assertions::assert_eq;
 
-    #[test]
-    fn parse_rect() {
-        let str = "1000x900+100+200";
-        let rect = iced::Rectangle {
-            width: 1000.0,
-            height: 900.0,
-            x: 100.0,
-            y: 200.0,
-        };
+    // #[test]
+    // fn parse_rect() {
+    //     let str = "1000x900+100+200";
+    //     let rect = iced::Rectangle {
+    //         width: 1000.0,
+    //         height: 900.0,
+    //         x: 100.0,
+    //         y: 200.0,
+    //     };
 
-        // string -> Rect
-        assert_eq!(Rectangle::from_str(str), Ok(rect));
-        // Rect -> string
-        assert_eq!(rect.as_str(), str.to_owned());
-    }
+    //     // string -> Rect
+    //     assert_eq!(Rectangle::from_str(str), Ok(rect));
+    //     // Rect -> string
+    //     assert_eq!(rect.as_str(), str.to_owned());
+    // }
 
     #[test]
     fn test_size_ext_square() {
@@ -963,5 +947,29 @@ mod tests {
         assert_eq!(rect.top_right(), Point::new(110.0, 20.0));
         assert_eq!(rect.bottom_left(), Point::new(10.0, 100.0));
         assert_eq!(rect.bottom_right(), Point::new(110.0, 100.0));
+    }
+
+    #[test]
+    fn test_rectangle_contained_in() {
+        assert_eq!(
+            Rectangle {
+                x: -50.0,
+                y: 200.0,
+                width: 100.0,
+                height: 150.0,
+            }
+            .contained_in(Rectangle {
+                x: 0.0,
+                y: 0.0,
+                width: 800.0,
+                height: 600.0,
+            }),
+            Rectangle {
+                y: 200.0,
+                height: 150.0,
+                x: 0.0,
+                width: 50.0,
+            }
+        );
     }
 }

@@ -78,11 +78,20 @@ fn main() -> miette::Result<()> {
     // Parse user's `ferrishot.kdl` config file
     let config = Arc::new(ferrishot::Config::parse(&cli.config_file)?);
 
+    // The image that we are going to be editing
+    let image = Arc::new(ferrishot::get_image(cli.file.as_ref())?);
+    let image_bounds = iced::Rectangle {
+        x: 0.0,
+        y: 0.0,
+        width: image.width() as f32,
+        height: image.height() as f32,
+    };
+
     // start the app with an initial selection of the image
     let initial_region = if cli.last_region {
-        ferrishot::last_region::read()?
+        ferrishot::last_region::read(image_bounds)?
     } else {
-        cli.region
+        cli.region.map(|lazy_rect| lazy_rect.init(image_bounds))
     };
 
     let generate_output = match (cli.accept_on_select, initial_region) {
@@ -93,15 +102,13 @@ fn main() -> miette::Result<()> {
         (Some(accept_on_select), Some(region)) => {
             let runtime = tokio::runtime::Runtime::new().into_diagnostic()?;
 
-            App::headless(accept_on_select, region, cli.file.as_ref(), cli.json)
+            App::headless(accept_on_select, region, image, cli.json)
                 .pipe(|fut| runtime.block_on(fut))
                 .map_err(|err| miette!("Failed to start ferrishot (headless): {err}"))?
                 .pipe(Some)
         }
         // Launch full ferrishot app
         _ => {
-            let image = Arc::new(ferrishot::get_image(cli.file.as_ref())?);
-
             iced::application(
                 move || {
                     App::builder()

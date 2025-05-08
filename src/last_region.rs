@@ -1,8 +1,11 @@
 //! Read and write the last region of a rectangle
-use crate::geometry::{ParseRectError, RectangleExt as _};
+use crate::{
+    geometry::RectangleExt as _,
+    lazy_rect::{LazyRectangle, ParseRectError},
+};
 use etcetera::BaseStrategy as _;
 use iced::Rectangle;
-use std::{fs, io::Write as _};
+use std::{fs, io::Write as _, str::FromStr as _};
 use tap::Pipe as _;
 
 /// Could not get the last region
@@ -22,12 +25,13 @@ pub enum Error {
 pub const LAST_REGION_FILENAME: &str = "ferrishot-last-region.txt";
 
 /// Read the last region used
-pub fn read() -> Result<Option<Rectangle>, Error> {
+pub fn read(image_bounds: Rectangle) -> Result<Option<Rectangle>, Error> {
     etcetera::choose_base_strategy()?
         .cache_dir()
         .join(LAST_REGION_FILENAME)
         .pipe(fs::read_to_string)?
-        .pipe_deref(Rectangle::from_str)?
+        .pipe_deref(LazyRectangle::from_str)?
+        .pipe(|lazy_rect| lazy_rect.init(image_bounds))
         .pipe(Some)
         .pipe(Ok)
 }

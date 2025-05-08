@@ -188,6 +188,7 @@ mod test {
     use iced::keyboard::key;
 
     use super::*;
+    use pretty_assertions::assert_eq;
 
     #[test]
     fn parse_key_sequence() {

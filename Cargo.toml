@@ -106,6 +106,8 @@ reqwest = { version = "0.12.15", default-features = false, features = [
 serde = { version = "1.0.219", features = ["derive"] }
 serde_json = "1.0.140"
 
+pretty_assertions = "1.4.1"
+
 # --- helper crates ---
 
 # typed error enum generation

@@ -6,6 +6,7 @@ mod config;
 mod geometry;
 mod icons;
 mod image;
+mod lazy_rect;
 mod message;
 mod ui;
 

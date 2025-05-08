@@ -113,6 +113,7 @@ pub fn set_image(image_data: arboard::ImageData) -> Result<std::path::PathBuf, C
 #[cfg(target_os = "linux")]
 pub fn run_clipboard_daemon() -> Result<(), arboard::Error> {
     use arboard::SetExtLinux as _;
+    use pretty_assertions::assert_eq;
     use std::fs;
 
     log::info!(
