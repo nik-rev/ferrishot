@@ -5,7 +5,7 @@ use std::iter;
 use iced::{
     Element, Event, Font,
     Length::Fill,
-    Point, Task,
+    Point, Size, Task,
     font::Weight,
     keyboard::Key,
     widget::{
@@ -44,11 +44,12 @@ impl crate::message::Handler for Message {
             Self::Pick { point, corner } => {
                 let sel = app.selection.map_or_else(
                     || {
-                        app.selections_created += 1;
+                        // Intentionally do not increment `app.selections`, because
+                        // when selectiong a `0,0` point we do not want to active `--accept-on-select`
                         Selection::new(
                             Point::default(),
                             &app.config.theme,
-                            app.selections_created == 1,
+                            false,
                             app.cli.accept_on_select,
                         )
                     },
@@ -56,21 +57,29 @@ impl crate::message::Handler for Message {
                 );
                 let x = point.x;
                 let y = point.y;
-                match corner {
+                let new_sel = match corner {
                     PickCorner::TopLeft => {
-                        app.selection = Some(
-                            sel.with_x(|_| x)
-                                .with_y(|_| y)
-                                // make sure that the selection is not going to be out of bounds
-                                .with_width(|w| w.min(app.image.width() as f32 - x))
-                                .with_height(|h| h.min(app.image.height() as f32 - y)),
-                        );
+                        sel.with_x(|_| x)
+                            .with_y(|_| y)
+                            // make sure that the selection is not going to be out of bounds
+                            .with_width(|w| w.min(app.image.width() as f32 - x))
+                            .with_height(|h| h.min(app.image.height() as f32 - y))
                     }
-                    PickCorner::BottomRight => {
-                        app.selection = Some(
-                            sel.with_height(|_| y - sel.rect.y)
-                                .with_width(|_| x - sel.rect.x),
-                        );
+                    PickCorner::BottomRight => sel
+                        .with_height(|_| y - sel.rect.y)
+                        .with_width(|_| x - sel.rect.x),
+                };
+                app.selection = Some(new_sel);
+
+                if let Some(on_select) = app.cli.accept_on_select {
+                    if new_sel.size() != Size::ZERO {
+                        if app.selections_created == 0 {
+                            return Task::done(crate::Message::KeyBind {
+                                action: on_select.into_key_action(),
+                                count: 1,
+                            });
+                        }
+                        app.selections_created += 1;
                     }
                 }
                 app.popup = None;
