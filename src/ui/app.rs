@@ -30,8 +30,8 @@ use ui::popup::PickCorner;
 
 use crate::image::RgbaHandle;
 use crate::message::Message;
+use iced::Task;
 use iced::widget::Stack;
-use iced::{Point, Size, Task};
 
 use crate::geometry::Direction;
 use crate::geometry::RectangleExt as _;
@@ -377,18 +377,16 @@ impl App {
                 KeyAction::ClearSelection => {
                     self.selection = None;
                 }
-                KeyAction::SelectFullScreen => {
+                KeyAction::SelectRegion(lazy_rect) => {
+                    let rect = lazy_rect.init(self.image.bounds());
                     self.selection = Some(
                         Selection::new(
-                            Point { x: 0.0, y: 0.0 },
+                            rect.top_left(),
                             &self.config.theme,
                             self.selections_created == 0,
                             self.cli.accept_on_select,
                         )
-                        .with_size(|_| Size {
-                            width: self.image.width() as f32,
-                            height: self.image.height() as f32,
-                        }),
+                        .with_size(|_| rect.size()),
                     );
                     self.selections_created += 1;
                 }

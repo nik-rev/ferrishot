@@ -2,6 +2,7 @@
 
 use crate::config::Place;
 use crate::geometry::Direction;
+use crate::lazy_rect::LazyRectangle;
 
 crate::declare_config_options! {
     /// Renders a size indicator in the bottom left corner.
@@ -37,7 +38,10 @@ crate::declare_key_options! {
     /// Exit the application
     Exit,
     /// Set selection to encompass the entire screen
-    SelectFullScreen,
+    SelectRegion {
+        #[ferrishot_knus(str)]
+        selection: LazyRectangle,
+    },
     /// Remove the selection
     ClearSelection,
     /// Shift the selection in the given direction by pixels

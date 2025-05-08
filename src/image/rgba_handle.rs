@@ -1,6 +1,6 @@
 //! Wrapper around `iced::widget::image::Handle` to guarantee that it is an RGBA handle
 
-use iced::{advanced::image::Bytes, widget::image::Handle};
+use iced::{Rectangle, advanced::image::Bytes, widget::image::Handle};
 
 /// The `RgbaHandle` is a wrapper for a handle pointing to decoded image pixels in RGBA format.
 ///
@@ -12,6 +12,16 @@ impl RgbaHandle {
     /// Create handle to an image represented in RGBA format
     pub fn new(width: u32, height: u32, pixels: impl Into<Bytes>) -> Self {
         Self(Handle::from_rgba(width, height, pixels.into()))
+    }
+
+    /// Get the bounds of this image
+    pub fn bounds(&self) -> Rectangle {
+        Rectangle {
+            x: 0.0,
+            y: 0.0,
+            width: self.width() as f32,
+            height: self.height() as f32,
+        }
     }
 
     /// Width of the image

@@ -162,6 +162,20 @@ pub struct LazyRectangle {
 }
 
 impl LazyRectangle {
+    /// Expands to its entire container
+    pub const FULL: Self = Self {
+        x: Coord {
+            original_position: Length::Absolute(0),
+            nudge: None,
+        },
+        y: Coord {
+            original_position: Length::Absolute(0),
+            nudge: None,
+        },
+        width: Length::Relative(Percentage(1.0)),
+        height: Length::Relative(Percentage(1.0)),
+    };
+
     /// Convert this type into an `iced::Rectangle`,
     /// with knowing the `bounds` that it will be inside
     ///
@@ -234,18 +248,7 @@ impl FromStr for LazyRectangle {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         if s == "full" {
             // the inner rect will be the same size as the outer rect
-            return Ok(Self {
-                x: Coord {
-                    original_position: Length::Absolute(0),
-                    nudge: None,
-                },
-                y: Coord {
-                    original_position: Length::Absolute(0),
-                    nudge: None,
-                },
-                width: Length::Relative(Percentage(1.0)),
-                height: Length::Relative(Percentage(1.0)),
-            });
+            return Ok(Self::FULL);
         }
 
         // START: 100x250+180+190-50%+75%

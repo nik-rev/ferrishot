@@ -23,7 +23,8 @@ keys {
   upload-screenshot mod=ctrl key=u
 
   // Set selection to be the entire screen
-  select-full-screen key=<f11>
+  // You can use the syntax of `ferrishot --region` here (see `--help` for more info)
+  select-region "full" key=<f11>
 
   // Remove the selection
   clear-selection mod=ctrl key=x

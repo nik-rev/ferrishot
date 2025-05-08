@@ -57,8 +57,8 @@ pub struct Cli {
     /// - If `width` is `250`, end region with `+30%` to move right by 75px or `-40%` to move left by 100px
     /// - Supplying 2 percentage at the end like `+30%-10%`, the 1st affects x-offset and the 2nd affects y-offset
     ///
-    /// With the above syntax, you can create all the regions you want. More examples in `--dump-default-config`
-    /// - `100x1.0+0.5+0.5-50%`: Create a 100px wide, horizontally centered region
+    /// With the above syntax, you can create all the regions you want.
+    /// - `100x1.0+0.5+0-50%`: Create a 100px wide, full height, horizontally centered region
     /// - `1.0x1.0+0+0`: Create a region that spans the full screen. You can use alias `full` for this
     #[arg(
         short,
