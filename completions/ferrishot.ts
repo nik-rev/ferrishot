@@ -1,6 +1,6 @@
 const completion: Fig.Spec = {
   name: "ferrishot",
-  description: "A cross-platform desktop screenshot app",
+  description: "A powerful screenshot app",
   options: [
     {
       name: ["-r", "--region"],
@@ -65,7 +65,7 @@ const completion: Fig.Spec = {
     },
     {
       name: "--log-level",
-      description: "Choose a minumum level at which to log",
+      description: "Choose a miniumum level at which to log",
       hidden: true,
       isRepeatable: true,
       args: {
@@ -82,6 +82,16 @@ const completion: Fig.Spec = {
         name: "log_file",
         isOptional: true,
         template: "filepaths",
+      },
+    },
+    {
+      name: "--log-filter",
+      description: "Filter for specific Rust module or crate, instead of showing logs from all crates",
+      hidden: true,
+      isRepeatable: true,
+      args: {
+        name: "log_filter",
+        isOptional: true,
       },
     },
     {
@@ -109,8 +119,8 @@ const completion: Fig.Spec = {
       ],
     },
     {
-      name: "--log-stdout",
-      description: "Log to stdout instead of file",
+      name: "--log-stderr",
+      description: "Log to standard error instead of file",
       exclusiveOn: [
         "-S",
         "--silent",
@@ -118,15 +128,7 @@ const completion: Fig.Spec = {
     },
     {
       name: "--debug",
-      description: "Launch ferrishot in debug mode (F12)",
-    },
-    {
-      name: "--print-log-file-path",
-      description: "Output the path to the log file",
-      exclusiveOn: [
-        "-S",
-        "--silent",
-      ],
+      description: "Launch in debug mode (F12)",
     },
     {
       name: ["-h", "--help"],

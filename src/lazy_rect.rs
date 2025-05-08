@@ -318,7 +318,7 @@ impl FromStr for LazyRectangle {
                 let parse_nudge = |i| {
                     if nudges.len() > 2 {
                         return Err(ParseRectError::InvalidFormat);
-                    };
+                    }
 
                     nudges
                         .get(i)

@@ -1,5 +1,5 @@
 name: ferrishot
-description: A cross-platform desktop screenshot app
+description: A powerful screenshot app
 flags:
   -a, --accept-on-select=: Accept on first selection
   -C, --config-file=: Use the provided config file

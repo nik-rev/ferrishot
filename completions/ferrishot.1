@@ -2,17 +2,33 @@
 .el .ds Aq '
 .TH ferrishot 1  "ferrishot 0.2.0" 
 .SH NAME
-ferrishot \- A cross\-platform desktop screenshot app
+ferrishot \- A powerful screenshot app
 .SH SYNOPSIS
 \fBferrishot\fR [\fB\-r\fR|\fB\-\-region\fR] [\fB\-l\fR|\fB\-\-last\-region\fR] [\fB\-a\fR|\fB\-\-accept\-on\-select\fR] [\fB\-d\fR|\fB\-\-delay\fR] [\fB\-s\fR|\fB\-\-save\-path\fR] [\fB\-D\fR|\fB\-\-dump\-default\-config\fR] [\fB\-C\fR|\fB\-\-config\-file\fR] [\fB\-S\fR|\fB\-\-silent\fR] [\fB\-j\fR|\fB\-\-json\fR] [\fB\-h\fR|\fB\-\-help\fR] [\fB\-V\fR|\fB\-\-version\fR] [\fIFILE\fR] 
 .SH DESCRIPTION
-A cross\-platform desktop screenshot app
+A powerful screenshot app
 .SH OPTIONS
 .TP
 \fB\-r\fR, \fB\-\-region\fR=\fIWxH+X+Y\fR
 Open with a region pre\-selected
 
 Format: `<width>x<height>+<top\-left\-x>+<top\-left\-y>`
+
+Each value can be absolute.
+\- 550 for `x` means top\-left corner starts after 550px
+\- 100 for `height` means it will be 100px tall
+
+Each can also be relative to the height (for `y` and `height`) or width (for `width` and `x`)
+\- 0.2 for `width` means it region takes up 20% of the width of the image.
+\- 0.5 for `y` means the top\-left corner will be at the vertical center
+
+The format can also end with 1 or 2 percentages, which shifts the region relative to the region\*(Aqs size
+\- If `width` is `250`, end region with `+30%` to move right by 75px or `\-40%` to move left by 100px
+\- Supplying 2 percentage at the end like `+30%\-10%`, the 1st affects x\-offset and the 2nd affects y\-offset
+
+With the above syntax, you can create all the regions you want.
+\- `100x1.0+0.5+0\-50%`: Create a 100px wide, full height, horizontally centered region
+\- `1.0x1.0+0+0`: Create a region that spans the full screen. You can use alias `full` for this
 .TP
 \fB\-l\fR, \fB\-\-last\-region\fR
 Use last region
@@ -58,7 +74,7 @@ Print version
 \fB\-D\fR, \fB\-\-dump\-default\-config\fR
 Write contents of the default config to /home/e/.config/ferrishot.kdl
 .TP
-\fB\-C\fR, \fB\-\-config\-file\fR=\fIfile.kdl\fR [default: /home/e/.config/ferrishot.kdl]
+\fB\-C\fR, \fB\-\-config\-file\fR=\fIFILE.KDL\fR [default: /home/e/.config/ferrishot.kdl]
 Use the provided config file
 .SH OUTPUT
 .TP

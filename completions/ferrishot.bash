@@ -23,18 +23,24 @@ _ferrishot() {
 
     case "${cmd}" in
         ferrishot)
-            opts="-r -l -a -d -s -D -C -S -j -h -V --region --last-region --accept-on-select --delay --save-path --dump-default-config --config-file --silent --json --log-level --log-stdout --log-file --debug --print-log-file-path --help --version [FILE]"
+            opts="-r -l -a -d -s -D -C -S -j -h -V --region --last-region --accept-on-select --delay --save-path --dump-default-config --config-file --silent --json --log-level --log-stderr --log-file --log-filter --debug --help --version [FILE]"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 1 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
             fi
             case "${prev}" in
                 --region)
-                    COMPREPLY=($(compgen -f "${cur}"))
+                    COMPREPLY=("${cur}")
+                    if [[ "${BASH_VERSINFO[0]}" -ge 4 ]]; then
+                        compopt -o nospace
+                    fi
                     return 0
                     ;;
                 -r)
-                    COMPREPLY=($(compgen -f "${cur}"))
+                    COMPREPLY=("${cur}")
+                    if [[ "${BASH_VERSINFO[0]}" -ge 4 ]]; then
+                        compopt -o nospace
+                    fi
                     return 0
                     ;;
                 --accept-on-select)
@@ -46,11 +52,17 @@ _ferrishot() {
                     return 0
                     ;;
                 --delay)
-                    COMPREPLY=($(compgen -f "${cur}"))
+                    COMPREPLY=("${cur}")
+                    if [[ "${BASH_VERSINFO[0]}" -ge 4 ]]; then
+                        compopt -o nospace
+                    fi
                     return 0
                     ;;
                 -d)
-                    COMPREPLY=($(compgen -f "${cur}"))
+                    COMPREPLY=("${cur}")
+                    if [[ "${BASH_VERSINFO[0]}" -ge 4 ]]; then
+                        compopt -o nospace
+                    fi
                     return 0
                     ;;
                 --save-path)
@@ -129,6 +141,13 @@ _ferrishot() {
                     fi
                     if [[ "${BASH_VERSINFO[0]}" -ge 4 ]]; then
                         compopt -o filenames
+                    fi
+                    return 0
+                    ;;
+                --log-filter)
+                    COMPREPLY=("${cur}")
+                    if [[ "${BASH_VERSINFO[0]}" -ge 4 ]]; then
+                        compopt -o nospace
                     fi
                     return 0
                     ;;

@@ -4,7 +4,7 @@ module completions {
     [ "copy" "save" "upload" ]
   }
 
-  # A cross-platform desktop screenshot app
+  # A powerful screenshot app
   export extern ferrishot [
     file?: path               # Instead of taking a screenshot of the desktop, open this image instead
     --region(-r): string      # Open with a region pre-selected
@@ -16,11 +16,11 @@ module completions {
     --config-file(-C): path   # Use the provided config file
     --silent(-S)              # Run in silent mode
     --json(-j)                # Print in JSON format
-    --log-level: string       # Choose a minumum level at which to log
-    --log-stdout              # Log to stdout instead of file
+    --log-level: string       # Choose a miniumum level at which to log
+    --log-stderr              # Log to standard error instead of file
     --log-file: path          # Path to the log file
-    --debug                   # Launch ferrishot in debug mode (F12)
-    --print-log-file-path     # Output the path to the log file
+    --log-filter: string      # Filter for specific Rust module or crate, instead of showing logs from all crates
+    --debug                   # Launch in debug mode (F12)
     --help(-h)                # Print help (see more with '--help')
     --version(-V)             # Print version
   ]
