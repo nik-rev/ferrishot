@@ -77,17 +77,9 @@ Ferrishot is fantastic for usage in scripts. It can be fully controlled without 
 
 #### `ferrishot`
 
-A cross-platform desktop screenshot app
-
-## `ferrishot`
-
 A powerful screenshot app
 
 **Usage:** `ferrishot [OPTIONS]`
-
-###### **Arguments:**
-
-- `<FILE>` — Instead of taking a screenshot of the desktop, open this image instead
 
 ###### **Options:**
 
