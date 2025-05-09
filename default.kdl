@@ -1,5 +1,7 @@
 // Default config for ferrishot
 //
+// Create this file in the appropriate place with `ferrishot --dump-default-config`
+//
 // You can remove all of the defaults, and just keep your overrides
 // if you want to do that
 
