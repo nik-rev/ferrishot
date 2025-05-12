@@ -408,8 +408,9 @@ pub impl Point<f32> {
 /// Extension methods for `iced::Rectangle`
 #[easy_ext::ext(RectangleExt)]
 pub impl Rectangle<f32> {
-    /// Completely contain this rectangle in another rectangle
-    fn contained_in(mut self, container: Rectangle) -> Rectangle {
+    /// Completely contain this rectangle in another rectangle, cutting
+    /// off any parts that overflow
+    fn clipped_in_bounds_of(mut self, container: Rectangle) -> Rectangle {
         let dx = container.x.max(self.x).min(container.x + container.width) - self.x;
         self.x += dx;
 
@@ -958,7 +959,7 @@ mod tests {
                 width: 100.0,
                 height: 150.0,
             }
-            .contained_in(Rectangle {
+            .clipped_in_bounds_of(Rectangle {
                 x: 0.0,
                 y: 0.0,
                 width: 800.0,

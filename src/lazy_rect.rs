@@ -1,4 +1,6 @@
-//! Parse user's rectangle using custom syntax
+//! Parse "lazy rect" using custom syntax to specify precise dimensions
+//! It is "lazy" because the concrete size of it will depend on the size of its container
+//!
 //! Syntax:
 //!
 //! WxH+X+Y[-XP%[+YP%]]
@@ -214,7 +216,7 @@ impl LazyRectangle {
             width,
             height,
         }
-        .contained_in(bounds)
+        .clipped_in_bounds_of(bounds)
     }
 }
 

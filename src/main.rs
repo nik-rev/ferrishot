@@ -80,18 +80,12 @@ fn main() -> miette::Result<()> {
 
     // The image that we are going to be editing
     let image = Arc::new(ferrishot::get_image(cli.file.as_ref())?);
-    let image_bounds = iced::Rectangle {
-        x: 0.0,
-        y: 0.0,
-        width: image.width() as f32,
-        height: image.height() as f32,
-    };
 
     // start the app with an initial selection of the image
     let initial_region = if cli.last_region {
-        ferrishot::last_region::read(image_bounds)?
+        ferrishot::last_region::read(image.bounds())?
     } else {
-        cli.region.map(|lazy_rect| lazy_rect.init(image_bounds))
+        cli.region.map(|lazy_rect| lazy_rect.init(image.bounds()))
     };
 
     let generate_output = match (cli.accept_on_select, initial_region) {
