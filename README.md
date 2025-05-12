@@ -33,11 +33,13 @@ Run by typing `ferrishot` on the command line.
 - Resize the region by dragging on any of the sides and dragging
 - Move the region around by dragging in the center
 
-The selection is surrounded by buttons, each with their own keybinding. Most notably:
+The selected region is surrounded by buttons, each with their own keybinding. Most notably:
 
 - `Enter` copies screenshot to clipboard
 - `Ctrl s` saves screenshot to a file. You can choose any valid extension like `.png`, `.webp`, `.jpg`
 - `Ctrl u` uploads the screenshot to the internet
+
+Hold `Shift` while resizing to have much more granular control over the size of the region.
 
 #### Image Uploaded
 
