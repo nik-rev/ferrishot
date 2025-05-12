@@ -145,26 +145,39 @@ suboptimal_flops = "allow"
 too_many_lines = "allow"
 # if we need it const, make it const. no need to make everything that can be const, const
 missing_const_for_fn = "allow"
+
+if_then_some_else_none = "warn"
+
+# --- casts
+# 
 # casts from floats -> int are common in the code, and in
 # most cases we don't care about precision as we are
 # dealing with pixels which cannot be float.
 cast_sign_loss = "allow"
 cast_possible_truncation = "allow"
 cast_precision_loss = "allow"
+# ---
 
 missing_errors_doc = "allow"
 
+# use Trait; => use Trait as _;
 unused_trait_names = "warn"
 
+# #[allow] => #[allow, reason = "why"]
 allow_attributes_without_reason = "warn"
+# .unwrap() => .expect("why")
 unwrap_used = "warn"
+# assert!(...) => assert!(..., "why")
 missing_assert_message = "warn"
+
 missing_docs_in_private_items = "warn"
 
-# catch debug remnants
+# --- catch debug remnants
 print_stderr = "warn"
 print_stdout = "warn"
 dbg_macro = "warn"
+todo = "warn"
+# ---
 
 # The profile that 'dist' will build with
 [profile.dist]

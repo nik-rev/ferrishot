@@ -75,8 +75,8 @@ pub fn selection_icon<'a, Message>(
             blur_radius: 3.0,
             offset: iced::Vector { x: 0.0, y: 0.0 },
         };
-        style.border = Border::default()
-            .rounded(iced::border::Radius::new(iced::Pixels::from(f32::INFINITY)));
+        style.border =
+            Border::default().rounded(iced::border::Radius::new(iced::Pixels::from(f32::INFINITY)));
         style
     })
 }
