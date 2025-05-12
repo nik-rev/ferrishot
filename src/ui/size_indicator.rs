@@ -30,7 +30,7 @@ pub enum Message {
 }
 
 impl crate::message::Handler for Message {
-    fn handle(self, app: &mut crate::App) -> Task<crate::Message> {
+    fn handle(self, app: &mut App) -> Task<crate::Message> {
         match self {
             Self::ResizeVertically {
                 new_height,
@@ -80,7 +80,7 @@ fn dimension_indicator<'a>(
     theme: &'a crate::Theme,
 ) -> widget::TextInput<'a, crate::Message> {
     let content = value.to_string();
-    let input = iced::widget::text_input(Default::default(), content.as_str())
+    let input = widget::text_input(Default::default(), content.as_str())
         // HACK: iced does not provide a way to mimic `width: min-content` from CSS
         // so we have to "guesstimate" the width that each character will be
         // `Length::Shrink` makes `width = 0` for some reason
@@ -155,10 +155,10 @@ pub fn size_indicator(
         &app.config.theme,
     );
 
-    let x = iced::widget::text("✕ ")
+    let x = widget::text("✕ ")
         .color(app.config.theme.size_indicator_fg)
         .shaping(Shaping::Advanced);
-    let space = iced::widget::text(" ");
+    let space = widget::text(" ");
     let c = widget::container(row![space, width, x, height]).style(|_| widget::container::Style {
         text_color: None,
         background: Some(Background::Color(app.config.theme.size_indicator_bg)),

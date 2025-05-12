@@ -95,7 +95,7 @@ impl canvas::Program<crate::Message> for KeybindingsCheatsheet<'_> {
         _state: &Self::State,
         renderer: &Renderer,
         _theme: &Theme,
-        bounds: iced::Rectangle,
+        bounds: Rectangle,
         _cursor: iced::advanced::mouse::Cursor,
     ) -> Vec<canvas::Geometry> {
         /// How far away the `new` selection from the `old` selection should be
@@ -258,7 +258,7 @@ impl canvas::Program<crate::Message> for KeybindingsCheatsheet<'_> {
 
                         // draw the arrow
                         frame.draw_svg(
-                            iced::Rectangle {
+                            Rectangle {
                                 x: icon_pos_relative.x,
                                 y: icon_pos_relative.y,
                                 width: ARROW_ICON_SIZE,

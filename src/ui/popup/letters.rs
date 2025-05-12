@@ -139,11 +139,11 @@ fn draw_boxes(
                 + ((y - y_start) / box_height))
                 .round() as u32;
 
-            frame.fill_text(iced::widget::canvas::Text {
+            frame.fill_text(canvas::Text {
                 content: char::from_u32(UNICODE_CODEPOINT_LOWERCASE_A_START + boxes_drawn)
                     .expect("valid utf8 character")
                     .to_string(),
-                position: iced::Point {
+                position: Point {
                     x: x + box_width / 2.0 - line_offset,
                     y: y + box_height / 2.0 - line_offset,
                 },
@@ -349,7 +349,7 @@ impl canvas::Program<crate::Message> for Letters<'_> {
         event: &Event,
         bounds: iced::Rectangle,
         _cursor: iced::advanced::mouse::Cursor,
-    ) -> Option<canvas::Action<crate::Message>> {
+    ) -> Option<Action<crate::Message>> {
         if let Event::Keyboard(iced::keyboard::Event::KeyPressed {
             modified_key: Key::Character(input),
             ..
@@ -403,7 +403,7 @@ impl canvas::Program<crate::Message> for Letters<'_> {
                 }
             }
         } else if let Event::Keyboard(iced::keyboard::Event::KeyPressed {
-            key: iced::keyboard::Key::Named(iced::keyboard::key::Named::Escape),
+            key: Key::Named(iced::keyboard::key::Named::Escape),
             ..
         }) = event
         {

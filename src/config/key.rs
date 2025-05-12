@@ -73,13 +73,13 @@ pub struct KeySequence(pub (IcedKey, Option<IcedKey>));
 
 /// Modifier keys
 #[derive(Debug, Default, Clone, Hash, Eq, PartialEq)]
-pub struct KeyMods(pub iced::keyboard::Modifiers);
+pub struct KeyMods(pub Modifiers);
 
 impl FromStr for KeyMods {
     type Err = String;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let mut mods = iced::keyboard::Modifiers::empty();
+        let mut mods = Modifiers::empty();
         if s.is_empty() {
             return Ok(Self(Modifiers::empty()));
         }
@@ -101,7 +101,7 @@ impl FromStr for KeyMods {
     }
 }
 
-impl std::str::FromStr for KeySequence {
+impl FromStr for KeySequence {
     type Err = String;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {

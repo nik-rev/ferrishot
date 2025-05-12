@@ -4,7 +4,7 @@ use bon::Builder;
 use iced::{
     Point, Rectangle, Size,
     advanced::graphics::geometry,
-    widget::canvas::{self, Frame, Stroke},
+    widget::canvas::{Frame, Stroke},
 };
 
 use crate::geometry::{PointExt as _, RectangleExt as _, StrokeExt as _, TextExt as _};
@@ -24,7 +24,7 @@ pub struct Cell<'frame, Draw: FnOnce(&mut Frame, Rectangle)> {
 
 impl<Draw: FnOnce(&mut Frame, Rectangle)> Cell<'_, Draw> {
     /// Draw the `Cell`
-    pub fn draw(self, frame: &mut canvas::Frame, bounds: Rectangle) {
+    pub fn draw(self, frame: &mut Frame, bounds: Rectangle) {
         // Stroke
         if let Some(stroke) = self.stroke {
             frame.stroke_rectangle(bounds.top_left(), bounds.size(), stroke);
@@ -110,7 +110,7 @@ impl<Draw: FnOnce(&mut Frame, Rectangle)> Grid<'_, Draw> {
     }
 
     /// Draw the `Grid` on the `Frame` of a `Canvas`
-    pub fn draw(self, frame: &mut canvas::Frame) {
+    pub fn draw(self, frame: &mut Frame) {
         let grid_rect = Rectangle::new(self.top_left, self.size());
 
         if self.dbg {

@@ -16,7 +16,7 @@ const LABEL_SPACE: f32 = 25.0;
 
 /// Debug overlay shows useful information when pressing F12
 pub fn debug_overlay(app: &App) -> Element<Message> {
-    let container_style = |_: &Theme| iced::widget::container::Style {
+    let container_style = |_: &Theme| container::Style {
         text_color: Some(app.config.theme.debug_fg),
         background: Some(Background::Color(app.config.theme.debug_bg)),
         ..Default::default()

@@ -73,7 +73,7 @@ impl crate::message::Handler for Message {
             }
             Self::ImageUploaded(data) => {
                 app.is_uploading_image = false;
-                match iced::widget::qr_code::Data::new(data.image_uploaded.link.clone()) {
+                match qr_code::Data::new(data.image_uploaded.link.clone()) {
                     Ok(qr_code) => {
                         app.popup = Some(Popup::ImageUploaded(State {
                             url: (qr_code, data),
@@ -180,7 +180,7 @@ impl<'app> ImageUploaded<'app> {
                                             self.data.image_uploaded.link.to_string(),
                                         )))
                                         .style(|_, _| {
-                                            iced::widget::button::Style {
+                                            button::Style {
                                                 background: Some(Background::Color(
                                                     iced::Color::TRANSPARENT,
                                                 )),

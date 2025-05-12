@@ -38,7 +38,7 @@ const SPACE_BETWEEN_ICONS: f32 = 2.0;
 pub fn icon_tooltip<'a, Message>(
     content: impl Into<Element<'a, Message>>,
     tooltip: impl Into<Element<'a, Message>>,
-    position: widget::tooltip::Position,
+    position: tooltip::Position,
     theme: &'a crate::Theme,
 ) -> widget::Tooltip<'a, Message> {
     widget::Tooltip::new(content, tooltip, position)
@@ -75,7 +75,7 @@ pub fn selection_icon<'a, Message>(
             blur_radius: 3.0,
             offset: iced::Vector { x: 0.0, y: 0.0 },
         };
-        style.border = iced::Border::default()
+        style.border = Border::default()
             .rounded(iced::border::Radius::new(iced::Pixels::from(f32::INFINITY)));
         style
     })

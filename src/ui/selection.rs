@@ -383,7 +383,7 @@ impl Selection {
     }
 
     /// Draw shade around the selection
-    pub fn draw_shade(&self, frame: &mut iced::widget::canvas::Frame, image_bounds: Rectangle) {
+    pub fn draw_shade(&self, frame: &mut canvas::Frame, image_bounds: Rectangle) {
         let sel = self.norm();
 
         // represents the area outside of the selection
@@ -405,12 +405,12 @@ impl Selection {
     }
 
     /// Renders border of the selection
-    pub fn draw_border(&self, frame: &mut iced::widget::canvas::Frame) {
+    pub fn draw_border(&self, frame: &mut canvas::Frame) {
         // Draw the shadow of the border of the selection
         frame.stroke_rectangle(
             self.pos(),
             self.size(),
-            iced::widget::canvas::Stroke::default()
+            canvas::Stroke::default()
                 .with_color(self.theme.drop_shadow)
                 .with_width(FRAME_WIDTH * 2.0),
         );
@@ -418,14 +418,14 @@ impl Selection {
         frame.stroke_rectangle(
             self.pos(),
             self.size(),
-            iced::widget::canvas::Stroke::default()
+            canvas::Stroke::default()
                 .with_color(self.theme.selection_frame)
                 .with_width(FRAME_WIDTH),
         );
     }
 
     /// Render the circles for each side
-    pub fn draw_corners(&self, frame: &mut iced::widget::canvas::Frame) {
+    pub fn draw_corners(&self, frame: &mut canvas::Frame) {
         /// Radius of each of the 4 corner circles in the frame drawn around the selection
         const FRAME_CIRCLE_RADIUS: f32 = 6.0;
 
@@ -436,7 +436,7 @@ impl Selection {
             corners.bottom_left,
             corners.bottom_right,
         ]
-        .map(|corner| iced::widget::canvas::Path::circle(corner, FRAME_CIRCLE_RADIUS))
+        .map(|corner| canvas::Path::circle(corner, FRAME_CIRCLE_RADIUS))
         {
             frame.fill(&circle, self.theme.selection_frame);
         }
@@ -470,7 +470,7 @@ impl Selection {
         state: &mut SelectionKeysState,
         event: &iced::Event,
         _bounds: Rectangle,
-        cursor: iced::advanced::mouse::Cursor,
+        cursor: Cursor,
     ) -> Option<Action<crate::Message>> {
         use iced::Event::{Keyboard, Mouse, Touch};
         use iced::keyboard::Event::KeyPressed;

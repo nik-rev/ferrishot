@@ -3,13 +3,13 @@ use iced::Length::Fill;
 use iced::advanced::widget::Tree;
 use iced::advanced::{Layout, Widget, layout, renderer};
 use iced::widget::image;
-use iced::{Element, Length, Rectangle, Size, Theme, mouse, widget};
+use iced::{Element, Length, Rectangle, Size, Theme, mouse};
 
 #[derive(Debug)]
 /// A widget that draws an image on the entire screen
 pub struct BackgroundImage {
     /// Image handle of the full-desktop screenshot
-    pub image_handle: widget::image::Handle,
+    pub image_handle: image::Handle,
 }
 
 impl<Message, Renderer> Widget<Message, Theme, Renderer> for BackgroundImage
@@ -29,7 +29,7 @@ where
         renderer: &Renderer,
         limits: &layout::Limits,
     ) -> layout::Node {
-        iced::widget::image::layout(
+        image::layout(
             renderer,
             limits,
             &self.image_handle,
@@ -50,13 +50,13 @@ where
         _cursor: mouse::Cursor,
         viewport: &Rectangle,
     ) {
-        iced::widget::image::draw(
+        image::draw(
             renderer,
             layout,
             viewport,
             &self.image_handle,
             iced::ContentFit::Contain,
-            iced::widget::image::FilterMethod::Nearest,
+            image::FilterMethod::Nearest,
             iced::Rotation::Solid(0.into()),
             1.0,
             1.0,

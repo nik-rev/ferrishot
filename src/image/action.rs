@@ -107,7 +107,7 @@ impl Message {
             })
             .map(|_| (Output::Copied, image_data))?,
             Self::Save => {
-                let _ = crate::SAVED_IMAGE.set(image);
+                let _ = SAVED_IMAGE.set(image);
                 (Output::Saved, image_data)
             }
             Self::Upload => {
@@ -214,4 +214,4 @@ impl crate::message::Handler for Message {
 /// having to close this. But this seems to not be possible. Perhaps in the
 /// future there will be some kind of file explorer Iced widget that we
 /// can use instead of the native file explorer.
-pub static SAVED_IMAGE: std::sync::OnceLock<image::DynamicImage> = std::sync::OnceLock::new();
+pub static SAVED_IMAGE: std::sync::OnceLock<DynamicImage> = std::sync::OnceLock::new();

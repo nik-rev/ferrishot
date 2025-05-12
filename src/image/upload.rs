@@ -172,7 +172,7 @@ impl ImageUploadService {
     }
 
     /// Upload the image to the given upload service
-    pub async fn upload_image(self, file_path: &std::path::Path) -> Result<ImageUploaded, Error> {
+    pub async fn upload_image(self, file_path: &Path) -> Result<ImageUploaded, Error> {
         let request = HTTP_CLIENT
             .request(reqwest::Method::POST, self.post_url())
             .header(

@@ -132,6 +132,7 @@ anstyle = "1.0.10"
 
 [lints.rust]
 missing_docs = "warn"
+unused_qualifications = "warn"
 
 [lints.clippy]
 pedantic = { priority = -1, level = "warn" }

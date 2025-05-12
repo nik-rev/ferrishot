@@ -246,13 +246,13 @@ impl App {
     ///
     /// If there is no window
     pub fn exit() -> Task<Message> {
-        iced::window::get_latest().then(|id| iced::window::close(id.expect("window to exist")))
+        window::get_latest().then(|id| window::close(id.expect("window to exist")))
     }
 
     /// This method is used to keep track of time / how much time has passed since start
     /// of the program, using this for animations.
-    pub fn subscription(&self) -> Subscription<crate::Message> {
-        window::frames().map(crate::Message::Tick)
+    pub fn subscription(&self) -> Subscription<Message> {
+        window::frames().map(Message::Tick)
     }
 
     /// Renders the app
@@ -296,19 +296,19 @@ impl App {
             )
             .push_maybe(self.popup.as_ref().map(|popup| {
                 match popup {
-                    Popup::Letters(state) => ui::popup::Letters {
+                    Popup::Letters(state) => popup::Letters {
                         app: self,
                         pick_corner: state.picking_corner,
                     }
                     .view(),
-                    Popup::ImageUploaded(state) => ui::popup::ImageUploaded {
+                    Popup::ImageUploaded(state) => popup::ImageUploaded {
                         app: self,
                         qr_code_data: &state.url.0,
                         data: &state.url.1,
                         url_copied: state.has_copied_link,
                     }
                     .view(),
-                    Popup::KeyCheatsheet => ui::popup::KeybindingsCheatsheet {
+                    Popup::KeyCheatsheet => popup::KeybindingsCheatsheet {
                         theme: &self.config.theme,
                     }
                     .view(),
@@ -326,7 +326,7 @@ impl App {
     ///
     /// The stored image is not a valid RGBA image
     pub fn process_image(rect: Rectangle, image: &RgbaHandle) -> DynamicImage {
-        image::DynamicImage::from(
+        DynamicImage::from(
             image::RgbaImage::from_raw(image.width(), image.height(), image.bytes().to_vec())
                 .expect("Image handle stores a valid image"),
         )
@@ -615,7 +615,7 @@ impl canvas::Program<Message> for App {
         // Events will still be forwarded to the canvas even if we have a popup
         if self.popup.is_some() {
             if let Keyboard(KeyPressed {
-                key: iced::keyboard::Key::Named(iced::keyboard::key::Named::Escape),
+                key: Named(iced::keyboard::key::Named::Escape),
                 ..
             }) = event
             {
