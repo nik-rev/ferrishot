@@ -35,10 +35,10 @@ pub enum Message {
     Error(String),
     /// Do nothing
     NoOp,
-    /// An action can be triggered by a keybind
+    /// A command can be triggered by a keybind
     ///
     /// It can also be triggered through other means, such as pressing a button
-    KeyBind {
+    Command {
         /// What to do when this keybind is pressed
         action: Command,
         /// How many times it was pressed

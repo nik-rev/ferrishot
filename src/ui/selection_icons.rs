@@ -200,7 +200,7 @@ impl<'app> SelectionIcons<'app> {
         .map(|(icon, action, label)| {
             (
                 selection_icon(icon, &self.app.config.theme)
-                    .on_press(Message::KeyBind {
+                    .on_press(Message::Command {
                         action,
                         // Count does not actually matter at all, since it does not make sense to
                         // do any of the buttons multiple times.

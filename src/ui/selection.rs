@@ -526,7 +526,7 @@ impl Selection {
                     |on_select| {
                         if self.is_first && !state.is_ctrl_down {
                             // we have created 1 selections in total, (the current one)
-                            crate::Message::KeyBind {
+                            crate::Message::Command {
                                 action: on_select.into_key_action(),
                                 count: 1,
                             }

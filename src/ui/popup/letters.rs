@@ -74,7 +74,7 @@ impl crate::message::Handler for Message {
                 if let Some(on_select) = app.cli.accept_on_select {
                     if new_sel.size() != Size::ZERO {
                         if app.selections_created == 0 {
-                            return Task::done(crate::Message::KeyBind {
+                            return Task::done(crate::Message::Command {
                                 action: on_select.into_key_action(),
                                 count: 1,
                             });

@@ -366,7 +366,7 @@ impl App {
                 return letters.handle(self);
             }
             Message::NoOp => (),
-            Message::KeyBind { action, count } => match action {
+            Message::Command { action, count } => match action {
                 Command::NoOp => {}
                 Command::OpenKeybindingsCheatsheet => {
                     self.popup = Some(Popup::KeyCheatsheet);
@@ -698,7 +698,7 @@ impl canvas::Program<Message> for App {
                 let count = state.motion_count.unwrap_or(1);
                 state.motion_count = None;
 
-                return Some(Action::publish(Message::KeyBind {
+                return Some(Action::publish(Message::Command {
                     action: action.clone(),
                     count,
                 }));
