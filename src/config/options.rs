@@ -14,7 +14,7 @@ crate::declare_config_options! {
     selection_icons: bool,
 }
 
-crate::declare_key_options! {
+crate::declare_commands! {
     /// Do nothing
     NoOp,
     /// Open the keybindings cheatsheet

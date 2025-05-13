@@ -275,7 +275,7 @@ macro_rules! declare_theme_options {
 /// Key::Keybind(10, false, 0.8, "hello", KeySequence("g", None), KeyMods::CTRL)
 /// ```
 #[macro_export]
-macro_rules! declare_key_options {
+macro_rules! declare_commands {
     (
         $(
             $(#[$Keymappable_Command_Attr:meta])*
