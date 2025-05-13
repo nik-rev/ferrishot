@@ -158,7 +158,9 @@ impl<'app> SelectionIcons<'app> {
         let icons = vec![
             (
                 icon!(Fullscreen),
-                KeyAction::SelectRegion(LazyRectangle::FULL),
+                KeyAction::SelectRegion {
+                    selection: LazyRectangle::FULL,
+                },
                 "Select entire monitor (F11)",
             ),
             (
