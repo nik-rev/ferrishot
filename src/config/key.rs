@@ -8,15 +8,15 @@ use iced::{
     keyboard::{Modifiers, key::Key as IcedKey},
 };
 
-use crate::config::Key;
+use crate::config::KeymappableCommand;
 
-use super::KeyAction;
+use super::Command;
 
 /// Represents the keybindings for ferrishot
 #[derive(Debug, Default)]
 pub struct KeyMap {
     /// Map of Key Pressed => Action when pressing that key
-    pub keys: HashMap<(KeySequence, KeyMods), KeyAction>,
+    pub keys: HashMap<(KeySequence, KeyMods), Command>,
 }
 
 impl KeyMap {
@@ -39,7 +39,7 @@ impl KeyMap {
         key: IcedKey,
         previous_key: Option<IcedKey>,
         mods: Modifiers,
-    ) -> Option<&KeyAction> {
+    ) -> Option<&Command> {
         self.keys
             .get(&(KeySequence((key, previous_key)), KeyMods(mods)))
     }
@@ -50,13 +50,13 @@ impl KeyMap {
 pub struct Keys {
     /// A list of raw keybindings for ferrishot, directly as read from the config file
     #[ferrishot_knus(children)]
-    pub keys: Vec<Key>,
+    pub keys: Vec<KeymappableCommand>,
 }
 
-impl FromIterator<Key> for KeyMap {
-    fn from_iter<T: IntoIterator<Item = Key>>(iter: T) -> Self {
+impl FromIterator<KeymappableCommand> for KeyMap {
+    fn from_iter<T: IntoIterator<Item = KeymappableCommand>>(iter: T) -> Self {
         Self {
-            keys: iter.into_iter().map(Key::action).collect(),
+            keys: iter.into_iter().map(KeymappableCommand::action).collect(),
         }
     }
 }

@@ -19,14 +19,14 @@ crate::declare_key_options! {
     NoOp,
     /// Open the keybindings cheatsheet
     OpenKeybindingsCheatsheet,
-    /// Upload screenshot to the internet
-    UploadScreenshot,
     /// Toggle the overlay showing various information for debugging
     ToggleDebugOverlay,
     /// Open a grid of letters to pick the top left corner in 3 keystrokes
     PickTopLeftCorner,
     /// Open a grid of letters to pick the bottom right corner in 3 keystrokes
     PickBottomRightCorner,
+    /// Upload screenshot to the internet
+    UploadScreenshot,
     /// Copy the selected region as a screenshot to the clipboard
     CopyToClipboard,
     /// Save the screenshot as a path

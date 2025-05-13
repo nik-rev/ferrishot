@@ -278,22 +278,22 @@ macro_rules! declare_theme_options {
 macro_rules! declare_key_options {
     (
         $(
-            $(#[$key_attr:meta])*
-            $KeyOption:ident $({$(
-                $(#[$arg_attr:meta])*
-                $field:ident: $Argument:ty $(= $default:expr)?,
+            $(#[$Keymappable_Command_Attr:meta])*
+            $Keymappable_Command:ident $({$(
+                $(#[$Command_Argument_Attr:meta])*
+                $Command_Argument:ident: $Command_Argument_Ty:ty $(= $Command_Argument_Default:expr)?,
             )+})?
         ),* $(,)?
     ) => {
         $(
-            $(#[$key_attr])*
+            $(#[$Keymappable_Command_Attr])*
             #[derive(ferrishot_knus::Decode, Debug, Clone)]
-            pub struct $KeyOption {
+            pub struct $Keymappable_Command {
                 $($(
-                    $(#[$arg_attr])*
-                    $(#[ferrishot_knus(default = $default)])?
+                    $(#[$Command_Argument_Attr])*
+                    $(#[ferrishot_knus(default = $Command_Argument_Default)])?
                     #[ferrishot_knus(argument)]
-                    $field: $Argument,
+                    $Command_Argument: $Command_Argument_Ty,
                 )+)?
                 #[ferrishot_knus(property(name = "key"), str)]
                 keys: $crate::config::key::KeySequence,
@@ -304,29 +304,29 @@ macro_rules! declare_key_options {
 
         /// A list of keybindings which exist in the app
         #[derive(ferrishot_knus::Decode, Debug, Clone)]
-        pub enum Key {
+        pub enum KeymappableCommand {
             $(
-                $KeyOption($KeyOption),
+                $Keymappable_Command($Keymappable_Command),
             )*
         }
 
-        impl Key {
+        impl KeymappableCommand {
             /// Obtain the Action for this key. What will happen when the specific `KeySequence` is fired
             /// provided that the `KeyMods` match the current key modifiers.
-            pub fn action(self) -> (($crate::config::key::KeySequence, $crate::config::key::KeyMods), KeyAction) {
+            pub fn action(self) -> (($crate::config::key::KeySequence, $crate::config::key::KeyMods), Command) {
                 match self {
                     $(
-                        Self::$KeyOption($KeyOption {
+                        Self::$Keymappable_Command($Keymappable_Command {
                             $(
-                                $($field,)*
+                                $($Command_Argument,)*
                             )?
                             keys,
                             mods
                         }) => {
                             (
                                 (keys, mods),
-                                KeyAction::$KeyOption$({
-                                    $($field),*
+                                Command::$Keymappable_Command$({
+                                    $($Command_Argument),*
                                 })?
                             )
                         },
@@ -335,15 +335,15 @@ macro_rules! declare_key_options {
             }
         }
 
-        /// The action associated with a key
+        /// An action in the app
         #[derive(Debug, Clone)]
-        pub enum KeyAction {
+        pub enum Command {
             $(
-                $(#[$key_attr])*
-                $KeyOption $(
+                $(#[$Keymappable_Command_Attr])*
+                $Keymappable_Command $(
                     {
                         $(
-                            $field: $Argument,
+                            $Command_Argument: $Command_Argument_Ty,
                         )*
                     }
                 )?,

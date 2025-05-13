@@ -15,7 +15,7 @@
 //! - Adding opacity to colors
 
 pub mod cli;
-mod key;
+pub mod key;
 mod macros;
 mod named_key;
 mod options;
@@ -32,7 +32,7 @@ use options::{DefaultKdlConfig, UserKdlConfig};
 
 pub use cli::DEFAULT_LOG_FILE_PATH;
 pub use macros::Place;
-pub use options::{Config, Key, KeyAction, Theme};
+pub use options::{Command, Config, KeymappableCommand, Theme};
 
 /// The default configuration for ferrishot, to be merged with the user's config
 ///

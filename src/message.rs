@@ -4,7 +4,7 @@ use std::time::Instant;
 
 use crate::ui;
 
-use crate::config::KeyAction;
+use crate::config::Command;
 
 /// Handler for a `Message`
 pub trait Handler {
@@ -40,7 +40,7 @@ pub enum Message {
     /// It can also be triggered through other means, such as pressing a button
     KeyBind {
         /// What to do when this keybind is pressed
-        action: KeyAction,
+        action: Command,
         /// How many times it was pressed
         ///
         /// This does not always have an effect, such as it does not make sense to

@@ -7,7 +7,7 @@ use std::time::Instant;
 
 use crate::Cli;
 use crate::Config;
-use crate::config::KeyAction;
+use crate::config::Command;
 use crate::config::Place;
 use crate::image::action::ImageData;
 use crate::ui;
@@ -367,17 +367,17 @@ impl App {
             }
             Message::NoOp => (),
             Message::KeyBind { action, count } => match action {
-                KeyAction::NoOp => {}
-                KeyAction::OpenKeybindingsCheatsheet => {
+                Command::NoOp => {}
+                Command::OpenKeybindingsCheatsheet => {
                     self.popup = Some(Popup::KeyCheatsheet);
                 }
-                KeyAction::ToggleDebugOverlay => {
+                Command::ToggleDebugOverlay => {
                     self.show_debug_overlay = !self.show_debug_overlay;
                 }
-                KeyAction::ClearSelection => {
+                Command::ClearSelection => {
                     self.selection = None;
                 }
-                KeyAction::SelectRegion {
+                Command::SelectRegion {
                     selection: lazy_rect,
                 } => {
                     let rect = lazy_rect.init(self.image.bounds());
@@ -392,17 +392,17 @@ impl App {
                     );
                     self.selections_created += 1;
                 }
-                KeyAction::CopyToClipboard => {
+                Command::CopyToClipboard => {
                     return crate::image::action::Message::Copy.handle(self);
                 }
-                KeyAction::SaveScreenshot => {
+                Command::SaveScreenshot => {
                     return crate::image::action::Message::Save.handle(self);
                 }
-                KeyAction::UploadScreenshot => {
+                Command::UploadScreenshot => {
                     return crate::image::action::Message::Upload.handle(self);
                 }
-                KeyAction::Exit => return Self::exit(),
-                KeyAction::SetWidth => {
+                Command::Exit => return Self::exit(),
+                Command::SetWidth => {
                     let Some(selection) = self.selection.as_mut() else {
                         self.errors.push("Nothing is selected.");
                         return Task::none();
@@ -412,7 +412,7 @@ impl App {
 
                     *selection = sel.with_width(|_| (count as f32).min(image_width - sel.rect.x));
                 }
-                KeyAction::SetHeight => {
+                Command::SetHeight => {
                     let Some(selection) = self.selection.as_mut() else {
                         self.errors.push("Nothing is selected.");
                         return Task::none();
@@ -422,7 +422,7 @@ impl App {
 
                     *selection = sel.with_height(|_| (count as f32).min(image_height - sel.rect.y));
                 }
-                KeyAction::Goto { place } => {
+                Command::Goto { place } => {
                     let Some(selection) = self.selection.as_mut() else {
                         self.errors.push("Nothing is selected.");
                         return Task::none();
@@ -471,7 +471,7 @@ impl App {
                         }
                     }
                 }
-                KeyAction::Move { direction, amount } => {
+                Command::Move { direction, amount } => {
                     let Some(selection) = self.selection.as_mut() else {
                         self.errors.push("Nothing is selected.");
                         return Task::none();
@@ -492,7 +492,7 @@ impl App {
                         }
                     }
                 }
-                KeyAction::Extend { direction, amount } => {
+                Command::Extend { direction, amount } => {
                     let Some(selection) = self.selection.as_mut() else {
                         self.errors.push("Nothing is selected.");
                         return Task::none();
@@ -517,7 +517,7 @@ impl App {
                         }
                     }
                 }
-                KeyAction::Shrink { direction, amount } => {
+                Command::Shrink { direction, amount } => {
                     let Some(selection) = self.selection.as_mut() else {
                         self.errors.push("Nothing is selected.");
                         return Task::none();
@@ -536,12 +536,12 @@ impl App {
                         Direction::Right => sel.with_width(|w| (w - amount).max(0.0)),
                     }
                 }
-                KeyAction::PickTopLeftCorner => {
+                Command::PickTopLeftCorner => {
                     self.popup = Some(Popup::Letters(popup::letters::State {
                         picking_corner: PickCorner::TopLeft,
                     }));
                 }
-                KeyAction::PickBottomRightCorner => {
+                Command::PickBottomRightCorner => {
                     self.popup = Some(Popup::Letters(popup::letters::State {
                         picking_corner: PickCorner::BottomRight,
                     }));

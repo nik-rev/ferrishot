@@ -9,7 +9,7 @@ use iced::{
     widget::{Column, Row, Space, row, tooltip},
 };
 
-use crate::{config::KeyAction, icon, message::Message, ui::selection::FRAME_WIDTH};
+use crate::{config::Command, icon, message::Message, ui::selection::FRAME_WIDTH};
 use crate::{lazy_rect::LazyRectangle, ui::selection::ICON_BUTTON_SIZE};
 use iced::{Background, Border, Shadow, widget};
 
@@ -158,22 +158,22 @@ impl<'app> SelectionIcons<'app> {
         let icons = vec![
             (
                 icon!(Fullscreen),
-                KeyAction::SelectRegion {
+                Command::SelectRegion {
                     selection: LazyRectangle::FULL,
                 },
                 "Select entire monitor (F11)",
             ),
             (
                 icon!(Clipboard),
-                KeyAction::CopyToClipboard,
+                Command::CopyToClipboard,
                 "Copy to Clipboard (Enter)",
             ),
             (
                 icon!(Save),
-                KeyAction::SaveScreenshot,
+                Command::SaveScreenshot,
                 "Save Screenshot (Ctrl + s)",
             ),
-            (icon!(Close), KeyAction::Exit, "Exit (esc)"),
+            (icon!(Close), Command::Exit, "Exit (esc)"),
             if self.app.is_uploading_image {
                 // how many seconds we are into the current spin
                 let current_spin_secs = self.app.time_elapsed.as_secs_f32() % 2.0;
@@ -185,13 +185,13 @@ impl<'app> SelectionIcons<'app> {
                         current_spin_percent * f32::consts::TAU,
                     ))),
                     // TODO: Clicking this should cancel the image upload
-                    KeyAction::NoOp,
+                    Command::NoOp,
                     "Screenshot is being uploaded...",
                 )
             } else {
                 (
                     icon!(Upload),
-                    KeyAction::UploadScreenshot,
+                    Command::UploadScreenshot,
                     "Upload Screenshot (Ctrl + u)",
                 )
             },

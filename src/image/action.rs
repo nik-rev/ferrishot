@@ -10,7 +10,7 @@ use iced::Task;
 use image::DynamicImage;
 
 use crate::image::upload::ImageUploaded;
-use crate::{App, config::KeyAction, geometry::RectangleExt as _, ui::popup::image_uploaded};
+use crate::{App, config::Command, geometry::RectangleExt as _, ui::popup::image_uploaded};
 use iced::widget;
 
 /// Action to take with the image
@@ -73,11 +73,11 @@ pub enum Error {
 
 impl Message {
     /// Convert this into a key action
-    pub fn into_key_action(self) -> KeyAction {
+    pub fn into_key_action(self) -> Command {
         match self {
-            Self::Copy => KeyAction::CopyToClipboard,
-            Self::Save => KeyAction::SaveScreenshot,
-            Self::Upload => KeyAction::UploadScreenshot,
+            Self::Copy => Command::CopyToClipboard,
+            Self::Save => Command::SaveScreenshot,
+            Self::Upload => Command::UploadScreenshot,
         }
     }
 
