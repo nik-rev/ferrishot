@@ -377,7 +377,9 @@ impl App {
                 KeyAction::ClearSelection => {
                     self.selection = None;
                 }
-                KeyAction::SelectRegion(lazy_rect) => {
+                KeyAction::SelectRegion {
+                    selection: lazy_rect,
+                } => {
                     let rect = lazy_rect.init(self.image.bounds());
                     self.selection = Some(
                         Selection::new(
@@ -420,7 +422,7 @@ impl App {
 
                     *selection = sel.with_height(|_| (count as f32).min(image_height - sel.rect.y));
                 }
-                KeyAction::Goto(place) => {
+                KeyAction::Goto { place } => {
                     let Some(selection) = self.selection.as_mut() else {
                         self.errors.push("Nothing is selected.");
                         return Task::none();
@@ -469,7 +471,7 @@ impl App {
                         }
                     }
                 }
-                KeyAction::Move(direction, amount) => {
+                KeyAction::Move { direction, amount } => {
                     let Some(selection) = self.selection.as_mut() else {
                         self.errors.push("Nothing is selected.");
                         return Task::none();
@@ -490,7 +492,7 @@ impl App {
                         }
                     }
                 }
-                KeyAction::Extend(direction, amount) => {
+                KeyAction::Extend { direction, amount } => {
                     let Some(selection) = self.selection.as_mut() else {
                         self.errors.push("Nothing is selected.");
                         return Task::none();
@@ -515,7 +517,7 @@ impl App {
                         }
                     }
                 }
-                KeyAction::Shrink(direction, amount) => {
+                KeyAction::Shrink { direction, amount } => {
                     let Some(selection) = self.selection.as_mut() else {
                         self.errors.push("Nothing is selected.");
                         return Task::none();

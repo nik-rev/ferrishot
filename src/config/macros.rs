@@ -67,6 +67,19 @@ macro_rules! declare_config_options {
             $key:ident: $typ:ty
         ),* $(,)?
     ) => {
+        /// Configuration for ferrishot.
+        #[derive(Debug)]
+        pub struct Config {
+            /// Ferrishot's theme and colors
+            pub theme: Theme,
+            /// Ferrishot's keybindings
+            pub keys: $crate::config::key::KeyMap,
+            $(
+                $(#[$doc])*
+                pub $key: $typ,
+            )*
+        }
+
         /// The default config as read from the default config file, included as a static string in the binary.
         /// All values are required and must be specified
         #[derive(ferrishot_knus::Decode, Debug)]
@@ -82,18 +95,6 @@ macro_rules! declare_config_options {
                 #[ferrishot_knus(child, unwrap(argument))]
                 pub $key: $typ,
             )*
-        }
-
-        impl From<DefaultKdlConfig> for Config {
-            fn from(value: DefaultKdlConfig) -> Self {
-                Self {
-                    $(
-                        $key: value.$key,
-                    )*
-                    theme: value.theme.into(),
-                    keys: value.keys.keys.into_iter().collect::<$crate::config::KeyMap>(),
-                }
-            }
         }
 
         impl DefaultKdlConfig {
@@ -143,6 +144,18 @@ macro_rules! declare_config_options {
             }
         }
 
+        impl From<DefaultKdlConfig> for Config {
+            fn from(value: DefaultKdlConfig) -> Self {
+                Self {
+                    $(
+                        $key: value.$key,
+                    )*
+                    theme: value.theme.into(),
+                    keys: value.keys.keys.into_iter().collect::<$crate::config::KeyMap>(),
+                }
+            }
+        }
+
         /// User's config. Everything is optional. Values will be merged with `DefaultKdlConfig`.
         /// And will take priority over the default values.
         #[derive(ferrishot_knus::Decode, Debug)]
@@ -157,18 +170,6 @@ macro_rules! declare_config_options {
                 $(#[$doc])*
                 #[ferrishot_knus(child, unwrap(argument))]
                 pub $key: Option<$typ>,
-            )*
-        }
-        /// Configuration for ferrishot.
-        #[derive(Debug)]
-        pub struct Config {
-            /// Ferrishot's theme and colors
-            pub theme: Theme,
-            /// Ferrishot's keybindings
-            pub keys: $crate::config::key::KeyMap,
-            $(
-                $(#[$doc])*
-                pub $key: $typ,
             )*
         }
     }
@@ -186,6 +187,15 @@ macro_rules! declare_theme_options {
             $key:ident
         ),* $(,)?
     ) => {
+        /// Theme and colors of ferrishot
+        #[derive(Debug, Copy, Clone)]
+        pub struct Theme {
+            $(
+                $(#[$doc])*
+                pub $key: iced::Color,
+            )*
+        }
+
         /// Ferrishot's default theme and colors
         #[derive(ferrishot_knus::Decode, Debug)]
         pub struct DefaultKdlTheme {
@@ -235,15 +245,6 @@ macro_rules! declare_theme_options {
                 pub $key: Option<$crate::config::Color>,
             )*
         }
-
-        /// Theme and colors of ferrishot
-        #[derive(Debug, Copy, Clone)]
-        pub struct Theme {
-            $(
-                $(#[$doc])*
-                pub $key: iced::Color,
-            )*
-        }
     }
 }
 
@@ -284,25 +285,28 @@ macro_rules! declare_key_options {
             )+})?
         ),* $(,)?
     ) => {
+        $(
+            $(#[$key_attr])*
+            #[derive(ferrishot_knus::Decode, Debug, Clone)]
+            pub struct $KeyOption {
+                $($(
+                    $(#[$arg_attr])*
+                    $(#[ferrishot_knus(default = $default)])?
+                    #[ferrishot_knus(argument)]
+                    $field: $Argument,
+                )+)?
+                #[ferrishot_knus(property(name = "key"), str)]
+                keys: $crate::config::key::KeySequence,
+                #[ferrishot_knus(default, property(name = "mod"), str)]
+                mods: $crate::config::key::KeyMods,
+            }
+        )*
+
         /// A list of keybindings which exist in the app
-        ///
-        /// These have just been parsed, they are
         #[derive(ferrishot_knus::Decode, Debug, Clone)]
         pub enum Key {
             $(
-                $(#[$key_attr])*
-                $KeyOption(
-                    $($(
-                        $(#[$arg_attr])*
-                        $(#[ferrishot_knus(default = $default)])?
-                        #[ferrishot_knus(argument)]
-                        $Argument,
-                    )+)?
-                    #[ferrishot_knus(property(name = "key"), str)]
-                    $crate::config::key::KeySequence,
-                    #[ferrishot_knus(default, property(name = "mod"), str)]
-                    $crate::config::key::KeyMods,
-                ),
+                $KeyOption($KeyOption),
             )*
         }
 
@@ -312,10 +316,18 @@ macro_rules! declare_key_options {
             pub fn action(self) -> (($crate::config::key::KeySequence, $crate::config::key::KeyMods), KeyAction) {
                 match self {
                     $(
-                        Self::$KeyOption($($($field,)*)? key_sequence, key_mods) => {
+                        Self::$KeyOption($KeyOption {
+                            $(
+                                $($field,)*
+                            )?
+                            keys,
+                            mods
+                        }) => {
                             (
-                                (key_sequence, key_mods),
-                                KeyAction::$KeyOption$(($($field),*))?
+                                (keys, mods),
+                                KeyAction::$KeyOption$({
+                                    $($field),*
+                                })?
                             )
                         },
                     )*
@@ -328,7 +340,13 @@ macro_rules! declare_key_options {
         pub enum KeyAction {
             $(
                 $(#[$key_attr])*
-                $KeyOption$(($($Argument,)*))?,
+                $KeyOption $(
+                    {
+                        $(
+                            $field: $Argument,
+                        )*
+                    }
+                )?,
             )*
         }
     }
