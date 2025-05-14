@@ -1,9 +1,5 @@
 //! Declare config options
 
-use crate::config::Place;
-use crate::geometry::Direction;
-use crate::lazy_rect::LazyRectangle;
-
 crate::declare_config_options! {
     /// Renders a size indicator in the bottom left corner.
     /// It shows the current height and width of the selection.
@@ -12,57 +8,6 @@ crate::declare_config_options! {
     size_indicator: bool,
     /// Render icons around the selection
     selection_icons: bool,
-}
-
-crate::declare_commands! {
-    /// Do nothing
-    NoOp,
-    /// Open the keybindings cheatsheet
-    OpenKeybindingsCheatsheet,
-    /// Toggle the overlay showing various information for debugging
-    ToggleDebugOverlay,
-    /// Open a grid of letters to pick the top left corner in 3 keystrokes
-    PickTopLeftCorner,
-    /// Open a grid of letters to pick the bottom right corner in 3 keystrokes
-    PickBottomRightCorner,
-    /// Upload screenshot to the internet
-    UploadScreenshot,
-    /// Copy the selected region as a screenshot to the clipboard
-    CopyToClipboard,
-    /// Save the screenshot as a path
-    SaveScreenshot,
-    /// Set the width to whatever number is currently pressed
-    SetWidth,
-    /// Set the height to whatever number is currently pressed
-    SetHeight,
-    /// Exit the application
-    Exit,
-    /// Set selection to encompass the entire screen
-    SelectRegion {
-        #[ferrishot_knus(str)]
-        selection: LazyRectangle,
-    },
-    /// Remove the selection
-    ClearSelection,
-    /// Shift the selection in the given direction by pixels
-    Move {
-        direction: Direction,
-        amount: u32 = u32::MAX,
-    },
-    /// Increase the size of the selection in the given direction by pixels
-    Extend {
-        direction: Direction,
-        amount: u32 = u32::MAX,
-    },
-    /// Decrease the size of the selection in the given direction by pixels
-    Shrink {
-        direction: Direction,
-        amount: u32 = u32::MAX,
-    },
-    /// Move rectangle to a place
-    Goto {
-        place: Place,
-    }
 }
 
 crate::declare_theme_options! {

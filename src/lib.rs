@@ -10,6 +10,8 @@ mod lazy_rect;
 mod message;
 mod ui;
 
+use config::commands::Command;
+
 use config::Theme;
 use message::Message;
 

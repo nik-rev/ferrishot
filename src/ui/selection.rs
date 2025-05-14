@@ -1,8 +1,10 @@
 //! A `Selection` is the structure representing a selected area in the background image
 use crate::geometry::Corners;
+use crate::geometry::Direction;
 use crate::geometry::RectangleExt as _;
 use crate::geometry::Side;
 use crate::geometry::SideOrCorner;
+use crate::lazy_rect::LazyRectangle;
 use delegate::delegate;
 use iced::Task;
 use iced::mouse::Cursor;
@@ -10,6 +12,66 @@ use iced::mouse::Interaction;
 use iced::widget::Action;
 use iced::widget::canvas;
 use iced::{Point, Rectangle, Size};
+
+/// A place on the rectangle
+#[derive(ferrishot_knus::DecodeScalar, Debug, Clone)]
+pub enum Place {
+    /// Center
+    Center,
+    /// Center on the x-axis
+    XCenter,
+    /// Center on the y-axis
+    YCenter,
+    /// Top-left corner
+    TopLeft,
+    /// Bottom-left corner
+    BottomLeft,
+    /// Bottom-right corner
+    BottomRight,
+    /// Top-right corner
+    TopRight,
+    /// Left side
+    Left,
+    /// Right side
+    Right,
+    /// Top side
+    Top,
+    /// Bottom side
+    Bottom,
+}
+
+crate::declare_commands! {
+    /// Set the width to whatever number is currently pressed
+    SetWidth,
+    /// Set the height to whatever number is currently pressed
+    SetHeight,
+    /// Set selection to encompass the entire screen
+    SelectRegion {
+        #[ferrishot_knus(str)]
+        selection: LazyRectangle,
+    },
+    /// Remove the selection
+    ClearSelection,
+    /// Shift the selection in the given direction by pixels
+    Move {
+        direction: Direction,
+        amount: u32 = u32::MAX,
+    },
+    /// Increase the size of the selection in the given direction by pixels
+    Extend {
+        direction: Direction,
+        amount: u32 = u32::MAX,
+    },
+    /// Decrease the size of the selection in the given direction by pixels
+    Shrink {
+        direction: Direction,
+        amount: u32 = u32::MAX,
+    },
+    /// Move rectangle to a place
+    Goto {
+        place: Place,
+    }
+}
 
 /// Message for a selection
 #[derive(Clone, Debug)]

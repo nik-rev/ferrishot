@@ -16,6 +16,13 @@ use iced::{
 
 use crate::ui::selection::Selection;
 
+crate::declare_commands! {
+    /// Open a grid of letters to pick the top left corner in 3 keystrokes
+    PickTopLeftCorner,
+    /// Open a grid of letters to pick the bottom right corner in 3 keystrokes
+    PickBottomRightCorner
+}
+
 /// State of the letters
 #[derive(Debug)]
 pub struct State {

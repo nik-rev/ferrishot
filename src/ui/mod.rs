@@ -2,9 +2,9 @@
 
 use iced::Element;
 
-mod app;
+pub mod app;
 mod background_image;
-mod debug_overlay;
+pub mod debug_overlay;
 mod errors;
 mod grid;
 mod selection_icons;

@@ -22,6 +22,11 @@ use crate::{
 
 use super::Popup;
 
+crate::declare_commands! {
+    /// Open the keybindings cheatsheet
+    OpenKeybindingsCheatsheet,
+}
+
 /// Keybindings cheatsheet message
 #[derive(Debug, Clone)]
 pub enum Message {

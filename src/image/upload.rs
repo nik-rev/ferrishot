@@ -9,14 +9,14 @@ use serde::{Deserialize, Serialize};
 use strum::{EnumCount as _, IntoEnumIterator as _};
 use tokio::sync::oneshot;
 
-// crate::declare_key_options! {
-//     /// Upload screenshot to the internet
-//     UploadScreenshot,
-//     /// Copy the selected region as a screenshot to the clipboard
-//     CopyToClipboard,
-//     /// Save the screenshot as a path
-//     SaveScreenshot,
-// }
+crate::declare_commands! {
+    /// Upload screenshot to the internet
+    UploadScreenshot,
+    /// Copy the selected region as a screenshot to the clipboard
+    CopyToClipboard,
+    /// Save the screenshot as a path
+    SaveScreenshot,
+}
 
 /// A single client for HTTP requests
 static HTTP_CLIENT: std::sync::LazyLock<reqwest::Client> =

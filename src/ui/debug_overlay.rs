@@ -11,6 +11,11 @@ use crate::message::Message;
 
 use super::App;
 
+crate::declare_commands! {
+    /// Toggle the overlay showing various information for debugging
+    ToggleDebugOverlay,
+}
+
 /// Space between the label and what it represents
 const LABEL_SPACE: f32 = 25.0;
 

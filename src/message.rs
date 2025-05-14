@@ -4,7 +4,7 @@ use std::time::Instant;
 
 use crate::ui;
 
-use crate::config::Command;
+use crate::Command;
 
 /// Handler for a `Message`
 pub trait Handler {

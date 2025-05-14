@@ -8,9 +8,7 @@ use iced::{
     keyboard::{Modifiers, key::Key as IcedKey},
 };
 
-use crate::config::KeymappableCommand;
-
-use super::Command;
+use super::commands::{Command, KeymappableCommand};
 
 /// Represents the keybindings for ferrishot
 #[derive(Debug, Default)]

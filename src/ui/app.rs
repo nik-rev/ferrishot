@@ -7,11 +7,10 @@ use std::time::Instant;
 
 use crate::Cli;
 use crate::Config;
-use crate::config::Command;
-use crate::config::Place;
 use crate::image::action::ImageData;
 use crate::ui;
 use crate::ui::popup;
+use crate::ui::selection::Place;
 use iced::Length::Fill;
 use iced::Renderer;
 use iced::Subscription;
@@ -41,6 +40,13 @@ use super::Errors;
 use super::popup::Popup;
 use super::selection::OptionalSelectionExt as _;
 use super::selection::SelectionKeysState;
+
+crate::declare_commands! {
+    /// Do nothing
+    NoOp,
+    /// Exit the application
+    Exit,
+}
 
 /// Holds the state for ferrishot
 #[derive(Debug)]
@@ -367,185 +373,197 @@ impl App {
             }
             Message::NoOp => (),
             Message::Command { action, count } => match action {
-                Command::NoOp => {}
-                Command::OpenKeybindingsCheatsheet => {
-                    self.popup = Some(Popup::KeyCheatsheet);
-                }
-                Command::ToggleDebugOverlay => {
-                    self.show_debug_overlay = !self.show_debug_overlay;
-                }
-                Command::ClearSelection => {
-                    self.selection = None;
-                }
-                Command::SelectRegion {
-                    selection: lazy_rect,
-                } => {
-                    let rect = lazy_rect.init(self.image.bounds());
-                    self.selection = Some(
-                        Selection::new(
-                            rect.top_left(),
-                            &self.config.theme,
-                            self.selections_created == 0,
-                            self.cli.accept_on_select,
-                        )
-                        .with_size(|_| rect.size()),
-                    );
-                    self.selections_created += 1;
-                }
-                Command::CopyToClipboard => {
-                    return crate::image::action::Message::Copy.handle(self);
-                }
-                Command::SaveScreenshot => {
-                    return crate::image::action::Message::Save.handle(self);
-                }
-                Command::UploadScreenshot => {
-                    return crate::image::action::Message::Upload.handle(self);
-                }
-                Command::Exit => return Self::exit(),
-                Command::SetWidth => {
-                    let Some(selection) = self.selection.as_mut() else {
-                        self.errors.push("Nothing is selected.");
-                        return Task::none();
-                    };
-                    let image_width = self.image.width() as f32;
-                    let sel = selection.norm();
+                crate::Command::ImageUpload(command) => match command {
+                    crate::image::upload::Command::UploadScreenshot => {
+                        return crate::image::action::Message::Upload.handle(self);
+                    }
+                    crate::image::upload::Command::CopyToClipboard => {
+                        return crate::image::action::Message::Copy.handle(self);
+                    }
+                    crate::image::upload::Command::SaveScreenshot => {
+                        return crate::image::action::Message::Save.handle(self);
+                    }
+                },
+                crate::Command::App(command) => match command {
+                    Command::NoOp => {}
+                    Command::Exit => return Self::exit(),
+                },
+                crate::Command::DebugOverlay(command) => match command {
+                    ui::debug_overlay::Command::ToggleDebugOverlay => {
+                        self.show_debug_overlay = !self.show_debug_overlay;
+                    }
+                },
+                crate::Command::KeybindingsCheatsheet(command) => match command {
+                    popup::keybindings_cheatsheet::Command::OpenKeybindingsCheatsheet => {
+                        self.popup = Some(Popup::KeyCheatsheet);
+                    }
+                },
+                crate::Command::Letters(command) => match command {
+                    popup::letters::Command::PickTopLeftCorner => {
+                        self.popup = Some(Popup::Letters(popup::letters::State {
+                            picking_corner: PickCorner::TopLeft,
+                        }));
+                    }
+                    popup::letters::Command::PickBottomRightCorner => {
+                        self.popup = Some(Popup::Letters(popup::letters::State {
+                            picking_corner: PickCorner::BottomRight,
+                        }));
+                    }
+                },
+                crate::Command::Selection(command) => match command {
+                    ui::selection::Command::SetWidth => {
+                        let Some(selection) = self.selection.as_mut() else {
+                            self.errors.push("Nothing is selected.");
+                            return Task::none();
+                        };
+                        let image_width = self.image.width() as f32;
+                        let sel = selection.norm();
 
-                    *selection = sel.with_width(|_| (count as f32).min(image_width - sel.rect.x));
-                }
-                Command::SetHeight => {
-                    let Some(selection) = self.selection.as_mut() else {
-                        self.errors.push("Nothing is selected.");
-                        return Task::none();
-                    };
-                    let image_height = self.image.height() as f32;
-                    let sel = selection.norm();
+                        *selection =
+                            sel.with_width(|_| (count as f32).min(image_width - sel.rect.x));
+                    }
+                    ui::selection::Command::SetHeight => {
+                        let Some(selection) = self.selection.as_mut() else {
+                            self.errors.push("Nothing is selected.");
+                            return Task::none();
+                        };
+                        let image_height = self.image.height() as f32;
+                        let sel = selection.norm();
 
-                    *selection = sel.with_height(|_| (count as f32).min(image_height - sel.rect.y));
-                }
-                Command::Goto { place } => {
-                    let Some(selection) = self.selection.as_mut() else {
-                        self.errors.push("Nothing is selected.");
-                        return Task::none();
-                    };
-                    let image_height = self.image.height() as f32;
-                    let image_width = self.image.width() as f32;
+                        *selection =
+                            sel.with_height(|_| (count as f32).min(image_height - sel.rect.y));
+                    }
+                    ui::selection::Command::SelectRegion { selection } => {
+                        let rect = selection.init(self.image.bounds());
+                        self.selection = Some(
+                            Selection::new(
+                                rect.top_left(),
+                                &self.config.theme,
+                                self.selections_created == 0,
+                                self.cli.accept_on_select,
+                            )
+                            .with_size(|_| rect.size()),
+                        );
+                        self.selections_created += 1;
+                    }
+                    ui::selection::Command::ClearSelection => {
+                        self.selection = None;
+                    }
+                    ui::selection::Command::Move { direction, amount } => {
+                        let Some(selection) = self.selection.as_mut() else {
+                            self.errors.push("Nothing is selected.");
+                            return Task::none();
+                        };
+                        let image_width = self.image.width() as f32;
+                        let image_height = self.image.height() as f32;
+                        let amount = amount as f32 * count as f32;
+                        let sel = selection.norm();
 
-                    match place {
-                        Place::Center => {
-                            selection.rect.x = (image_width - selection.rect.width) / 2.0;
-                            selection.rect.y = (image_height - selection.rect.height) / 2.0;
-                        }
-                        Place::XCenter => {
-                            selection.rect.x = (image_width - selection.rect.width) / 2.0;
-                        }
-                        Place::YCenter => {
-                            selection.rect.y = (image_height - selection.rect.height) / 2.0;
-                        }
-                        Place::TopLeft => {
-                            selection.rect.x = 0.0;
-                            selection.rect.y = 0.0;
-                        }
-                        Place::TopRight => {
-                            selection.rect.x = image_width - selection.rect.width;
-                            selection.rect.y = 0.0;
-                        }
-                        Place::BottomLeft => {
-                            selection.rect.x = 0.0;
-                            selection.rect.y = image_height - selection.rect.height;
-                        }
-                        Place::BottomRight => {
-                            selection.rect.x = image_width - selection.rect.width;
-                            selection.rect.y = image_height - selection.rect.height;
-                        }
-                        Place::Top => {
-                            selection.rect.y = 0.0;
-                        }
-                        Place::Bottom => {
-                            selection.rect.y = image_height - selection.rect.height;
-                        }
-                        Place::Left => {
-                            selection.rect.x = 0.0;
-                        }
-                        Place::Right => {
-                            selection.rect.x = image_width - selection.rect.width;
+                        *selection = match direction {
+                            Direction::Up => sel.with_y(|y| (y - amount).max(0.0)),
+                            Direction::Down => {
+                                sel.with_y(|y| (y + amount).min(image_height - sel.rect.height))
+                            }
+                            Direction::Left => sel.with_x(|x| (x - amount).max(0.0)),
+                            Direction::Right => {
+                                sel.with_x(|x| (x + amount).min(image_width - sel.rect.width))
+                            }
                         }
                     }
-                }
-                Command::Move { direction, amount } => {
-                    let Some(selection) = self.selection.as_mut() else {
-                        self.errors.push("Nothing is selected.");
-                        return Task::none();
-                    };
-                    let image_width = self.image.width() as f32;
-                    let image_height = self.image.height() as f32;
-                    let amount = amount as f32 * count as f32;
-                    let sel = selection.norm();
+                    ui::selection::Command::Extend { direction, amount } => {
+                        let Some(selection) = self.selection.as_mut() else {
+                            self.errors.push("Nothing is selected.");
+                            return Task::none();
+                        };
+                        let image_height = self.image.height() as f32;
+                        let image_width = self.image.width() as f32;
+                        let sel = selection.norm();
+                        let amount = amount as f32 * count as f32;
 
-                    *selection = match direction {
-                        Direction::Up => sel.with_y(|y| (y - amount).max(0.0)),
-                        Direction::Down => {
-                            sel.with_y(|y| (y + amount).min(image_height - sel.rect.height))
-                        }
-                        Direction::Left => sel.with_x(|x| (x - amount).max(0.0)),
-                        Direction::Right => {
-                            sel.with_x(|x| (x + amount).min(image_width - sel.rect.width))
+                        *selection = match direction {
+                            Direction::Up => sel
+                                .with_y(|y| (y - amount).max(0.0))
+                                .with_height(|h| (h + amount).min(sel.rect.y + sel.rect.height)),
+                            Direction::Down => {
+                                sel.with_height(|h| (h + amount).min(image_height - sel.rect.y))
+                            }
+                            Direction::Left => sel
+                                .with_x(|x| (x - amount).max(0.0))
+                                .with_width(|w| (w + amount).min(sel.rect.x + sel.rect.width)),
+                            Direction::Right => {
+                                sel.with_width(|w| (w + amount).min(image_width - sel.rect.x))
+                            }
                         }
                     }
-                }
-                Command::Extend { direction, amount } => {
-                    let Some(selection) = self.selection.as_mut() else {
-                        self.errors.push("Nothing is selected.");
-                        return Task::none();
-                    };
-                    let image_height = self.image.height() as f32;
-                    let image_width = self.image.width() as f32;
-                    let sel = selection.norm();
-                    let amount = amount as f32 * count as f32;
+                    ui::selection::Command::Shrink { direction, amount } => {
+                        let Some(selection) = self.selection.as_mut() else {
+                            self.errors.push("Nothing is selected.");
+                            return Task::none();
+                        };
+                        let sel = selection.norm();
+                        let amount = amount as f32 * count as f32;
 
-                    *selection = match direction {
-                        Direction::Up => sel
-                            .with_y(|y| (y - amount).max(0.0))
-                            .with_height(|h| (h + amount).min(sel.rect.y + sel.rect.height)),
-                        Direction::Down => {
-                            sel.with_height(|h| (h + amount).min(image_height - sel.rect.y))
-                        }
-                        Direction::Left => sel
-                            .with_x(|x| (x - amount).max(0.0))
-                            .with_width(|w| (w + amount).min(sel.rect.x + sel.rect.width)),
-                        Direction::Right => {
-                            sel.with_width(|w| (w + amount).min(image_width - sel.rect.x))
+                        *selection = match direction {
+                            Direction::Up => sel
+                                .with_y(|y| (y + amount).min(sel.rect.y + sel.rect.height))
+                                .with_height(|h| (h - amount).max(0.0)),
+                            Direction::Down => sel.with_height(|h| (h - amount).max(0.0)),
+                            Direction::Left => sel
+                                .with_x(|x| (x + amount).min(sel.rect.x + sel.rect.width))
+                                .with_width(|w| (w - amount).max(0.0)),
+                            Direction::Right => sel.with_width(|w| (w - amount).max(0.0)),
                         }
                     }
-                }
-                Command::Shrink { direction, amount } => {
-                    let Some(selection) = self.selection.as_mut() else {
-                        self.errors.push("Nothing is selected.");
-                        return Task::none();
-                    };
-                    let sel = selection.norm();
-                    let amount = amount as f32 * count as f32;
+                    ui::selection::Command::Goto { place } => {
+                        let Some(selection) = self.selection.as_mut() else {
+                            self.errors.push("Nothing is selected.");
+                            return Task::none();
+                        };
+                        let image_height = self.image.height() as f32;
+                        let image_width = self.image.width() as f32;
 
-                    *selection = match direction {
-                        Direction::Up => sel
-                            .with_y(|y| (y + amount).min(sel.rect.y + sel.rect.height))
-                            .with_height(|h| (h - amount).max(0.0)),
-                        Direction::Down => sel.with_height(|h| (h - amount).max(0.0)),
-                        Direction::Left => sel
-                            .with_x(|x| (x + amount).min(sel.rect.x + sel.rect.width))
-                            .with_width(|w| (w - amount).max(0.0)),
-                        Direction::Right => sel.with_width(|w| (w - amount).max(0.0)),
+                        match place {
+                            Place::Center => {
+                                selection.rect.x = (image_width - selection.rect.width) / 2.0;
+                                selection.rect.y = (image_height - selection.rect.height) / 2.0;
+                            }
+                            Place::XCenter => {
+                                selection.rect.x = (image_width - selection.rect.width) / 2.0;
+                            }
+                            Place::YCenter => {
+                                selection.rect.y = (image_height - selection.rect.height) / 2.0;
+                            }
+                            Place::TopLeft => {
+                                selection.rect.x = 0.0;
+                                selection.rect.y = 0.0;
+                            }
+                            Place::TopRight => {
+                                selection.rect.x = image_width - selection.rect.width;
+                                selection.rect.y = 0.0;
+                            }
+                            Place::BottomLeft => {
+                                selection.rect.x = 0.0;
+                                selection.rect.y = image_height - selection.rect.height;
+                            }
+                            Place::BottomRight => {
+                                selection.rect.x = image_width - selection.rect.width;
+                                selection.rect.y = image_height - selection.rect.height;
+                            }
+                            Place::Top => {
+                                selection.rect.y = 0.0;
+                            }
+                            Place::Bottom => {
+                                selection.rect.y = image_height - selection.rect.height;
+                            }
+                            Place::Left => {
+                                selection.rect.x = 0.0;
+                            }
+                            Place::Right => {
+                                selection.rect.x = image_width - selection.rect.width;
+                            }
+                        }
                     }
-                }
-                Command::PickTopLeftCorner => {
-                    self.popup = Some(Popup::Letters(popup::letters::State {
-                        picking_corner: PickCorner::TopLeft,
-                    }));
-                }
-                Command::PickBottomRightCorner => {
-                    self.popup = Some(Popup::Letters(popup::letters::State {
-                        picking_corner: PickCorner::BottomRight,
-                    }));
-                }
+                },
             },
             Message::Error(err) => {
                 self.errors.push(err);
