@@ -14,7 +14,7 @@ use iced::widget::canvas;
 use iced::{Point, Rectangle, Size};
 
 /// A place on the rectangle
-#[derive(ferrishot_knus::DecodeScalar, Debug, Clone)]
+#[derive(ferrishot_knus::DecodeScalar, Debug, Clone, PartialEq, Copy, Eq, Ord, PartialOrd)]
 pub enum Place {
     /// Center
     Center,
@@ -41,35 +41,196 @@ pub enum Place {
 }
 
 crate::declare_commands! {
-    /// Set the width to whatever number is currently pressed
-    SetWidth,
-    /// Set the height to whatever number is currently pressed
-    SetHeight,
-    /// Set selection to encompass the entire screen
-    SelectRegion {
-        #[ferrishot_knus(str)]
-        selection: LazyRectangle,
-    },
-    /// Remove the selection
-    ClearSelection,
-    /// Shift the selection in the given direction by pixels
-    Move {
-        direction: Direction,
-        amount: u32 = u32::MAX,
-    },
-    /// Increase the size of the selection in the given direction by pixels
-    Extend {
-        direction: Direction,
-        amount: u32 = u32::MAX,
-    },
-    /// Decrease the size of the selection in the given direction by pixels
-    Shrink {
-        direction: Direction,
-        amount: u32 = u32::MAX,
-    },
-    /// Move rectangle to a place
-    Goto {
-        place: Place,
+    enum Command {
+        /// Set the width to whatever number is currently pressed
+        SetWidth,
+        /// Set the height to whatever number is currently pressed
+        SetHeight,
+        /// Set selection to encompass the entire screen
+        SelectRegion {
+            #[ferrishot_knus(str)]
+            selection: LazyRectangle,
+        },
+        /// Remove the selection
+        ClearSelection,
+        /// Shift the selection in the given direction by pixels
+        Move {
+            direction: Direction,
+            amount: u32 = u32::MAX,
+        },
+        /// Increase the size of the selection in the given direction by pixels
+        Extend {
+            direction: Direction,
+            amount: u32 = u32::MAX,
+        },
+        /// Decrease the size of the selection in the given direction by pixels
+        Shrink {
+            direction: Direction,
+            amount: u32 = u32::MAX,
+        },
+        /// Move rectangle to a place
+        Goto {
+            place: Place,
+        }
+    }
+}
+
+impl crate::command::Handler for Command {
+    fn handle(self, app: &mut crate::App, count: u32) -> Task<crate::Message> {
+        match self {
+            Self::SetWidth => {
+                let Some(selection) = app.selection.as_mut() else {
+                    app.errors.push("Nothing is selected.");
+                    return Task::none();
+                };
+                let image_width = app.image.width() as f32;
+                let sel = selection.norm();
+
+                *selection = sel.with_width(|_| (count as f32).min(image_width - sel.rect.x));
+            }
+            Self::SetHeight => {
+                let Some(selection) = app.selection.as_mut() else {
+                    app.errors.push("Nothing is selected.");
+                    return Task::none();
+                };
+                let image_height = app.image.height() as f32;
+                let sel = selection.norm();
+
+                *selection = sel.with_height(|_| (count as f32).min(image_height - sel.rect.y));
+            }
+            Self::SelectRegion { selection } => {
+                let rect = selection.init(app.image.bounds());
+                app.selection = Some(
+                    Selection::new(
+                        rect.top_left(),
+                        &app.config.theme,
+                        app.selections_created == 0,
+                        app.cli.accept_on_select,
+                    )
+                    .with_size(|_| rect.size()),
+                );
+                app.selections_created += 1;
+            }
+            Self::ClearSelection => {
+                app.selection = None;
+            }
+            Self::Move { direction, amount } => {
+                let Some(selection) = app.selection.as_mut() else {
+                    app.errors.push("Nothing is selected.");
+                    return Task::none();
+                };
+                let image_width = app.image.width() as f32;
+                let image_height = app.image.height() as f32;
+                let amount = amount as f32 * count as f32;
+                let sel = selection.norm();
+
+                *selection = match direction {
+                    Direction::Up => sel.with_y(|y| (y - amount).max(0.0)),
+                    Direction::Down => {
+                        sel.with_y(|y| (y + amount).min(image_height - sel.rect.height))
+                    }
+                    Direction::Left => sel.with_x(|x| (x - amount).max(0.0)),
+                    Direction::Right => {
+                        sel.with_x(|x| (x + amount).min(image_width - sel.rect.width))
+                    }
+                }
+            }
+            Self::Extend { direction, amount } => {
+                let Some(selection) = app.selection.as_mut() else {
+                    app.errors.push("Nothing is selected.");
+                    return Task::none();
+                };
+                let image_height = app.image.height() as f32;
+                let image_width = app.image.width() as f32;
+                let sel = selection.norm();
+                let amount = amount as f32 * count as f32;
+
+                *selection = match direction {
+                    Direction::Up => sel
+                        .with_y(|y| (y - amount).max(0.0))
+                        .with_height(|h| (h + amount).min(sel.rect.y + sel.rect.height)),
+                    Direction::Down => {
+                        sel.with_height(|h| (h + amount).min(image_height - sel.rect.y))
+                    }
+                    Direction::Left => sel
+                        .with_x(|x| (x - amount).max(0.0))
+                        .with_width(|w| (w + amount).min(sel.rect.x + sel.rect.width)),
+                    Direction::Right => {
+                        sel.with_width(|w| (w + amount).min(image_width - sel.rect.x))
+                    }
+                }
+            }
+            Self::Shrink { direction, amount } => {
+                let Some(selection) = app.selection.as_mut() else {
+                    app.errors.push("Nothing is selected.");
+                    return Task::none();
+                };
+                let sel = selection.norm();
+                let amount = amount as f32 * count as f32;
+
+                *selection = match direction {
+                    Direction::Up => sel
+                        .with_y(|y| (y + amount).min(sel.rect.y + sel.rect.height))
+                        .with_height(|h| (h - amount).max(0.0)),
+                    Direction::Down => sel.with_height(|h| (h - amount).max(0.0)),
+                    Direction::Left => sel
+                        .with_x(|x| (x + amount).min(sel.rect.x + sel.rect.width))
+                        .with_width(|w| (w - amount).max(0.0)),
+                    Direction::Right => sel.with_width(|w| (w - amount).max(0.0)),
+                }
+            }
+            Self::Goto { place } => {
+                let Some(selection) = app.selection.as_mut() else {
+                    app.errors.push("Nothing is selected.");
+                    return Task::none();
+                };
+                let image_height = app.image.height() as f32;
+                let image_width = app.image.width() as f32;
+
+                match place {
+                    Place::Center => {
+                        selection.rect.x = (image_width - selection.rect.width) / 2.0;
+                        selection.rect.y = (image_height - selection.rect.height) / 2.0;
+                    }
+                    Place::XCenter => {
+                        selection.rect.x = (image_width - selection.rect.width) / 2.0;
+                    }
+                    Place::YCenter => {
+                        selection.rect.y = (image_height - selection.rect.height) / 2.0;
+                    }
+                    Place::TopLeft => {
+                        selection.rect.x = 0.0;
+                        selection.rect.y = 0.0;
+                    }
+                    Place::TopRight => {
+                        selection.rect.x = image_width - selection.rect.width;
+                        selection.rect.y = 0.0;
+                    }
+                    Place::BottomLeft => {
+                        selection.rect.x = 0.0;
+                        selection.rect.y = image_height - selection.rect.height;
+                    }
+                    Place::BottomRight => {
+                        selection.rect.x = image_width - selection.rect.width;
+                        selection.rect.y = image_height - selection.rect.height;
+                    }
+                    Place::Top => {
+                        selection.rect.y = 0.0;
+                    }
+                    Place::Bottom => {
+                        selection.rect.y = image_height - selection.rect.height;
+                    }
+                    Place::Left => {
+                        selection.rect.x = 0.0;
+                    }
+                    Place::Right => {
+                        selection.rect.x = image_width - selection.rect.width;
+                    }
+                }
+            }
+        }
+
+        Task::none()
     }
 }
 
@@ -306,7 +467,7 @@ pub struct Selection {
     /// If this selection is the first one
     pub is_first: bool,
     /// Accept on select
-    pub accept_on_select: Option<crate::image::action::Message>,
+    pub accept_on_select: Option<crate::image::action::Command>,
     /// Theme of the app
     pub theme: crate::Theme,
     /// Area represented by the selection
@@ -391,7 +552,7 @@ impl Selection {
     pub fn initial(
         rect: Rectangle,
         theme: &crate::Theme,
-        accept_on_select: Option<crate::image::action::Message>,
+        accept_on_select: Option<crate::image::action::Command>,
     ) -> Self {
         Self {
             is_first: true,
@@ -515,7 +676,7 @@ impl Selection {
         point: Point,
         theme: &crate::Theme,
         is_first: bool,
-        accept_on_select: Option<crate::image::action::Message>,
+        accept_on_select: Option<crate::image::action::Command>,
     ) -> Self {
         Self {
             rect: Rectangle::new(point, Size::default()),

@@ -23,8 +23,22 @@ use crate::{
 use super::Popup;
 
 crate::declare_commands! {
-    /// Open the keybindings cheatsheet
-    OpenKeybindingsCheatsheet,
+    enum Command {
+        /// Open the keybindings cheatsheet
+        OpenKeybindingsCheatsheet,
+    }
+}
+
+impl crate::command::Handler for Command {
+    fn handle(self, app: &mut crate::App, _count: u32) -> Task<crate::Message> {
+        match self {
+            Self::OpenKeybindingsCheatsheet => {
+                app.popup = Some(Popup::KeyCheatsheet);
+            }
+        }
+
+        Task::none()
+    }
 }
 
 /// Keybindings cheatsheet message

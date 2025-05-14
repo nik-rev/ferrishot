@@ -16,7 +16,7 @@ use iced::widget::{
     button, column, container, horizontal_space, row, stack, svg, tooltip, vertical_space,
 };
 pub mod letters;
-pub use letters::{Letters, PickCorner};
+pub use letters::Letters;
 
 /// Popup are overlaid on top and they block any events. allowing only Escape to close
 /// the popup.

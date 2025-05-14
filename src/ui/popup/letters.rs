@@ -16,11 +16,34 @@ use iced::{
 
 use crate::ui::selection::Selection;
 
+use super::Popup;
+
 crate::declare_commands! {
-    /// Open a grid of letters to pick the top left corner in 3 keystrokes
-    PickTopLeftCorner,
-    /// Open a grid of letters to pick the bottom right corner in 3 keystrokes
-    PickBottomRightCorner
+    enum Command {
+        /// Open a grid of letters to pick the top left corner in 3 keystrokes
+        PickTopLeftCorner,
+        /// Open a grid of letters to pick the bottom right corner in 3 keystrokes
+        PickBottomRightCorner
+    }
+}
+
+impl crate::command::Handler for Command {
+    fn handle(self, app: &mut crate::App, _count: u32) -> Task<crate::Message> {
+        match self {
+            Self::PickTopLeftCorner => {
+                app.popup = Some(Popup::Letters(State {
+                    picking_corner: PickCorner::TopLeft,
+                }));
+            }
+            Self::PickBottomRightCorner => {
+                app.popup = Some(Popup::Letters(State {
+                    picking_corner: PickCorner::BottomRight,
+                }));
+            }
+        }
+
+        Task::none()
+    }
 }
 
 /// State of the letters

@@ -93,7 +93,7 @@ pub struct Cli {
             without making a new window."
         }
     )]
-    pub accept_on_select: Option<crate::image::action::Message>,
+    pub accept_on_select: Option<crate::image::action::Command>,
 
     /// Wait this long before launch
     #[arg(

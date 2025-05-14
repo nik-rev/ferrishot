@@ -22,7 +22,7 @@ impl KeymappableCommand {
 #[derive(Debug, Clone)]
 pub enum KeymappableCommand {
     /// Image Upload
-    ImageUpload(crate::image::upload::KeymappableCommand),
+    ImageUpload(crate::image::action::KeymappableCommand),
     /// App
     App(crate::ui::app::KeymappableCommand),
     /// Debug overlay
@@ -53,13 +53,13 @@ where
         match &**node.node_name {
             // Screenshot
             "upload-screenshot" => ::ferrishot_knus::Decode::decode_node(node, ctx)
-                .map(crate::image::upload::KeymappableCommand::UploadScreenshot)
+                .map(crate::image::action::KeymappableCommand::UploadScreenshot)
                 .map(KeymappableCommand::ImageUpload),
             "copy-to-clipboard" => ::ferrishot_knus::Decode::decode_node(node, ctx)
-                .map(crate::image::upload::KeymappableCommand::CopyToClipboard)
+                .map(crate::image::action::KeymappableCommand::CopyToClipboard)
                 .map(KeymappableCommand::ImageUpload),
             "save-screenshot" => ::ferrishot_knus::Decode::decode_node(node, ctx)
-                .map(crate::image::upload::KeymappableCommand::SaveScreenshot)
+                .map(crate::image::action::KeymappableCommand::SaveScreenshot)
                 .map(KeymappableCommand::ImageUpload),
 
             // App
@@ -126,7 +126,7 @@ where
 #[derive(Debug, Clone)]
 pub enum Command {
     /// Image Upload
-    ImageUpload(crate::image::upload::Command),
+    ImageUpload(crate::image::action::Command),
     /// App
     App(crate::ui::app::Command),
     /// Debug Overlay
@@ -139,17 +139,23 @@ pub enum Command {
     Selection(crate::ui::selection::Command),
 }
 
-/// Marker trait for deserializing commands
-#[expect(
-    dead_code,
-    reason = "bug. it's used in `KeymappableCommandTrait` as a marker"
-)]
-pub trait CommandTrait {}
+impl crate::command::Handler for Command {
+    fn handle(self, app: &mut crate::App, count: u32) -> iced::Task<crate::Message> {
+        match self {
+            Self::ImageUpload(command) => command.handle(app, count),
+            Self::App(command) => command.handle(app, count),
+            Self::DebugOverlay(command) => command.handle(app, count),
+            Self::KeybindingsCheatsheet(command) => command.handle(app, count),
+            Self::Letters(command) => command.handle(app, count),
+            Self::Selection(command) => command.handle(app, count),
+        }
+    }
+}
 
 /// This command deserializes a key in the KDL file
 pub trait KeymappableCommandTrait {
     /// The command that this evaluates to
-    type Command: CommandTrait;
+    type Command: crate::command::Handler;
 
     /// Obtain the Action for this key. What will happen when the specific `KeySequence` is fired
     /// provided that the `KeyMods` match the current key modifiers.
@@ -197,13 +203,16 @@ pub trait KeymappableCommandTrait {
 #[macro_export]
 macro_rules! declare_commands {
     (
-        $(
-            $(#[$Keymappable_Command_Attr:meta])*
-            $Keymappable_Command:ident $({$(
-                $(#[$Command_Argument_Attr:meta])*
-                $Command_Argument:ident: $Command_Argument_Ty:ty $(= $Command_Argument_Default:expr)?,
-            )+})?
-        ),* $(,)?
+        $(#[$Command_Attr:meta])*
+        enum Command {
+            $(
+                $(#[$Keymappable_Command_Attr:meta])*
+                $Keymappable_Command:ident $({$(
+                    $(#[$Command_Argument_Attr:meta])*
+                    $Command_Argument:ident: $Command_Argument_Ty:ty $(= $Command_Argument_Default:expr)?,
+                )+})?
+            ),* $(,)?
+        }
     ) => {
         $(
             $(#[$Keymappable_Command_Attr])*
@@ -231,7 +240,9 @@ macro_rules! declare_commands {
         }
 
         /// An action in the app
-        #[derive(Debug, Clone)]
+        #[allow(clippy::derive_partial_eq_without_eq, reason = "f32 cannot derive `Eq`")]
+        #[derive(Debug, Clone, PartialEq, Copy)]
+        $(#[$Command_Attr])*
         pub enum Command {
             $(
                 $(#[$Keymappable_Command_Attr])*
@@ -244,8 +255,6 @@ macro_rules! declare_commands {
                 )?,
             )*
         }
-
-        impl $crate::config::commands::CommandTrait for Command {}
 
         impl $crate::config::commands::KeymappableCommandTrait for KeymappableCommand {
             type Command = Command;

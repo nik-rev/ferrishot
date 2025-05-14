@@ -167,12 +167,12 @@ impl<'app> SelectionIcons<'app> {
             ),
             (
                 icon!(Clipboard),
-                crate::Command::ImageUpload(crate::image::upload::Command::CopyToClipboard),
+                crate::Command::ImageUpload(crate::image::action::Command::CopyToClipboard),
                 "Copy to Clipboard (Enter)",
             ),
             (
                 icon!(Save),
-                crate::Command::ImageUpload(crate::image::upload::Command::SaveScreenshot),
+                crate::Command::ImageUpload(crate::image::action::Command::SaveScreenshot),
                 "Save Screenshot (Ctrl + s)",
             ),
             (
@@ -197,7 +197,7 @@ impl<'app> SelectionIcons<'app> {
             } else {
                 (
                     icon!(Upload),
-                    crate::Command::ImageUpload(crate::image::upload::Command::UploadScreenshot),
+                    crate::Command::ImageUpload(crate::image::action::Command::UploadScreenshot),
                     "Upload Screenshot (Ctrl + u)",
                 )
             },

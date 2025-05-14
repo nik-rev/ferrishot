@@ -13,17 +13,60 @@ use crate::image::upload::ImageUploaded;
 use crate::{App, geometry::RectangleExt as _, ui::popup::image_uploaded};
 use iced::widget;
 
-use super::upload::Command;
+// INFO: Documentation comments for the enum are used in `--help`
+crate::declare_commands! {
+    #[derive(clap::ValueEnum)]
+    /// Action to take with the image
+    enum Command {
+        /// Copy image to the clipboard
+        UploadScreenshot,
+        /// Save image to a file
+        CopyToClipboard,
+        /// Upload image to the internet
+        SaveScreenshot,
+    }
+}
 
-/// Action to take with the image
-#[derive(clap::ValueEnum, Debug, Clone, Copy, strum::EnumIs)]
-pub enum Message {
-    /// Copy image to the clipboard
-    Copy,
-    /// Save image to a file
-    Save,
-    /// Upload image to the internet
-    Upload,
+impl crate::command::Handler for Command {
+    fn handle(self, app: &mut App, _count: u32) -> Task<crate::Message> {
+        let Some(rect) = app.selection.map(|sel| sel.rect.norm()) else {
+            app.errors.push(match self {
+                Self::CopyToClipboard => "There is no selection to copy",
+                Self::UploadScreenshot => "There is no selection to upload",
+                Self::SaveScreenshot => "There is no selection to save",
+            });
+            return Task::none();
+        };
+
+        if self == Self::UploadScreenshot {
+            app.is_uploading_image = true;
+        }
+
+        let image = App::process_image(rect, &app.image);
+
+        Task::future(async move {
+            match self.execute(image, rect).await {
+                Ok((Output::Saved | Output::Copied, _)) => crate::message::Message::Exit,
+                Ok((
+                    Output::Uploaded {
+                        path,
+                        data,
+                        file_size,
+                    },
+                    ImageData { height, width },
+                )) => crate::Message::ImageUploaded(image_uploaded::Message::ImageUploaded(
+                    image_uploaded::ImageUploadedData {
+                        image_uploaded: data,
+                        uploaded_image: widget::image::Handle::from_path(&path),
+                        height,
+                        width,
+                        file_size,
+                    },
+                )),
+                Err(err) => crate::Message::Error(err.to_string()),
+            }
+        })
+    }
 }
 
 /// Data about the image
@@ -73,13 +116,13 @@ pub enum Error {
     GetImage(#[from] crate::image::GetImageError),
 }
 
-impl Message {
+impl Command {
     /// Convert this into a key action
     pub fn into_key_action(self) -> crate::Command {
         match self {
-            Self::Copy => crate::Command::ImageUpload(Command::CopyToClipboard),
-            Self::Save => crate::Command::ImageUpload(Command::SaveScreenshot),
-            Self::Upload => crate::Command::ImageUpload(Command::UploadScreenshot),
+            Self::CopyToClipboard => crate::Command::ImageUpload(Self::CopyToClipboard),
+            Self::SaveScreenshot => crate::Command::ImageUpload(Self::SaveScreenshot),
+            Self::UploadScreenshot => crate::Command::ImageUpload(Self::UploadScreenshot),
         }
     }
 
@@ -102,17 +145,17 @@ impl Message {
         }
 
         let out = match self {
-            Self::Copy => crate::clipboard::set_image(arboard::ImageData {
+            Self::CopyToClipboard => crate::clipboard::set_image(arboard::ImageData {
                 width: image.width() as usize,
                 height: image.height() as usize,
                 bytes: std::borrow::Cow::Borrowed(image.as_bytes()),
             })
             .map(|_| (Output::Copied, image_data))?,
-            Self::Save => {
+            Self::SaveScreenshot => {
                 let _ = SAVED_IMAGE.set(image);
                 (Output::Saved, image_data)
             }
-            Self::Upload => {
+            Self::UploadScreenshot => {
                 let path = tempfile::TempDir::new()?
                     .into_path()
                     .join("ferrishot-screenshot.png");
@@ -138,48 +181,6 @@ impl Message {
         };
 
         Ok(out)
-    }
-}
-
-impl crate::message::Handler for Message {
-    fn handle(self, app: &mut App) -> Task<crate::Message> {
-        let Some(rect) = app.selection.map(|sel| sel.rect.norm()) else {
-            app.errors.push(match self {
-                Self::Copy => "There is no selection to copy",
-                Self::Upload => "There is no selection to upload",
-                Self::Save => "There is no selection to save",
-            });
-            return Task::none();
-        };
-
-        if self.is_upload() {
-            app.is_uploading_image = true;
-        }
-
-        let image = App::process_image(rect, &app.image);
-
-        Task::future(async move {
-            match self.execute(image, rect).await {
-                Ok((Output::Saved | Output::Copied, _)) => crate::message::Message::Exit,
-                Ok((
-                    Output::Uploaded {
-                        path,
-                        data,
-                        file_size,
-                    },
-                    ImageData { height, width },
-                )) => crate::Message::ImageUploaded(image_uploaded::Message::ImageUploaded(
-                    image_uploaded::ImageUploadedData {
-                        image_uploaded: data,
-                        uploaded_image: widget::image::Handle::from_path(&path),
-                        height,
-                        width,
-                        file_size,
-                    },
-                )),
-                Err(err) => crate::Message::Error(err.to_string()),
-            }
-        })
     }
 }
 

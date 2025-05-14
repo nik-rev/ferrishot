@@ -3,24 +3,34 @@
 use iced::{
     Background, Element,
     Length::Fill,
-    Theme,
+    Task, Theme,
     widget::{Column, column, container, horizontal_space, row, scrollable, text, vertical_space},
 };
 
-use crate::message::Message;
-
-use super::App;
-
 crate::declare_commands! {
-    /// Toggle the overlay showing various information for debugging
-    ToggleDebugOverlay,
+    enum Command {
+        /// Toggle the overlay showing various information for debugging
+        ToggleDebugOverlay,
+    }
+}
+
+impl crate::command::Handler for Command {
+    fn handle(self, app: &mut crate::App, _count: u32) -> Task<crate::Message> {
+        match self {
+            Self::ToggleDebugOverlay => {
+                app.popup = Some(super::popup::Popup::KeyCheatsheet);
+            }
+        }
+
+        Task::none()
+    }
 }
 
 /// Space between the label and what it represents
 const LABEL_SPACE: f32 = 25.0;
 
 /// Debug overlay shows useful information when pressing F12
-pub fn debug_overlay(app: &App) -> Element<Message> {
+pub fn debug_overlay(app: &crate::App) -> Element<crate::Message> {
     let container_style = |_: &Theme| container::Style {
         text_color: Some(app.config.theme.debug_fg),
         background: Some(Background::Color(app.config.theme.debug_bg)),

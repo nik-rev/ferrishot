@@ -1,6 +1,15 @@
 //! The ferrishot app
 #![cfg_attr(test, allow(clippy::unwrap_used, reason = "ok to unwrap in test"))]
 
+/// Containes handler for a command
+mod command {
+    /// Handle a command and mutate the app's state
+    pub trait Handler {
+        /// The command was invoked. Handle it.
+        fn handle(self, app: &mut crate::App, count: u32) -> iced::Task<crate::Message>;
+    }
+}
+
 mod clipboard;
 mod config;
 mod geometry;

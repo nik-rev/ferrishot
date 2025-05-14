@@ -41,7 +41,7 @@ use iced::Rectangle;
 use crate::geometry::RectangleExt as _;
 
 /// Percentage
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 struct Percentage(f32);
 
 /// Error parsing percentage like "0.47"
@@ -70,7 +70,7 @@ impl FromStr for Percentage {
 }
 
 /// Represents a single axis / dimension of the rectangle's x, y, width, or height values
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 enum Length {
     /// A specific amount of pixels
     Absolute(u32),
@@ -123,7 +123,7 @@ impl FromStr for Length {
 }
 
 /// Nudge a coordinate by an amount
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 struct Nudge {
     /// Move the `original_position` by this amount, relative to the width / height of the rect
     /// It is a `Percentage` because if e.g. `width` is a `Percentage`, we don't know the concrete
@@ -140,7 +140,7 @@ struct Nudge {
 /// The coordinate can be "nudged", that is, say we provide a
 /// -40% value. Now the `x` coordinate will move to the left
 /// by 0.4 * Width of the rectangle
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 struct Coord {
     /// Original coordinate position, before it is nudged
     original_position: Length,
@@ -151,7 +151,7 @@ struct Coord {
 /// The rectangle will turn into an `iced::Rectangle` once we know the bounds of its container
 ///
 /// The container will be the image that we are editing
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct LazyRectangle {
     /// x of the top left corner
     x: Coord,
