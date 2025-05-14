@@ -1,8 +1,8 @@
 //! Icons for ferrishot
 //!
-//! Icons are stored in the `assets/icons/` directory.
-//! Icons are declared at the invocation of the `icons!` macro.
-//! Each `Icon` must have a corresponding `icons/Icon.svg` file.
+//! - Icons are stored in the `assets/icons/` directory.
+//! - Icons are declared at the invocation of the `icons!` macro.
+//! - Each `Icon` must have a corresponding `icons/Icon.svg` file.
 
 /// Generates handles for macros and automatically includes all the icons
 macro_rules! load_icons {

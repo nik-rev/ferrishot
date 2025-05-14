@@ -27,7 +27,7 @@ crate::declare_commands! {
     }
 }
 
-impl crate::command::Handler for Command {
+impl crate::message::CommandHandler for Command {
     fn handle(self, app: &mut App, _count: u32) -> Task<crate::Message> {
         let Some(rect) = app.selection.map(|sel| sel.rect.norm()) else {
             app.errors.push(match self {

@@ -35,6 +35,9 @@ pub enum KeymappableCommand {
     Selection(crate::ui::selection::KeymappableCommand),
 }
 
+// FIXME: Manual implementation for a potentially deriveable trait
+// - Should be find some way to generate this automatically?
+// - Possible contribution to `knus` to implement this feature?
 impl<S> ::ferrishot_knus::Decode<S> for KeymappableCommand
 where
     S: ::ferrishot_knus::traits::ErrorSpan,
@@ -46,8 +49,9 @@ where
         // NOTE: it's unfortunate we have to repeat the node names here and the derive can't manually
         // take care of that.
         //
-        // It is because we have 3-levels of indirection: OutmostEnum(OuterEnum(InnerEnum)).
-        // `knus` only supports 2-levels of indirection
+        // It is because we have 3-levels of indirection: `OutmostEnum(OuterEnum(InnerEnum))`.
+        // while `knus` only supports 2-levels of indirection: `OuterEnum(InnerEnum)`.
+        // The parsing logic is not going to be properly delegated to the `OuterEnum` in the first example
         //
         // TODO: Figure out how to automate this
         match &**node.node_name {
@@ -139,7 +143,7 @@ pub enum Command {
     Selection(crate::ui::selection::Command),
 }
 
-impl crate::command::Handler for Command {
+impl crate::message::CommandHandler for Command {
     fn handle(self, app: &mut crate::App, count: u32) -> iced::Task<crate::Message> {
         match self {
             Self::ImageUpload(command) => command.handle(app, count),
@@ -154,8 +158,8 @@ impl crate::command::Handler for Command {
 
 /// This command deserializes a key in the KDL file
 pub trait KeymappableCommandTrait {
-    /// The command that this evaluates to
-    type Command: crate::command::Handler;
+    /// The command that runs when the keybind is triggered
+    type Command: crate::message::CommandHandler;
 
     /// Obtain the Action for this key. What will happen when the specific `KeySequence` is fired
     /// provided that the `KeyMods` match the current key modifiers.

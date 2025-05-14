@@ -1,6 +1,9 @@
-//! Initialize ferrishot logging
+//! Initialize ferrishot logging to file or stderr
 
-/// Initialize logging
+/// Uses the `log` crate to log either to the standard output or the log file.
+///
+/// See `CONTRIBUTING.md` for info on which params ferrishot takes
+/// for logging specifically that are normally hidden.
 pub fn initialize(cli: &crate::Cli) {
     if cli.log_stderr {
         env_logger::builder()

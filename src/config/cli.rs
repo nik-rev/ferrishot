@@ -10,7 +10,7 @@ use crate::lazy_rect::LazyRectangle;
 
 use anstyle::{AnsiColor, Effects};
 
-/// get CLI styles
+/// Colors for the CLI
 fn get_cli_styles() -> clap::builder::Styles {
     clap::builder::Styles::styled()
         .header(AnsiColor::Green.on_default().effects(Effects::BOLD))

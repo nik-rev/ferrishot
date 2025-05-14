@@ -8,7 +8,7 @@ Some pointers:
 - `ui/app.rs` holds the `App` struct which contains all information about the program
   - `App::view` renders the app
 - `message.rs` holds `Message` enum which defines all events that can happen which mutate the `App`'s state
-  - `App::update` responds to a `Message` to mutate itself
+  - `App::update` responds to a `Message` to mutate itself. This is the **only** place with access to `&mut App`
 - `config/options.rs` defines each config option
 - `cli.rs` defines the command line interface
 

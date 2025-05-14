@@ -1,7 +1,10 @@
-//! Set clipboard with either:
+//! Set clipboard to either:
 //!
 //! - PNG image
-//! - text
+//! - Text
+//!
+//! This module includes a small daemon for Linux that runs in the background,
+//! providing clipboard access.
 
 /// An argument that can be passed into the program to signal that it should daemonize itself. This
 /// can be anything as long as it is unlikely to be passed in by the user by mistake.

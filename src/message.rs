@@ -1,14 +1,27 @@
-//! A message represents some event in the app that mutates the state
-
-use std::time::Instant;
-
-use crate::ui;
+//! A message represents some event in the app that mutates the global state
 
 use crate::Command;
+use crate::ui;
+use std::time::Instant;
 
-/// Handler for a `Message`
+/// Handles commands which mutate state of the application.
+///
+/// A `Command` is a subset of a `Message` which can be bound to a keybinding, and
+/// can therefore receive a `count`.
+pub trait CommandHandler {
+    /// Handle the invoked command, mutating the `App`.
+    ///
+    /// Some commands will behave differently depending on the value of `count`.
+    /// `count` represents a number that the user has typed.
+    ///
+    /// If the `j` key is bound to move down by 1px, typing `200j` will execute
+    /// whatever `j` is bound to 200 times, so move down by 200px.
+    fn handle(self, app: &mut crate::App, count: u32) -> iced::Task<Message>;
+}
+
+/// Handles all mutation of the global state, the `App`.
 pub trait Handler {
-    /// Handle the message
+    /// Handle the message, mutating the `App`.
     fn handle(self, app: &mut crate::App) -> iced::Task<Message>;
 }
 

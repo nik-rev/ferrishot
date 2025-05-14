@@ -233,13 +233,13 @@ pub enum ParseRectError {
     /// Missing positive / negative sign
     #[error("Invalid sign, expected `-` or `+` but found {0}")]
     InvalidSign(String),
-    /// Invalid format
+    /// Lazy rectangle is malformed
     #[error("Invalid format")]
     InvalidFormat,
-    /// Percentage parse error
+    /// Failed to parse the percentage.
     #[error(transparent)]
     PercentageParseError(#[from] ParsePercentageError),
-    /// Parse float error
+    /// Failed to parse a float.
     #[error(transparent)]
     ParseLengthError(#[from] ParseLengthError),
 }
@@ -253,6 +253,9 @@ impl FromStr for LazyRectangle {
             return Ok(Self::FULL);
         }
 
+        // Example of a `LazyRectangle` string being parsed.
+        // Quotes are omitted
+        //
         // START: 100x250+180+190-50%+75%
         let (width, height, x, left) = s
             .split_once('x')

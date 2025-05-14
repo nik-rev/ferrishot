@@ -1,4 +1,4 @@
-//! Additional methods for working with geometry in a canvas:
+//! Additional extension methods for working with geometry in a canvas:
 //!
 //! - Corners
 //! - Point

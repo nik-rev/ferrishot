@@ -75,7 +75,7 @@ crate::declare_commands! {
     }
 }
 
-impl crate::command::Handler for Command {
+impl crate::message::CommandHandler for Command {
     fn handle(self, app: &mut crate::App, count: u32) -> Task<crate::Message> {
         match self {
             Self::SetWidth => {
