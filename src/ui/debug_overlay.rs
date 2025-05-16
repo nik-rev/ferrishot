@@ -14,7 +14,7 @@ crate::declare_commands! {
     }
 }
 
-impl crate::message::CommandHandler for Command {
+impl crate::command::Handler for Command {
     fn handle(self, app: &mut crate::App, _count: u32) -> Task<crate::Message> {
         match self {
             Self::ToggleDebugOverlay => {

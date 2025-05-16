@@ -46,7 +46,7 @@ crate::declare_commands! {
     }
 }
 
-impl crate::message::CommandHandler for Command {
+impl crate::command::Handler for Command {
     fn handle(self, _app: &mut App, _count: u32) -> Task<Message> {
         match self {
             Self::NoOp => Task::none(),
@@ -380,9 +380,7 @@ impl App {
             }
             Message::NoOp => (),
             Message::Command { action, count } => {
-                return <crate::Command as crate::message::CommandHandler>::handle(
-                    action, self, count,
-                );
+                return <crate::Command as crate::command::Handler>::handle(action, self, count);
             }
             Message::Error(err) => {
                 self.errors.push(err);

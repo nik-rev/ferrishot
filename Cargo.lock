@@ -1542,6 +1542,7 @@ dependencies = [
  "log",
  "miette",
  "mouse_position",
+ "paste",
  "pretty_assertions",
  "reqwest",
  "rfd",
@@ -1552,19 +1553,6 @@ dependencies = [
  "tempfile",
  "thiserror 2.0.12",
  "tokio",
-]
-
-[[package]]
-name = "ferrishot-knus-derive"
-version = "3.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c84a2bd232c1fb0af86f1ce6ca35500a3acd4e37756c6263833ab65ee239ae20"
-dependencies = [
- "heck",
- "proc-macro-error2",
- "proc-macro2",
- "quote",
- "syn",
 ]
 
 [[package]]
@@ -1777,15 +1765,24 @@ dependencies = [
 [[package]]
 name = "ferrishot_knus"
 version = "3.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ff62aeed0d8cc2a5e74b08ce8cd533682d603db528a680fb137da6df9a2dfa11"
 dependencies = [
  "base64",
  "chumsky",
- "ferrishot-knus-derive",
+ "ferrishot_knus-derive",
  "miette",
  "thiserror 1.0.69",
  "unicode-width 0.2.0",
+]
+
+[[package]]
+name = "ferrishot_knus-derive"
+version = "3.2.0"
+dependencies = [
+ "heck",
+ "proc-macro-error2",
+ "proc-macro2",
+ "quote",
+ "syn",
 ]
 
 [[package]]

@@ -86,7 +86,8 @@ tokio = { version = "1.44.2", features = ["full"] }
 #
 # I'd like to just use kdl-v2 to avoid breaking users' configs in the future when we'll
 # migrate from kdl v1 -> kdl v2 anyways
-ferrishot_knus = "3.2"
+# ferrishot_knus = "3.2"
+ferrishot_knus = { path = "../knus" }
 # pretty error messages for KDL derive
 miette = { version = "7.5.0", features = ["fancy"] }
 
@@ -129,6 +130,7 @@ tap = "1.0.1"
 indoc = "2.0.6"
 
 anstyle = "1.0.10"
+paste = "1.0.15"
 
 [lints.rust]
 missing_docs = "warn"
