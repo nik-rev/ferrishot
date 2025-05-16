@@ -46,7 +46,7 @@ macro_rules! declare_config_options {
             /// Ferrishot's theme and colors
             pub theme: Theme,
             /// Ferrishot's keybindings
-            pub keys: $crate::config::key::KeyMap,
+            pub keys: $crate::config::key_map::KeyMap,
             $(
                 $(#[$doc])*
                 pub $key: $typ,
@@ -59,7 +59,7 @@ macro_rules! declare_config_options {
         pub struct DefaultKdlConfig {
             /// The default keybindings of ferrishot
             #[ferrishot_knus(child)]
-            pub keys: $crate::config::key::Keys,
+            pub keys: $crate::config::key_map::Keys,
             /// The default theme of ferrishot
             #[ferrishot_knus(child)]
             pub theme: DefaultKdlTheme,
@@ -135,7 +135,7 @@ macro_rules! declare_config_options {
         pub struct UserKdlConfig {
             /// User-defined keybindings
             #[ferrishot_knus(child)]
-            pub keys: Option<$crate::config::key::Keys>,
+            pub keys: Option<$crate::config::key_map::Keys>,
             /// User-defined colors
             #[ferrishot_knus(child)]
             pub theme: Option<UserKdlTheme>,

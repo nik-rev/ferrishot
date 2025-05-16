@@ -16,12 +16,12 @@
 
 pub mod cli;
 pub mod commands;
-pub mod key;
+pub mod key_map;
 mod macros;
 mod named_key;
 mod options;
 
-use crate::config::key::KeyMap;
+use crate::config::key_map::KeyMap;
 use crate::config::macros::Color;
 
 pub use cli::Cli;
