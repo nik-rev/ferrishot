@@ -1556,6 +1556,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "ferrishot-knus-derive"
+version = "3.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ba8fa75b23b1ba9e418f912f181448ec05a5e55bb6a26fff55f7b097521728bc"
+dependencies = [
+ "heck",
+ "proc-macro-error2",
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "ferrishot_cryoglyph"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1764,25 +1777,16 @@ dependencies = [
 
 [[package]]
 name = "ferrishot_knus"
-version = "3.2.0"
+version = "3.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fb04f1e7687f32c48bb533ef87d949921e3537387f934ef1e7e106fe1c58e81d"
 dependencies = [
  "base64",
  "chumsky",
- "ferrishot_knus-derive",
+ "ferrishot-knus-derive",
  "miette",
  "thiserror 1.0.69",
  "unicode-width 0.2.0",
-]
-
-[[package]]
-name = "ferrishot_knus-derive"
-version = "3.2.0"
-dependencies = [
- "heck",
- "proc-macro-error2",
- "proc-macro2",
- "quote",
- "syn",
 ]
 
 [[package]]

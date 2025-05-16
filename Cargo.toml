@@ -86,8 +86,7 @@ tokio = { version = "1.44.2", features = ["full"] }
 #
 # I'd like to just use kdl-v2 to avoid breaking users' configs in the future when we'll
 # migrate from kdl v1 -> kdl v2 anyways
-# ferrishot_knus = "3.2"
-ferrishot_knus = { path = "../knus" }
+ferrishot_knus = "3.3"
 # pretty error messages for KDL derive
 miette = { version = "7.5.0", features = ["fancy"] }
 
