@@ -191,26 +191,26 @@ mod test {
     #[test]
     fn parse_key_sequence() {
         macro_rules! assert_parsed_key_sequences {
-        ( $( $seq:literal -> $( $outcome:tt ),+ )* ) => {{
-            $(
-                assert_eq!(
-                    $seq.parse::<KeySequence>(),
-                    assert_parsed_key_sequences!(@seq $($outcome),*),
-                    concat!("Failed to parse ", $seq)
-                );
-            )*
-        }};
-        (@seq Err, $message:literal ) => { Err($message.to_string()) };
-        (@seq $first:expr) => { Ok(KeySequence((assert_parsed_key_sequences!(@key $first), None))) };
-        (@seq $first:tt, $second:tt) => {{
-            Ok(KeySequence((
-                assert_parsed_key_sequences!(@key $first),
-                Some(assert_parsed_key_sequences!(@key $second))
-            )))
-        }};
-        (@key $key:ident) => { IcedKey::Named(key::Named::$key) };
-        (@key $key:literal) => { IcedKey::Character(SmolStr::new($key)) };
-    }
+            ( $( $seq:literal -> $( $outcome:tt ),+ )* ) => {{
+                $(
+                    assert_eq!(
+                        $seq.parse::<KeySequence>(),
+                        assert_parsed_key_sequences!(@seq $($outcome),*),
+                        concat!("Failed to parse ", $seq)
+                    );
+                )*
+            }};
+            (@seq Err, $message:literal ) => { Err($message.to_string()) };
+            (@seq $first:expr) => { Ok(KeySequence((assert_parsed_key_sequences!(@key $first), None))) };
+            (@seq $first:tt, $second:tt) => {{
+                Ok(KeySequence((
+                    assert_parsed_key_sequences!(@key $first),
+                    Some(assert_parsed_key_sequences!(@key $second))
+                )))
+            }};
+            (@key $key:ident) => { IcedKey::Named(key::Named::$key) };
+            (@key $key:literal) => { IcedKey::Character(SmolStr::new($key)) };
+        }
 
         assert_parsed_key_sequences! {
             "gh" -> "g", "h"
