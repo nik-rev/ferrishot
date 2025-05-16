@@ -1,6 +1,14 @@
 //! The ferrishot app
-#![cfg_attr(test, allow(clippy::unwrap_used, reason = "ok to unwrap in test"))]
+#![cfg_attr(
+    test,
+    allow(
+        clippy::unwrap_used,
+        clippy::needless_pass_by_value,
+        reason = "relaxed lints in tests"
+    )
+)]
 
+/// See [`CommandHandler`](crate::config::commands::CommandHandler) for more info
 mod command {
     pub use super::config::commands::CommandHandler as Handler;
 }

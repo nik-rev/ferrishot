@@ -188,49 +188,57 @@ mod test {
     use super::*;
     use pretty_assertions::assert_eq;
 
+    fn ch(c: &str) -> IcedKey {
+        IcedKey::Character(SmolStr::new(c))
+    }
+
+    #[track_caller]
+    fn parse(input: &str, expected: Result<KeySequence, String>) {
+        assert_eq!(
+            input.parse::<KeySequence>(),
+            expected,
+            "Failed to parse {:?}",
+            input
+        );
+    }
+
     #[test]
     fn parse_key_sequence() {
-        macro_rules! assert_parsed_key_sequences {
-            ( $( $seq:literal -> $( $outcome:tt ),+ )* ) => {{
-                $(
-                    assert_eq!(
-                        $seq.parse::<KeySequence>(),
-                        assert_parsed_key_sequences!(@seq $($outcome),*),
-                        concat!("Failed to parse ", $seq)
-                    );
-                )*
-            }};
-            (@seq Err, $message:literal ) => { Err($message.to_string()) };
-            (@seq $first:expr) => { Ok(KeySequence((assert_parsed_key_sequences!(@key $first), None))) };
-            (@seq $first:tt, $second:tt) => {{
-                Ok(KeySequence((
-                    assert_parsed_key_sequences!(@key $first),
-                    Some(assert_parsed_key_sequences!(@key $second))
-                )))
-            }};
-            (@key $key:ident) => { IcedKey::Named(key::Named::$key) };
-            (@key $key:literal) => { IcedKey::Character(SmolStr::new($key)) };
-        }
+        use IcedKey::Named;
+        use key::Named::*;
 
-        assert_parsed_key_sequences! {
-            "gh" -> "g", "h"
-            "ge" -> "g", "e"
-            "x" -> "x"
-            "Lx" -> "L", "x"
-            "" -> Err, "Expected at least 1 key."
-            "<space>x" -> Space, "x"
-            "x<space>" -> "x", Space
-            "<space><space>" -> Space, Space
-            "<<" -> "<", "<"
-            "<>" -> "<", ">"
-            "<" -> "<"
-            ">>" -> ">", ">"
-            "<<space>" -> "<", Space
-            "<f32><f31>" -> F32, F31
-            "><f32>" -> ">", F32
-            "abc" -> Err, "At the moment, only up to 2 keys in a sequence are supported."
-            "<f32>b<f16>" -> Err, "At the moment, only up to 2 keys in a sequence are supported."
-            "<@>" -> Err, "Invalid key: <@>. Matching variant not found"
-        }
+        parse("gh", Ok(KeySequence((ch("g"), Some(ch("h"))))));
+        parse("ge", Ok(KeySequence((ch("g"), Some(ch("e"))))));
+        parse("x", Ok(KeySequence((ch("x"), None))));
+        parse("Lx", Ok(KeySequence((ch("L"), Some(ch("x"))))));
+        parse("", Err("Expected at least 1 key.".to_string()));
+        parse("<space>x", Ok(KeySequence((Named(Space), Some(ch("x"))))));
+        parse("x<space>", Ok(KeySequence((ch("x"), Some(Named(Space))))));
+        parse(
+            "<space><space>",
+            Ok(KeySequence((Named(Space), Some(Named(Space))))),
+        );
+        parse("<<", Ok(KeySequence((ch("<"), Some(ch("<"))))));
+        parse("<>", Ok(KeySequence((ch("<"), Some(ch(">"))))));
+        parse("<", Ok(KeySequence((ch("<"), None))));
+        parse(">>", Ok(KeySequence((ch(">"), Some(ch(">"))))));
+        parse("<<space>", Ok(KeySequence((ch("<"), Some(Named(Space))))));
+        parse(
+            "<f32><f31>",
+            Ok(KeySequence((Named(F32), Some(Named(F31))))),
+        );
+        parse("><f32>", Ok(KeySequence((ch(">"), Some(Named(F32))))));
+        parse(
+            "abc",
+            Err("At the moment, only up to 2 keys in a sequence are supported.".to_string()),
+        );
+        parse(
+            "<f32>b<f16>",
+            Err("At the moment, only up to 2 keys in a sequence are supported.".to_string()),
+        );
+        parse(
+            "<@>",
+            Err("Invalid key: <@>. Matching variant not found".to_string()),
+        );
     }
 }
