@@ -14,6 +14,9 @@
 //!   obtain the `Message` to execute for that action.
 //! - Adding opacity to colors
 
+#[cfg(test)]
+mod tests;
+
 pub mod cli;
 pub mod commands;
 pub mod key_map;
