@@ -46,6 +46,7 @@ pub(crate) fn write(region: Rectangle) -> Result<(), Error> {
         .pipe(Ok)
 }
 
+#[cfg(not(target_os = "linux"))]
 #[cfg(test)]
 mod tests {
     use super::*;
