@@ -45,3 +45,49 @@ pub(crate) fn write(region: Rectangle) -> Result<(), Error> {
         .write_all(region.as_str().as_bytes())?
         .pipe(Ok)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use pretty_assertions::assert_eq;
+
+    #[test]
+    fn write_and_read_last_region() {
+        let region = Rectangle {
+            x: 42.0,
+            y: 24.0,
+            width: 800.0,
+            height: 600.0,
+        };
+
+        write(region).unwrap();
+        assert_eq!(
+            read(Rectangle {
+                x: 0.0,
+                y: 0.0,
+                width: 3440.0,
+                height: 1440.00
+            })
+            .unwrap(),
+            Some(region)
+        );
+        let another_region = Rectangle {
+            x: 900.0,
+            y: 400.0,
+            width: 800.0,
+            height: 150.0,
+        };
+
+        write(another_region).unwrap();
+        assert_eq!(
+            read(Rectangle {
+                x: 0.0,
+                y: 0.0,
+                width: 3440.0,
+                height: 1440.00
+            })
+            .unwrap(),
+            Some(another_region)
+        );
+    }
+}
