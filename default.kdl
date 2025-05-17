@@ -134,6 +134,8 @@ theme {
     bg = 0x00_00_00
   
   // color of the frame around the selection
+  //
+  // Uses the `accent` color from the `palette`
   selection-frame accent
   
   // background color of the region that is not selected
@@ -153,6 +155,7 @@ theme {
   tooltip-bg bg
   
   error-fg fg
+  // Use a custom hex color
   error-bg 0xff_00_00 opacity=0.6
   
   info-box-fg fg
