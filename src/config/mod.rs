@@ -17,14 +17,15 @@
 pub mod cli;
 pub mod commands;
 pub mod key_map;
-mod macros;
 mod named_key;
 mod options;
+mod theme;
 
 use crate::config::key_map::KeyMap;
-use crate::config::macros::Color;
+pub use crate::config::theme::{Color, Theme};
 
 pub use cli::Cli;
+use miette::miette;
 
 use std::fs;
 use std::path::PathBuf;
@@ -32,7 +33,7 @@ use std::path::PathBuf;
 use options::{DefaultKdlConfig, UserKdlConfig};
 
 pub use cli::DEFAULT_LOG_FILE_PATH;
-pub use options::{Config, Theme};
+pub use options::Config;
 
 /// The default configuration for ferrishot, to be merged with the user's config
 ///
@@ -55,6 +56,9 @@ impl Config {
             &fs::read_to_string(&config_file_path).unwrap_or_default(),
         )?;
 
-        Ok(default_config.merge_user_config(user_config).into())
+        default_config
+            .merge_user_config(user_config)
+            .try_into()
+            .map_err(|err| miette!("{err}"))
     }
 }

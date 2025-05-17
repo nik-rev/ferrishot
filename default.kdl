@@ -127,56 +127,62 @@ keys {
 // editing the `theme` section allows you to fully customize the appearance of ferrishot
 
 theme {
+  // Backslash `\` lets you split it the palette over multiple lines
+  palette \
+    accent = 0xab_61_37 \
+    fg = 0xff_ff_ff \
+    bg = 0x00_00_00
+  
   // color of the frame around the selection
-  selection-frame 0xab_61_37
+  selection-frame accent
   
   // background color of the region that is not selected
-  non-selected-region 0x00_00_00 opacity=0.5
+  non-selected-region bg opacity=0.5
   
   // small drop shadow used, an example is around the selection and also
   // around icons surrounding the selection
-  drop-shadow 0x00_00_00 opacity=0.5
+  drop-shadow bg opacity=0.5
   
   // selected text, for instance when editing the size indicator
-  text-selection 0xab_61_37 opacity=0.3
+  text-selection accent opacity=0.3
   
-  size-indicator-fg 0xff_ff_ff
-  size-indicator-bg 0x00_00_00 opacity=0.5
+  size-indicator-fg fg
+  size-indicator-bg bg opacity=0.5
   
-  tooltip-fg 0xff_ff_ff
-  tooltip-bg 0x00_00_00
+  tooltip-fg fg
+  tooltip-bg bg
   
-  error-fg 0xff_ff_ff
+  error-fg fg
   error-bg 0xff_00_00 opacity=0.6
   
-  info-box-fg 0xff_ff_ff
-  info-box-border 0xff_ff_ff
-  info-box-bg 0xab_61_37 opacity=0.95
+  info-box-fg fg
+  info-box-border fg
+  info-box-bg accent opacity=0.95
   
-  icon-fg 0xff_ff_ff
-  icon-bg 0xab_61_37
+  icon-fg fg
+  icon-bg accent
 
   // letters let you pick any region of the screen in 8 clicks
   // keys: t (top left corner), b (bottom right corner)
-  letters-lines 0xff_ff_ff
-  letters-bg 0x00_00_00 opacity=0.6
-  letters-fg 0xff_ff_ff
+  letters-lines fg
+  letters-bg bg opacity=0.6
+  letters-fg fg
 
   // image uploaded popup (ctrl + U)
-  image-uploaded-fg 0xff_ff_ff
-  image-uploaded-bg 0x00_00_00 opacity=0.9
+  image-uploaded-fg fg
+  image-uploaded-bg bg opacity=0.9
 
   // for example, the checkmark when you copy to clipboard
   success 0x00_ff_00
 
-  cheatsheet-bg 0x00_00_00
-  cheatsheet-fg 0xff_ff_ff
+  cheatsheet-bg bg
+  cheatsheet-fg fg
 
-  popup-close-icon-bg 0x00_00_00 opacity=0.0
-  popup-close-icon-fg 0xff_ff_ff
+  popup-close-icon-bg bg opacity=0.0
+  popup-close-icon-fg fg
 
   // debug menu, for development (F12)
-  debug-fg 0xff_ff_ff
+  debug-fg fg
   debug-label 0xff_00_00
-  debug-bg 0x00_00_00 opacity=0.9
+  debug-bg bg opacity=0.9
 }
