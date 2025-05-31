@@ -70,7 +70,11 @@ arboard = { version = "3.5", features = ["wayland-data-control"] }
 # image encoding, transformations and decoding
 image = "0.25.6"
 # command line argument parser
-clap = { version = "4.5.35", features = ["derive"] }
+clap = { version = "4.5.35", features = [
+  "derive",
+  "wrap_help",
+  "unstable-markdown",
+] }
 # file dialog
 rfd = "0.15.3"
 # cross-platform API to get locations like config directory, cache directory...

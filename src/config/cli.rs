@@ -10,21 +10,19 @@ use crate::lazy_rect::LazyRectangle;
 
 use anstyle::{AnsiColor, Effects};
 
-/// Colors for the CLI
-fn get_cli_styles() -> clap::builder::Styles {
-    clap::builder::Styles::styled()
-        .header(AnsiColor::Green.on_default().effects(Effects::BOLD))
-        .usage(AnsiColor::Green.on_default().effects(Effects::BOLD))
-        .literal(AnsiColor::Cyan.on_default().effects(Effects::BOLD))
-        .placeholder(AnsiColor::Cyan.on_default())
-        .error(AnsiColor::Red.on_default().effects(Effects::BOLD))
-        .valid(AnsiColor::Cyan.on_default().effects(Effects::BOLD))
-        .invalid(AnsiColor::Yellow.on_default().effects(Effects::BOLD))
-}
+/// Styles for the CLI
+const STYLES: clap::builder::Styles = clap::builder::Styles::styled()
+    .header(AnsiColor::BrightGreen.on_default().effects(Effects::BOLD))
+    .usage(AnsiColor::BrightGreen.on_default().effects(Effects::BOLD))
+    .literal(AnsiColor::BrightCyan.on_default().effects(Effects::BOLD))
+    .placeholder(AnsiColor::BrightCyan.on_default())
+    .error(AnsiColor::BrightRed.on_default().effects(Effects::BOLD))
+    .valid(AnsiColor::BrightCyan.on_default().effects(Effects::BOLD))
+    .invalid(AnsiColor::BrightYellow.on_default().effects(Effects::BOLD));
 
 /// Command line arguments for the program
 #[derive(Parser, Debug)]
-#[command(version, about, author = "Nik Revenco", styles = get_cli_styles())]
+#[command(version, about, author = "Nik Revenco", styles = STYLES)]
 #[expect(clippy::struct_excessive_bools, reason = "normal for CLIs")]
 pub struct Cli {
     /// Instead of taking a screenshot of the desktop, open this image instead
