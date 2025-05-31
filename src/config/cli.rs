@@ -20,9 +20,9 @@ const STYLES: clap::builder::Styles = clap::builder::Styles::styled()
     .valid(AnsiColor::BrightCyan.on_default().effects(Effects::BOLD))
     .invalid(AnsiColor::BrightYellow.on_default().effects(Effects::BOLD));
 
-/// Command line arguments for the program
+/// Ferrishot is a powerful screenshot app written in Rust
 #[derive(Parser, Debug)]
-#[command(version, about, author = "Nik Revenco", styles = STYLES)]
+#[command(version, styles = STYLES, long_about = None)]
 #[expect(clippy::struct_excessive_bools, reason = "normal for CLIs")]
 pub struct Cli {
     /// Instead of taking a screenshot of the desktop, open this image instead
@@ -62,7 +62,6 @@ pub struct Cli {
         short,
         long,
         value_name = "WxH+X+Y",
-        verbatim_doc_comment,
         value_hint = ValueHint::Other
     )]
     pub region: Option<LazyRectangle>,
@@ -71,26 +70,20 @@ pub struct Cli {
     #[arg(short, long, conflicts_with = "region")]
     pub last_region: bool,
 
-    /// Accept on first selection
-    #[arg(
-        short,
-        long,
-        value_name = "ACTION",
-        long_help = indoc! {
-            "
-            Accept capture and perform the action as soon as a selection is made
-
-            If holding `ctrl` while you are releasing the left mouse button on the first selection,
-            the behavior is cancelled
-
-            It's quite useful to run ferrishot, select a region and have it instantly be copied to the
-            clipboard for example. In 90% of situations you won't want to do much post-processing of
-            the region and this makes that experience twice as fast. You can always opt-out with `ctrl`
-
-            Using this option with `--region` or `--last-region` will run ferrishot in 'headless mode',
-            without making a new window."
-        }
-    )]
+    /// Accept capture and perform the action as soon as a selection is made
+    ///
+    /// If holding `ctrl` while you are releasing the left mouse button on the first selection,
+    /// the behavior is cancelled
+    ///
+    /// It's quite useful to run ferrishot, select a region and have it instantly be copied to the
+    /// clipboard for example.
+    ///
+    /// In 90% of situations you won't want to do much post-processing of
+    /// the region and this makes that experience twice as fast. You can always opt-out with `ctrl`
+    ///
+    /// Using this option with `--region` or `--last-region` will run ferrishot in 'headless mode',
+    /// without making a new window.
+    #[arg(short, long, value_name = "ACTION")]
     pub accept_on_select: Option<crate::image::action::Command>,
 
     /// Wait this long before launch
@@ -164,7 +157,7 @@ pub struct Cli {
         long,
         value_name = "LEVEL",
         default_value = "error",
-        long_help = "Choose a minumum level at which to log. [error, warn, info, debug, trace, off]",
+        long_help = "Choose a miniumum level at which to log. [error, warn, info, debug, trace, off]",
         hide = !cfg!(feature = "debug")
     )]
     pub log_level: log::LevelFilter,
