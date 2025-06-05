@@ -4,7 +4,6 @@ use std::{path::PathBuf, sync::LazyLock};
 
 use clap::{Parser, ValueHint};
 use etcetera::BaseStrategy as _;
-use indoc::indoc;
 
 use crate::lazy_rect::LazyRectangle;
 
