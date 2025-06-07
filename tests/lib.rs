@@ -1,3 +1,5 @@
+//! Tests for ferrishot
+
 // #![allow(clippy::unwrap_used, reason = "relaxed rules in tests")]
 // //! Tests
 
