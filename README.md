@@ -204,7 +204,7 @@ yay -S ferrishot-bin
 
 ### Cargo
 
-If you use Linux, see [`CONTRIBUTING.md`](./CONTRIBUTING.md) for details on which dependencies you will need.
+If you use Linux, see [`CONTRIBUTING.md`](./CONTRIBUTING.md) for details on which dependencies you will need
 
 ```sh
 cargo install ferrishot
