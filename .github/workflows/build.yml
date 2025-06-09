@@ -7,7 +7,6 @@ on:
 
 jobs:
   check:
-    name: Check
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -16,7 +15,6 @@ jobs:
       - run: cargo check
 
   nix:
-    name: Nix Build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -25,7 +23,6 @@ jobs:
       - run: nix build
 
   format:
-    name: Format
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -34,7 +31,6 @@ jobs:
       - run: cargo fmt --check
 
   test:
-    name: Test Suite
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -60,7 +56,6 @@ jobs:
       - run: cargo test --workspace
 
   lint:
-    name: Clippy
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
